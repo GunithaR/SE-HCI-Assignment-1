@@ -1,0 +1,16 @@
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+/** Redirects unauthenticated users to /login. */
+export function ProtectedRoute({ children }) {
+    const { isAuthenticated } = useAuth();
+    return isAuthenticated ? children : <Navigate to="/login" replace />;
+}
+
+/** Redirects non-admin users to / . */
+export function AdminRoute({ children }) {
+    const { isAuthenticated, isAdmin } = useAuth();
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    if (!isAdmin) return <Navigate to="/" replace />;
+    return children;
+}

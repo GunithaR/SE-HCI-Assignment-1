@@ -1,0 +1,45 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  # ── DataSource ──────────────────────────────────────────────────────────────
+  datasource:
+    # Replace with your own MySQL connection details
+    url: jdbc:mysql://localhost:3306/construction_platform?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
+    username: YOUR_MYSQL_USERNAME
+    password: YOUR_MYSQL_PASSWORD
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # ── JPA / Hibernate ─────────────────────────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # ── Jackson ─────────────────────────────────────────────────────────────────
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+# ── Seeder defaults ────────────────────────────────────────────────────────────
+app:
+  seed:
+    admin-email: admin@platform.com
+    admin-password: YOUR_ADMIN_PASSWORD
+
+# ── JWT ────────────────────────────────────────────────────────────────────────
+jwt:
+  # Generate a strong 256-bit Base64-encoded secret key for production
+  secret: "YOUR_BASE64_ENCODED_SECRET_KEY"
+  expiration-ms: 86400000   # 24 hours
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+logging:
+  level:
+    org.springframework.security: INFO
+    com.constructionplatform: DEBUG
