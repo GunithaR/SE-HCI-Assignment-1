@@ -28,14 +28,29 @@ function ProductCard({ product }) {
             background: 'rgba(255,255,255,0.03)',
             border: '1px solid rgba(255,255,255,0.07)',
             borderRadius: 16,
-            padding: '1.25rem',
-            display: 'flex', flexDirection: 'column', gap: 12,
+            overflow: 'hidden',
+            padding: 0,
+            display: 'flex', flexDirection: 'column', gap: 0,
             transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s',
             cursor: 'default',
         }}
             onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.4)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.4)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.boxShadow = 'none'; }}
         >
+            {/* Product Image */}
+            {product.imageUrl && (
+                <div style={{ width: '100%', height: 180, overflow: 'hidden', background: 'rgba(0,0,0,0.2)' }}>
+                    <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+                    />
+                </div>
+            )}
+
+            {/* Card body */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '1.25rem', flex: 1 }}>
             {/* Top row */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                 <div style={{ flex: 1 }}>
@@ -92,6 +107,7 @@ function ProductCard({ product }) {
                     {product.isActive ? 'In Stock' : 'Out of Stock'}
                 </span>
             </div>
+            </div>{/* end card body */}
         </div>
     );
 }

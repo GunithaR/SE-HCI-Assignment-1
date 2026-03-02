@@ -6,5 +6,6 @@ package com.constructionplatform.app.entity;
  */
 public enum Role {
     ADMIN,
+    SUB_ADMIN,
     CUSTOMER
 }

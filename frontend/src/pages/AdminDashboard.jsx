@@ -31,6 +31,72 @@ function Toast({ toast }) {
     );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// AddSubAdminModal — create a new Sub-Admin account
+// ─────────────────────────────────────────────────────────────────────────────
+function AddSubAdminModal({ onClose, onSuccess }) {
+    const [form, setForm] = useState({ email: '', password: '' });
+    const [error, setError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+
+    const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        if (!form.email || !form.password) { setError('Email and password are required.'); return; }
+        if (form.password.length < 6) { setError('Password must be at least 6 characters.'); return; }
+        setSubmitting(true);
+        try {
+            const result = await catalogService.createSubAdminUser(form);
+            onSuccess(`Sub-Admin "${result.email}" created successfully! ✅`);
+            onClose();
+        } catch (err) {
+            setError(err?.response?.data?.message || 'Failed to create Sub-Admin.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={(e) => e.target === e.currentTarget && onClose()}>
+            <div className="card" style={{ width: '100%', maxWidth: 440, padding: '2rem', borderRadius: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h2 style={{ fontWeight: 700, fontSize: '1.2rem', color: '#f59e0b' }}>➕ Add Sub-Admin</h2>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '1.3rem', cursor: 'pointer' }}>✕</button>
+                </div>
+                <p style={{ color: '#64748b', fontSize: '0.82rem', marginBottom: '1.2rem' }}>
+                    Sub-admins can manage products and brands, but cannot create new admins.
+                </p>
+                {error && <p style={{ color: '#f87171', fontSize: '0.82rem', marginBottom: '1rem', background: 'rgba(239,68,68,0.08)', padding: '8px 12px', borderRadius: 8 }}>{error}</p>}
+                <form onSubmit={handleSubmit}>
+                    <div style={{ marginBottom: '1rem' }}>
+                        <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.78rem', marginBottom: 4 }}>Email</label>
+                        <input type="email" value={form.email} onChange={set('email')} required
+                            style={{ width: '100%', padding: '9px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(245,158,11,0.35)', color: '#e2e8f0', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+                    </div>
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.78rem', marginBottom: 4 }}>Password</label>
+                        <input type="password" value={form.password} onChange={set('password')} required minLength={6}
+                            style={{ width: '100%', padding: '9px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(245,158,11,0.35)', color: '#e2e8f0', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                        <button type="submit" disabled={submitting}
+                            style={{ flex: 1, padding: '10px', borderRadius: 10, cursor: submitting ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '0.9rem', background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)' }}>
+                            {submitting ? 'Creating…' : 'Create Sub-Admin'}
+                        </button>
+                        <button type="button" onClick={onClose}
+                            style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#64748b', cursor: 'pointer', fontWeight: 500 }}>
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
 function StatCard({ icon, label, value, color, loading }) {
     return (
         <div className="card" style={{ padding: '1.5rem' }}>
@@ -70,10 +136,31 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
 
     const [errors, setErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
+    // Image state
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(
+        isEdit && editingProduct.imageUrl ? editingProduct.imageUrl : null
+    );
 
     const set = (field) => (e) => {
         const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
         setForm((f) => ({ ...f, [field]: value }));
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files?.[0] || null;
+        setImageFile(file);
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => setImagePreview(ev.target.result);
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const clearImage = () => {
+        setImageFile(null);
+        // If editing and had an existing image, restore its preview
+        setImagePreview(isEdit && editingProduct.imageUrl ? editingProduct.imageUrl : null);
     };
 
     const handleSubmit = async (e) => {
@@ -91,9 +178,9 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
         try {
             let result;
             if (isEdit) {
-                result = await catalogService.updateProduct(editingProduct.id, payload);
+                result = await catalogService.updateProduct(editingProduct.id, payload, imageFile || undefined);
             } else {
-                result = await catalogService.createProduct(payload);
+                result = await catalogService.createProduct(payload, imageFile || undefined);
             }
             onSuccess(`Product "${result.name}" ${isEdit ? 'updated' : 'created'} successfully! ✅`, result);
             onClose();
@@ -235,6 +322,54 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                         </div>
                     </div>
 
+                    {/* ── Image Upload ───────────────────────────────────────── */}
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
+                        <p style={{ color: '#a78bfa', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.75rem' }}>
+                            🖼️ Product Image <span style={{ color: '#475569', fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>(optional)</span>
+                        </p>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                            {/* Preview box */}
+                            <div style={{
+                                width: 90, height: 90, borderRadius: 10, flexShrink: 0,
+                                border: imagePreview ? '1px solid rgba(139,92,246,0.4)' : '2px dashed rgba(255,255,255,0.12)',
+                                background: 'rgba(255,255,255,0.03)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                            }}>
+                                {imagePreview
+                                    ? <img src={imagePreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    : <span style={{ fontSize: '2rem', opacity: 0.2 }}>📷</span>}
+                            </div>
+                            {/* Upload controls */}
+                            <div style={{ flex: 1 }}>
+                                <label style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px',
+                                    borderRadius: 8, cursor: 'pointer', fontSize: '0.82rem', fontWeight: 500,
+                                    background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.35)', color: '#a78bfa',
+                                }}>
+                                    📁 {imageFile ? 'Change image' : (isEdit && editingProduct?.imageUrl ? 'Replace image' : 'Choose image')}
+                                    <input
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp,image/gif"
+                                        onChange={handleImageChange}
+                                        style={{ display: 'none' }}
+                                    />
+                                </label>
+                                <p style={{ color: '#475569', fontSize: '0.73rem', marginTop: 6 }}>
+                                    {imageFile
+                                        ? `Selected: ${imageFile.name}`
+                                        : isEdit && editingProduct?.imageUrl
+                                            ? 'Current image kept — choose a file to replace it'
+                                            : 'JPG, PNG or WebP — max 10 MB'}
+                                </p>
+                                {imageFile && (
+                                    <button type="button" onClick={clearImage}
+                                        style={{ marginTop: 4, padding: '4px 12px', borderRadius: 7, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171', fontSize: '0.73rem', cursor: 'pointer' }}>
+                                        ✕ Remove
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                     {/* Actions */}
                     <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
                         <button type="button" onClick={onClose}
@@ -256,7 +391,7 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
 // Main Dashboard
 // ─────────────────────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
-    const { user, logout } = useAuth();
+    const { user, logout, isFullAdmin } = useAuth();
     const navigate = useNavigate();
 
     const [categories, setCategories] = useState([]);
@@ -270,8 +405,9 @@ export default function AdminDashboard() {
     const [loadingInit, setLoadingInit] = useState(true);
     const [loadingProds, setLoadingProds] = useState(false);
     const [showModal, setShowModal] = useState(false);
-    const [editingProduct, setEditingProduct] = useState(null); // null = create mode, object = edit mode
+    const [editingProduct, setEditingProduct] = useState(null);
     const [toast, setToast] = useState({ msg: '', isError: false });
+    const [showSubAdminModal, setShowSubAdminModal] = useState(false);
 
     const showToast = (msg, isError = false) => {
         setToast({ msg, isError });
@@ -383,19 +519,33 @@ export default function AdminDashboard() {
                     onSuccess={handleFormSuccess}
                 />
             )}
+            {showSubAdminModal && (
+                <AddSubAdminModal
+                    onClose={() => setShowSubAdminModal(false)}
+                    onSuccess={(msg) => { showToast(msg); setShowSubAdminModal(false); }}
+                />
+            )}
 
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: 16 }}>
                 <div>
                     <p style={{ color: '#a78bfa', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>Admin Panel</p>
                     <h1 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', color: '#fff', marginBottom: 4 }}>Dashboard</h1>
-                    <p style={{ color: '#64748b', fontSize: '0.85rem' }}>Logged in as <span style={{ color: '#a78bfa' }}>{user?.email}</span></p>
+                    <p style={{ color: '#64748b', fontSize: '0.85rem' }}>Logged in as <span style={{ color: '#a78bfa' }}>{user?.email}</span>
+                        {' '}<span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: 9999, background: isFullAdmin ? 'rgba(168,85,247,0.15)' : 'rgba(245,158,11,0.15)', color: isFullAdmin ? '#a78bfa' : '#f59e0b', fontWeight: 600, marginLeft: 4 }}>{user?.role === 'SUB_ADMIN' ? 'Sub-Admin' : 'Admin'}</span>
+                    </p>
                 </div>
-                <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     <button id="admin-add-product-btn" onClick={openCreate}
                         style={{ padding: '10px 22px', borderRadius: 10, background: 'linear-gradient(135deg, #6c63ff, #a855f7)', border: 'none', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
                         + Add Product
                     </button>
+                    {isFullAdmin && (
+                        <button onClick={() => setShowSubAdminModal(true)}
+                            style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', color: '#f59e0b', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
+                            + Add Sub-Admin
+                        </button>
+                    )}
                     <button onClick={handleLogout}
                         style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', cursor: 'pointer', fontSize: '0.9rem' }}>
                         Logout
@@ -464,7 +614,16 @@ export default function AdminDashboard() {
                                     <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', transition: 'background 0.15s' }}
                                         onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                                        <td style={{ padding: '12px 16px', color: '#e2e8f0', fontWeight: 500 }}>{p.name}</td>
+                                        <td style={{ padding: '10px 16px', color: '#e2e8f0', fontWeight: 500 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                <div style={{ width: 36, height: 36, borderRadius: 7, overflow: 'hidden', flexShrink: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    {p.imageUrl
+                                                        ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        : <span style={{ fontSize: '1rem', opacity: 0.25 }}>🖼️</span>}
+                                                </div>
+                                                {p.name}
+                                            </div>
+                                        </td>
                                         {viewAll && <td style={{ padding: '12px 16px', color: '#a78bfa', fontSize: '0.8rem' }}>{p.categoryName ?? '—'}</td>}
                                         <td style={{ padding: '12px 16px', color: '#64748b' }}>{p.brandName ?? '—'}</td>
                                         <td style={{ padding: '12px 16px' }}>

@@ -44,10 +44,12 @@ export function AuthProvider({ children }) {
     }, []);
 
     const isAuthenticated = Boolean(token);
-    const isAdmin = user?.role === 'ADMIN';
+    const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUB_ADMIN'; // can access admin dashboard
+    const isFullAdmin = user?.role === 'ADMIN';   // can create admins / sub-admins
+    const isSubAdmin = user?.role === 'SUB_ADMIN';
 
     return (
-        <AuthContext.Provider value={{ token, user, isAuthenticated, isAdmin, login, register, logout }}>
+        <AuthContext.Provider value={{ token, user, isAuthenticated, isAdmin, isFullAdmin, isSubAdmin, login, register, logout }}>
             {children}
         </AuthContext.Provider>
     );

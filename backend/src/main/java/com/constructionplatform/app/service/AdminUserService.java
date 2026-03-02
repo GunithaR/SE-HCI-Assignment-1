@@ -79,4 +79,39 @@ public class AdminUserService {
                 .expiresIn(jwtUtil.getExpirationMs())
                 .build();
     }
+
+    /**
+     * Creates a new SUB_ADMIN account.
+     * Sub-admins can perform all admin actions except creating new admins.
+     *
+     * @param request validated DTO containing email and password
+     * @return an {@link AuthResponse} with the JWT token for the new sub-admin
+     * @throws IllegalArgumentException if the email is already registered
+     */
+    @Transactional
+    public AuthResponse createSubAdminUser(AdminUserCreateRequestDTO request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException(
+                    "An account with email '" + request.getEmail() + "' already exists.");
+        }
+
+        User newSubAdmin = User.builder()
+                .email(request.getEmail())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .role(Role.SUB_ADMIN)
+                .build();
+
+        userRepository.save(newSubAdmin);
+        log.info("AdminUserService: New SUB_ADMIN account created → email=[{}]", newSubAdmin.getEmail());
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername(newSubAdmin.getEmail());
+        String token = jwtUtil.generateToken(userDetails, Role.SUB_ADMIN.name());
+
+        return AuthResponse.builder()
+                .token(token)
+                .email(newSubAdmin.getEmail())
+                .role(Role.SUB_ADMIN.name())
+                .expiresIn(jwtUtil.getExpirationMs())
+                .build();
+    }
 }

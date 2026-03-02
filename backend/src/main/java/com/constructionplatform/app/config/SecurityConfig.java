@@ -71,10 +71,13 @@ public class SecurityConfig {
                         // ── Public endpoints ──────────────────────────────────────
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()       // product images
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // pre-flight
 
-                        // ── Admin-only endpoints ──────────────────────────────────
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // ── Admin-only endpoints (ADMIN or SUB_ADMIN) ────────────
+                        // Fine-grained restrictions (e.g. creating new admins) are
+                        // enforced at the method level via @PreAuthorize.
+                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUB_ADMIN")
 
                         // ── Authenticated user endpoints ──────────────────────────
                         .requestMatchers("/api/user/**").authenticated()

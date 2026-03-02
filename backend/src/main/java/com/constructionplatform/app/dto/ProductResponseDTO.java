@@ -37,6 +37,9 @@ public class ProductResponseDTO {
     private String maintenanceLevel;
     private String style;
 
+    // ── Image ─────────────────────────────────────────────────────────────────
+    private String imageUrl;
+
     public ProductResponseDTO() {
     }
 
@@ -71,6 +74,8 @@ public class ProductResponseDTO {
             dto.maintenanceLevel = attr.getMaintenanceLevel() != null ? attr.getMaintenanceLevel().name() : null;
             dto.style = attr.getStyle();
         }
+
+        dto.imageUrl = product.getImageUrl();
 
         return dto;
     }
@@ -133,6 +138,10 @@ public class ProductResponseDTO {
         return style;
     }
 
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
     // ── Setters ───────────────────────────────────────────────────────────────
 
     public void setId(Long id) {
@@ -189,5 +198,9 @@ public class ProductResponseDTO {
 
     public void setStyle(String style) {
         this.style = style;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

@@ -36,6 +36,10 @@ public class Product {
         @Column(name = "is_active", nullable = false)
         private Boolean isActive = true;
 
+        /** Optional path to the product image file stored on disk. Nullable. */
+        @Column(name = "image_url", length = 500)
+        private String imageUrl;
+
         @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
         private ProductAttribute attribute;
 
@@ -74,6 +78,10 @@ public class Product {
                 return attribute;
         }
 
+        public String getImageUrl() {
+                return imageUrl;
+        }
+
         public void setId(Long id) {
                 this.id = id;
         }
@@ -106,6 +114,10 @@ public class Product {
                 this.attribute = attr;
         }
 
+        public void setImageUrl(String imageUrl) {
+                this.imageUrl = imageUrl;
+        }
+
         public static Builder builder() {
                 return new Builder();
         }
@@ -119,6 +131,7 @@ public class Product {
                 private BigDecimal basePrice;
                 private Boolean isActive = true;
                 private ProductAttribute attribute;
+                private String imageUrl;
 
                 public Builder id(Long id) {
                         this.id = id;
@@ -160,6 +173,11 @@ public class Product {
                         return this;
                 }
 
+                public Builder imageUrl(String url) {
+                        this.imageUrl = url;
+                        return this;
+                }
+
                 public Product build() {
                         Product p = new Product();
                         p.id = id;
@@ -170,6 +188,7 @@ public class Product {
                         p.basePrice = basePrice;
                         p.isActive = isActive;
                         p.attribute = attribute;
+                        p.imageUrl = imageUrl;
                         return p;
                 }
         }

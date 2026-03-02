@@ -15,8 +15,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Admin-only endpoints — requires a valid JWT with the ADMIN role.
@@ -51,23 +54,24 @@ public class AdminController {
         return ResponseEntity.ok(productService.findAll(pageable));
     }
 
-    /** POST /api/admin/products — create a new product with attributes */
-    @PostMapping("/products")
+    /** POST /api/admin/products — create a new product with optional image */
+    @PostMapping(value = "/products", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponseDTO> createProduct(
-            @Valid @RequestBody ProductCreateRequestDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(request));
+            @RequestPart("data") @Valid ProductCreateRequestDTO request,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(request, image));
     }
 
     /**
-     * PUT /api/admin/products/{id} — fully replace all fields of an existing
-     * product.
-     * This includes the isActive (In Stock / Out of Stock) flag.
+     * PUT /api/admin/products/{id} — fully replace all fields of an existing product.
+     * Optionally supply a new image to replace the old one.
      */
-    @PutMapping("/products/{id}")
+    @PutMapping(value = "/products/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponseDTO> updateProduct(
             @PathVariable Long id,
-            @Valid @RequestBody ProductUpdateRequestDTO request) {
-        return ResponseEntity.ok(productService.updateProduct(id, request));
+            @RequestPart("data") @Valid ProductUpdateRequestDTO request,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+        return ResponseEntity.ok(productService.updateProduct(id, request, image));
     }
 
     /**
@@ -97,12 +101,16 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.CREATED).body(brandService.createBrand(request));
     }
 
-    // ── Admin user management ─────────────────────────────────────────────────
+    // ── Sub-Admin user management ──────────────────────────────────────────────
 
-    /** POST /api/admin/users — create a new ADMIN account */
-    @PostMapping("/users")
-    public ResponseEntity<AuthResponse> createAdminUser(
+    /**
+     * POST /api/admin/sub-admins — create a new SUB_ADMIN account.
+     * Restricted to ADMIN only — sub-admins cannot promote other users.
+     */
+    @PostMapping("/sub-admins")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<AuthResponse> createSubAdminUser(
             @Valid @RequestBody AdminUserCreateRequestDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(adminUserService.createAdminUser(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(adminUserService.createSubAdminUser(request));
     }
 }
