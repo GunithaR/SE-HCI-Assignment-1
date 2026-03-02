@@ -17,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Use-case layer for Product operations.
@@ -34,13 +35,16 @@ public class ProductService {
         private final ProductRepository productRepository;
         private final CategoryRepository categoryRepository;
         private final BrandRepository brandRepository;
+        private final FileStorageService fileStorageService;
 
         public ProductService(ProductRepository productRepository,
                         CategoryRepository categoryRepository,
-                        BrandRepository brandRepository) {
+                        BrandRepository brandRepository,
+                        FileStorageService fileStorageService) {
                 this.productRepository = productRepository;
                 this.categoryRepository = categoryRepository;
                 this.brandRepository = brandRepository;
+                this.fileStorageService = fileStorageService;
         }
 
         // ── Public use cases ──────────────────────────────────────────────────────
@@ -104,7 +108,7 @@ public class ProductService {
          * @return persisted product as a {@link ProductResponseDTO}
          */
         @Transactional
-        public ProductResponseDTO createProduct(ProductCreateRequestDTO request) {
+        public ProductResponseDTO createProduct(ProductCreateRequestDTO request, MultipartFile image) {
                 // Guard: duplicate name check
                 if (productRepository.existsByName(request.getName())) {
                         throw new IllegalArgumentException(
@@ -139,7 +143,15 @@ public class ProductService {
 
                 product.setAttribute(attribute);
 
+                // Persist first so we have the ID, then store image if provided
                 Product saved = productRepository.save(product);
+
+                if (image != null && !image.isEmpty()) {
+                        String imageUrl = fileStorageService.store(image);
+                        saved.setImageUrl(imageUrl);
+                        saved = productRepository.save(saved);
+                }
+
                 log.info("ProductService: Created product id=[{}] name=[{}]", saved.getId(), saved.getName());
                 return ProductResponseDTO.from(saved);
         }
@@ -164,9 +176,11 @@ public class ProductService {
         /**
          * Fully replaces all mutable fields of a product (PUT semantics).
          * Name uniqueness is enforced while excluding the product itself.
+         * If a new image is provided it replaces the old one (old file is deleted).
+         * If no image is provided the existing imageUrl is preserved.
          */
         @Transactional
-        public ProductResponseDTO updateProduct(Long productId, ProductUpdateRequestDTO request) {
+        public ProductResponseDTO updateProduct(Long productId, ProductUpdateRequestDTO request, MultipartFile image) {
                 Product product = productRepository.findById(productId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
 
@@ -199,6 +213,12 @@ public class ProductService {
                 attr.setClimateSuitability(request.getClimateSuitability());
                 attr.setMaintenanceLevel(request.getMaintenanceLevel());
                 attr.setStyle(request.getStyle());
+
+                // Replace image only if a new one was uploaded
+                if (image != null && !image.isEmpty()) {
+                        fileStorageService.delete(product.getImageUrl()); // delete old file, if any
+                        product.setImageUrl(fileStorageService.store(image));
+                }
 
                 Product saved = productRepository.save(product);
                 log.info("ProductService: Updated product id=[{}] name=[{}]", saved.getId(), saved.getName());

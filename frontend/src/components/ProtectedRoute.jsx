@@ -7,7 +7,7 @@ export function ProtectedRoute({ children }) {
     return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
-/** Redirects non-admin users to / . */
+/** Redirects non-admin users to / . Allows both ADMIN and SUB_ADMIN. */
 export function AdminRoute({ children }) {
     const { isAuthenticated, isAdmin } = useAuth();
     if (!isAuthenticated) return <Navigate to="/login" replace />;

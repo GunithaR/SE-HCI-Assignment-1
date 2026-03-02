@@ -13,7 +13,21 @@ function ProductCard({ product }) {
     }[product.budgetLevel] || '#94a3b8';
 
     return (
-        <div className="card p-5 fade-in-up" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="card fade-in-up" style={{ display: 'flex', flexDirection: 'column', gap: 0, overflow: 'hidden', padding: 0 }}>
+            {/* Product Image */}
+            {product.imageUrl && (
+                <div style={{ width: '100%', height: 180, overflow: 'hidden', background: 'rgba(0,0,0,0.2)' }}>
+                    <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+                    />
+                </div>
+            )}
+
+            {/* Card body */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '1.25rem', flex: 1 }}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
@@ -76,6 +90,7 @@ function ProductCard({ product }) {
                     </span>
                 )}
             </div>
+            </div>{/* end card body */}
         </div>
     );
 }
