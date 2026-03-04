@@ -15,31 +15,12 @@ export default function Navbar() {
             <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
 
                 {/* ── Logo / Brand ─────────────────────────────────────────── */}
-                <Link to="/" className="flex items-center gap-3" style={{ textDecoration: 'none' }}>
-                    <img
-                        src="/logo.png"
-                        alt="L+ SIVILIMA"
-                        style={{ height: 36, width: 'auto', objectFit: 'contain' }}
-                    />
-                    {/* Fallback text logo if image fails */}
-                    <span
-                        style={{
-                            fontFamily: 'Outfit, sans-serif',
-                            fontWeight: 900,
-                            fontSize: '1.15rem',
-                            background: 'linear-gradient(135deg, #fff 0%, #a78bfa 60%, #6c63ff 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            letterSpacing: '-0.02em',
-                            lineHeight: 1,
-                        }}
-                    >
-                        L<span style={{ color: '#a78bfa', WebkitTextFillColor: '#a78bfa' }}>+</span>
-                        {' '}
-                        <span style={{ fontWeight: 400, fontSize: '0.85rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                            SIVILIMA
-                        </span>
-                    </span>
+                <Link to="/" className="flex items-center gap-4" style={{ textDecoration: 'none' }}>
+                    <img src="/anton.png" alt="Anton" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
+                    <img src="/gfloor.png" alt="G-Floor" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
+                    <img src="/PE+.jpg" alt="PE+" style={{ height: 32, width: 'auto', objectFit: 'contain', mixBlendMode: 'multiply' }} />
+                    <img src="/sivilima.png" alt="Sivilima" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
+                    <img src="/s-lon.png" alt="S-Lon" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
                 </Link>
 
                 {/* ── Nav links ────────────────────────────────────────────── */}
