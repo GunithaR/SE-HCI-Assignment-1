@@ -170,30 +170,44 @@ export default function Home() {
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500"></div>
 
             {/* ── HERO ──────────────────────────────────────────────────────────── */}
-            <section style={{ textAlign: 'center', padding: '9rem 1.5rem 4rem', position: 'relative', overflow: 'hidden' }}>
-                {/* Glow blobs */}
-                <div style={{ position: 'absolute', top: '20%', left: '15%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
-                <div style={{ position: 'absolute', top: '10%', right: '10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <section style={{
+                textAlign: 'center',
+                padding: '9rem 1.5rem 4rem',
+                position: 'relative',
+                overflow: 'hidden',
+                backgroundImage: 'url("/store-bg.jpg")',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+            }}>
+                {/* White/gray overlay layer */}
+                <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(255, 255, 255, 0.70)', zIndex: 0 }} />
 
-                <p style={{ color: '#8b5cf6', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '1.2rem' }}>
-                    CONSTRUCTION PLATFORM
-                </p>
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                    {/* Glow blobs */}
+                    <div style={{ position: 'absolute', top: '20%', left: '15%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%)', pointerEvents: 'none', zIndex: -1 }} />
+                    <div style={{ position: 'absolute', top: '10%', right: '10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%)', pointerEvents: 'none', zIndex: -1 }} />
 
-                <h1 style={{
-                    fontFamily: 'Outfit, sans-serif',
-                    fontSize: 'clamp(3.5rem, 10vw, 8rem)',
-                    fontWeight: 900,
-                    letterSpacing: '-0.03em',
-                    lineHeight: 1.1,
-                    color: '#8b5cf6',
-                    marginBottom: '1.5rem',
-                }}>
-                    L+<br /><span style={{ display: 'block', marginTop: '0.2em' }}>සිවිලිම</span>
-                </h1>
+                    <p style={{ color: '#8b5cf6', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '1.2rem' }}>
+                        CONSTRUCTION PLATFORM
+                    </p>
 
-                <p style={{ color: 'var(--color-muted)', fontSize: '1.05rem', maxWidth: 520, margin: '0 auto 2.5rem', lineHeight: 1.7 }}>
-                    Browse premium construction materials from top brands. Filter by category, compare by budget and climate — all in one place.
-                </p>
+                    <h1 style={{
+                        fontFamily: 'Outfit, sans-serif',
+                        fontSize: 'clamp(3.5rem, 10vw, 8rem)',
+                        fontWeight: 900,
+                        letterSpacing: '-0.03em',
+                        lineHeight: 1.1,
+                        color: '#8b5cf6',
+                        marginBottom: '1.5rem',
+                    }}>
+                        L+<br /><span style={{ display: 'block', marginTop: '0.2em' }}>සිවිලිම</span>
+                    </h1>
+
+                    <p style={{ color: '#475569', fontSize: '1.05rem', maxWidth: 520, margin: '0 auto 2.5rem', lineHeight: 1.7, fontWeight: 500 }}>
+                        Browse premium construction materials from top brands. Filter by category, compare by budget and climate — all in one place.
+                    </p>
+                </div>
             </section>
 
             {/* ── 5 CATEGORY BLOCKS ─────────────────────────────────────────────── */}
