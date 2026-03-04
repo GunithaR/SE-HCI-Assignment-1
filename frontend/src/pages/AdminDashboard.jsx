@@ -99,12 +99,12 @@ function AddSubAdminModal({ onClose, onSuccess }) {
 
 function StatCard({ icon, label, value, color, loading }) {
     return (
-        <div className="card" style={{ padding: '1.5rem' }}>
+        <div className="card" style={{ padding: '1.5rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
             <div style={{ fontSize: '2rem', marginBottom: 8 }}>{icon}</div>
             <div style={{ fontSize: '2.2rem', fontWeight: 800, color, marginBottom: 4 }}>
                 {loading ? '—' : value}
             </div>
-            <div style={{ color: '#64748b', fontSize: '0.85rem' }}>{label}</div>
+            <div style={{ color: 'var(--color-muted)', fontSize: '0.85rem' }}>{label}</div>
         </div>
     );
 }
@@ -206,10 +206,10 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
     const err = { color: '#f87171', fontSize: '0.72rem', marginTop: 3 };
 
     return (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-            <div style={{ background: '#0f1117', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '2rem', width: '100%', maxWidth: 680, maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+            <div className="glass" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 16, padding: '2rem', width: '100%', maxWidth: 680, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2 style={{ fontWeight: 700, fontSize: '1.2rem', color: '#fff' }}>
+                    <h2 style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--color-text)' }}>
                         {isEdit ? `✏️ Edit: ${editingProduct.name}` : '➕ Add New Product'}
                     </h2>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1.4rem' }}>✕</button>
@@ -262,7 +262,7 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                     </div>
 
                     {/* Divider */}
-                    <p style={{ color: '#334155', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.75rem', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Attributes</p>
+                    <p style={{ color: 'var(--color-muted)', borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Attributes</p>
 
                     {/* Budget + Climate */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -507,174 +507,179 @@ export default function AdminDashboard() {
     const BUDGET_COLORS = { LOW: { bg: 'rgba(34,197,94,0.12)', fg: '#4ade80' }, MEDIUM: { bg: 'rgba(245,158,11,0.12)', fg: '#fbbf24' }, HIGH: { bg: 'rgba(239,68,68,0.12)', fg: '#f87171' } };
 
     return (
-        <div style={{ minHeight: '100vh', padding: '7rem 1.5rem 3rem', maxWidth: 1280, margin: '0 auto' }}>
-            <Toast toast={toast} />
-            {showModal && (
-                <ProductFormModal
-                    editingProduct={editingProduct}
-                    categories={categories}
-                    brands={brands}
-                    options={options}
-                    onClose={closeModal}
-                    onSuccess={handleFormSuccess}
-                />
-            )}
-            {showSubAdminModal && (
-                <AddSubAdminModal
-                    onClose={() => setShowSubAdminModal(false)}
-                    onSuccess={(msg) => { showToast(msg); setShowSubAdminModal(false); }}
-                />
-            )}
+        <div className="light-theme" style={{ minHeight: '100vh', background: 'var(--bg-color)', padding: '7rem 1.5rem 3rem', position: 'relative' }}>
+            {/* Top Purple Line */}
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500"></div>
 
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: 16 }}>
-                <div>
-                    <p style={{ color: '#a78bfa', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>Admin Panel</p>
-                    <h1 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', color: '#fff', marginBottom: 4 }}>Dashboard</h1>
-                    <p style={{ color: '#64748b', fontSize: '0.85rem' }}>Logged in as <span style={{ color: '#a78bfa' }}>{user?.email}</span>
-                        {' '}<span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: 9999, background: isFullAdmin ? 'rgba(168,85,247,0.15)' : 'rgba(245,158,11,0.15)', color: isFullAdmin ? '#a78bfa' : '#f59e0b', fontWeight: 600, marginLeft: 4 }}>{user?.role === 'SUB_ADMIN' ? 'Sub-Admin' : 'Admin'}</span>
-                    </p>
-                </div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    <button id="admin-add-product-btn" onClick={openCreate}
-                        style={{ padding: '10px 22px', borderRadius: 10, background: 'linear-gradient(135deg, #6c63ff, #a855f7)', border: 'none', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
-                        + Add Product
-                    </button>
-                    {isFullAdmin && (
-                        <button onClick={() => setShowSubAdminModal(true)}
-                            style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', color: '#f59e0b', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
-                            + Add Sub-Admin
-                        </button>
-                    )}
-                    <button onClick={handleLogout}
-                        style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', cursor: 'pointer', fontSize: '0.9rem' }}>
-                        Logout
-                    </button>
-                </div>
-            </div>
-
-            {/* Stat Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
-                <StatCard icon="🏷️" label="Categories" value={categories.length} color="#f59e0b" loading={false} />
-                <StatCard icon="📦" label="Products Shown" value={totalProducts} color="#6c63ff" loading={loadingProds} />
-                <StatCard icon="✅" label="In Stock" value={products.filter((p) => p.isActive).length} color="#10b981" loading={loadingProds} />
-                <StatCard icon="⛔" label="Out of Stock" value={products.filter((p) => !p.isActive).length} color="#ef4444" loading={loadingProds} />
-            </div>
-
-            {/* Category Tabs + All Products */}
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.07)', paddingBottom: '1rem', alignItems: 'center' }}>
-                <button onClick={() => { setViewAll(true); setActiveCatId(null); }} style={{
-                    padding: '7px 16px', borderRadius: '9999px', cursor: 'pointer', fontSize: '0.83rem',
-                    fontWeight: viewAll ? 700 : 400,
-                    border: viewAll ? '1px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.08)',
-                    background: viewAll ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.03)',
-                    color: viewAll ? '#fbbf24' : '#64748b', transition: 'all 0.2s',
-                }}>⭐ All Products</button>
-                <span style={{ color: 'rgba(255,255,255,0.1)' }}>|</span>
-                {categories.map((cat) => (
-                    <button key={cat.id} onClick={() => { setActiveCatId(cat.id); setViewAll(false); }} style={{
-                        padding: '7px 16px', borderRadius: '9999px', cursor: 'pointer', fontSize: '0.83rem',
-                        fontWeight: !viewAll && activeCatId === cat.id ? 600 : 400,
-                        border: !viewAll && activeCatId === cat.id ? '1px solid rgba(139,92,246,0.6)' : '1px solid rgba(255,255,255,0.08)',
-                        background: !viewAll && activeCatId === cat.id ? 'rgba(139,92,246,0.18)' : 'rgba(255,255,255,0.03)',
-                        color: !viewAll && activeCatId === cat.id ? '#a78bfa' : '#64748b', transition: 'all 0.2s',
-                    }}>{cat.name}</button>
-                ))}
-            </div>
-
-            {/* Products Table */}
-            <div className="glass" style={{ overflow: 'hidden', borderRadius: 14 }}>
-                <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '0.95rem' }}>
-                        {viewAll ? 'All Products' : categories.find((c) => c.id === activeCatId)?.name ?? 'Products'}
-                    </h2>
-                    <span style={{ color: '#64748b', fontSize: '0.78rem' }}>{totalProducts} total</span>
-                </div>
-
-                {loadingProds ? (
-                    <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><div className="spinner" /></div>
-                ) : products.length === 0 ? (
-                    <div style={{ padding: '4rem', textAlign: 'center', color: '#475569' }}>
-                        <p style={{ fontSize: '2.5rem', marginBottom: 12 }}>📭</p>
-                        <p style={{ color: '#64748b' }}>No products here yet.</p>
-                        <p style={{ fontSize: '0.78rem', marginTop: 8 }}>Click <strong style={{ color: '#a78bfa' }}>+ Add Product</strong> to create the first one.</p>
-                    </div>
-                ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table id="admin-products-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                            <thead>
-                                <tr style={{ color: '#475569', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.08em', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                                    {(viewAll ? ['Product', 'Category', 'Brand', 'Budget', 'Price', 'Status', 'Actions'] : ['Product', 'Brand', 'Budget', 'Price', 'Status', 'Actions']).map((h) => (
-                                        <th key={h} style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>{h}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {products.map((p) => (
-                                    <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', transition: 'background 0.15s' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                                        <td style={{ padding: '10px 16px', color: '#e2e8f0', fontWeight: 500 }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                <div style={{ width: 36, height: 36, borderRadius: 7, overflow: 'hidden', flexShrink: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    {p.imageUrl
-                                                        ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                        : <span style={{ fontSize: '1rem', opacity: 0.25 }}>🖼️</span>}
-                                                </div>
-                                                {p.name}
-                                            </div>
-                                        </td>
-                                        {viewAll && <td style={{ padding: '12px 16px', color: '#a78bfa', fontSize: '0.8rem' }}>{p.categoryName ?? '—'}</td>}
-                                        <td style={{ padding: '12px 16px', color: '#64748b' }}>{p.brandName ?? '—'}</td>
-                                        <td style={{ padding: '12px 16px' }}>
-                                            <span style={{
-                                                padding: '2px 10px', borderRadius: 9999, fontSize: '0.72rem', fontWeight: 600,
-                                                background: BUDGET_COLORS[p.budgetLevel]?.bg || 'rgba(148,163,184,0.1)',
-                                                color: BUDGET_COLORS[p.budgetLevel]?.fg || '#94a3b8',
-                                            }}>{p.budgetLevel ?? '—'}</span>
-                                        </td>
-                                        <td style={{ padding: '12px 16px', color: '#a78bfa', fontWeight: 700 }}>${Number(p.basePrice).toFixed(2)}</td>
-                                        {/* Stock toggle */}
-                                        <td style={{ padding: '12px 16px' }}>
-                                            <button
-                                                onClick={() => handleToggleStatus(p)}
-                                                title="Click to toggle In Stock / Out of Stock"
-                                                style={{
-                                                    padding: '3px 12px', borderRadius: 9999, fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', border: 'none',
-                                                    background: p.isActive ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-                                                    color: p.isActive ? '#4ade80' : '#f87171',
-                                                    transition: 'all 0.2s',
-                                                }}>
-                                                {p.isActive ? '✅ In Stock' : '⛔ Out of Stock'}
-                                            </button>
-                                        </td>
-                                        {/* Actions */}
-                                        <td style={{ padding: '12px 16px' }}>
-                                            <div style={{ display: 'flex', gap: 8 }}>
-                                                <button
-                                                    id={`admin-edit-product-${p.id}`}
-                                                    onClick={() => openEdit(p)}
-                                                    style={{ padding: '5px 14px', borderRadius: 8, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 500, background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)', color: '#a78bfa', transition: 'all 0.2s' }}
-                                                    onMouseEnter={(e) => e.target.style.background = 'rgba(139,92,246,0.25)'}
-                                                    onMouseLeave={(e) => e.target.style.background = 'rgba(139,92,246,0.12)'}>
-                                                    ✏️ Edit
-                                                </button>
-                                                <button
-                                                    id={`admin-delete-product-${p.id}`}
-                                                    onClick={() => handleDelete(p)}
-                                                    style={{ padding: '5px 14px', borderRadius: 8, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 500, background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', transition: 'all 0.2s' }}
-                                                    onMouseEnter={(e) => e.target.style.background = 'rgba(239,68,68,0.22)'}
-                                                    onMouseLeave={(e) => e.target.style.background = 'rgba(239,68,68,0.10)'}>
-                                                    🗑 Delete
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+            <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+                <Toast toast={toast} />
+                {showModal && (
+                    <ProductFormModal
+                        editingProduct={editingProduct}
+                        categories={categories}
+                        brands={brands}
+                        options={options}
+                        onClose={closeModal}
+                        onSuccess={handleFormSuccess}
+                    />
                 )}
+                {showSubAdminModal && (
+                    <AddSubAdminModal
+                        onClose={() => setShowSubAdminModal(false)}
+                        onSuccess={(msg) => { showToast(msg); setShowSubAdminModal(false); }}
+                    />
+                )}
+
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: 16 }}>
+                    <div>
+                        <p style={{ color: '#8b5cf6', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>Admin Panel</p>
+                        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', color: 'var(--color-text)', marginBottom: 4 }}>Dashboard</h1>
+                        <p style={{ color: 'var(--color-muted)', fontSize: '0.85rem' }}>Logged in as <span style={{ color: '#8b5cf6' }}>{user?.email}</span>
+                            {' '}<span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: 9999, background: isFullAdmin ? 'rgba(168,85,247,0.15)' : 'rgba(245,158,11,0.15)', color: isFullAdmin ? '#a78bfa' : '#f59e0b', fontWeight: 600, marginLeft: 4 }}>{user?.role === 'SUB_ADMIN' ? 'Sub-Admin' : 'Admin'}</span>
+                        </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <button id="admin-add-product-btn" onClick={openCreate}
+                            style={{ padding: '10px 22px', borderRadius: 10, background: 'linear-gradient(135deg, #6c63ff, #a855f7)', border: 'none', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
+                            + Add Product
+                        </button>
+                        {isFullAdmin && (
+                            <button onClick={() => setShowSubAdminModal(true)}
+                                style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', color: '#f59e0b', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
+                                + Add Sub-Admin
+                            </button>
+                        )}
+                        <button onClick={handleLogout}
+                            style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', cursor: 'pointer', fontSize: '0.9rem' }}>
+                            Logout
+                        </button>
+                    </div>
+                </div>
+
+                {/* Stat Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
+                    <StatCard icon="🏷️" label="Categories" value={categories.length} color="#f59e0b" loading={false} />
+                    <StatCard icon="📦" label="Products Shown" value={totalProducts} color="#6c63ff" loading={loadingProds} />
+                    <StatCard icon="✅" label="In Stock" value={products.filter((p) => p.isActive).length} color="#10b981" loading={loadingProds} />
+                    <StatCard icon="⛔" label="Out of Stock" value={products.filter((p) => !p.isActive).length} color="#ef4444" loading={loadingProds} />
+                </div>
+
+                {/* Category Tabs + All Products */}
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.07)', paddingBottom: '1rem', alignItems: 'center' }}>
+                    <button onClick={() => { setViewAll(true); setActiveCatId(null); }} style={{
+                        padding: '7px 16px', borderRadius: '9999px', cursor: 'pointer', fontSize: '0.83rem',
+                        fontWeight: viewAll ? 700 : 400,
+                        border: viewAll ? '1px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.08)',
+                        background: viewAll ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.03)',
+                        color: viewAll ? '#fbbf24' : '#64748b', transition: 'all 0.2s',
+                    }}>⭐ All Products</button>
+                    <span style={{ color: 'rgba(255,255,255,0.1)' }}>|</span>
+                    {categories.map((cat) => (
+                        <button key={cat.id} onClick={() => { setActiveCatId(cat.id); setViewAll(false); }} style={{
+                            padding: '7px 16px', borderRadius: '9999px', cursor: 'pointer', fontSize: '0.83rem',
+                            fontWeight: !viewAll && activeCatId === cat.id ? 600 : 400,
+                            border: !viewAll && activeCatId === cat.id ? '1px solid rgba(139,92,246,0.6)' : '1px solid rgba(255,255,255,0.08)',
+                            background: !viewAll && activeCatId === cat.id ? 'rgba(139,92,246,0.18)' : 'rgba(255,255,255,0.03)',
+                            color: !viewAll && activeCatId === cat.id ? '#a78bfa' : '#64748b', transition: 'all 0.2s',
+                        }}>{cat.name}</button>
+                    ))}
+                </div>
+
+                {/* Products Table */}
+                <div className="glass" style={{ overflow: 'hidden', borderRadius: 14 }}>
+                    <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-surface)' }}>
+                        <h2 style={{ fontWeight: 600, color: 'var(--color-text)', fontSize: '0.95rem' }}>
+                            {viewAll ? 'All Products' : categories.find((c) => c.id === activeCatId)?.name ?? 'Products'}
+                        </h2>
+                        <span style={{ color: 'var(--color-muted)', fontSize: '0.78rem' }}>{totalProducts} total</span>
+                    </div>
+
+                    {loadingProds ? (
+                        <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><div className="spinner" /></div>
+                    ) : products.length === 0 ? (
+                        <div style={{ padding: '4rem', textAlign: 'center', color: '#475569' }}>
+                            <p style={{ fontSize: '2.5rem', marginBottom: 12 }}>📭</p>
+                            <p style={{ color: '#64748b' }}>No products here yet.</p>
+                            <p style={{ fontSize: '0.78rem', marginTop: 8 }}>Click <strong style={{ color: '#a78bfa' }}>+ Add Product</strong> to create the first one.</p>
+                        </div>
+                    ) : (
+                        <div style={{ overflowX: 'auto' }}>
+                            <table id="admin-products-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', background: 'var(--color-surface)' }}>
+                                <thead>
+                                    <tr style={{ color: 'var(--color-muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.08em', borderBottom: '1px solid var(--color-border)' }}>
+                                        {(viewAll ? ['Product', 'Category', 'Brand', 'Budget', 'Price', 'Status', 'Actions'] : ['Product', 'Brand', 'Budget', 'Price', 'Status', 'Actions']).map((h) => (
+                                            <th key={h} style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {products.map((p) => (
+                                        <tr key={p.id} style={{ borderBottom: '1px solid var(--color-border)', transition: 'background 0.15s' }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-alt)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                                            <td style={{ padding: '10px 16px', color: 'var(--color-text)', fontWeight: 500 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                    <div style={{ width: 36, height: 36, borderRadius: 7, overflow: 'hidden', flexShrink: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        {p.imageUrl
+                                                            ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            : <span style={{ fontSize: '1rem', opacity: 0.25 }}>🖼️</span>}
+                                                    </div>
+                                                    {p.name}
+                                                </div>
+                                            </td>
+                                            {viewAll && <td style={{ padding: '12px 16px', color: '#8b5cf6', fontSize: '0.8rem' }}>{p.categoryName ?? '—'}</td>}
+                                            <td style={{ padding: '12px 16px', color: 'var(--color-muted)' }}>{p.brandName ?? '—'}</td>
+                                            <td style={{ padding: '12px 16px' }}>
+                                                <span style={{
+                                                    padding: '2px 10px', borderRadius: 9999, fontSize: '0.72rem', fontWeight: 600,
+                                                    background: BUDGET_COLORS[p.budgetLevel]?.bg || 'rgba(148,163,184,0.1)',
+                                                    color: BUDGET_COLORS[p.budgetLevel]?.fg || '#94a3b8',
+                                                }}>{p.budgetLevel ?? '—'}</span>
+                                            </td>
+                                            <td style={{ padding: '12px 16px', color: '#a78bfa', fontWeight: 700 }}>${Number(p.basePrice).toFixed(2)}</td>
+                                            {/* Stock toggle */}
+                                            <td style={{ padding: '12px 16px' }}>
+                                                <button
+                                                    onClick={() => handleToggleStatus(p)}
+                                                    title="Click to toggle In Stock / Out of Stock"
+                                                    style={{
+                                                        padding: '3px 12px', borderRadius: 9999, fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', border: 'none',
+                                                        background: p.isActive ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+                                                        color: p.isActive ? '#4ade80' : '#f87171',
+                                                        transition: 'all 0.2s',
+                                                    }}>
+                                                    {p.isActive ? '✅ In Stock' : '⛔ Out of Stock'}
+                                                </button>
+                                            </td>
+                                            {/* Actions */}
+                                            <td style={{ padding: '12px 16px' }}>
+                                                <div style={{ display: 'flex', gap: 8 }}>
+                                                    <button
+                                                        id={`admin-edit-product-${p.id}`}
+                                                        onClick={() => openEdit(p)}
+                                                        style={{ padding: '5px 14px', borderRadius: 8, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 500, background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)', color: '#a78bfa', transition: 'all 0.2s' }}
+                                                        onMouseEnter={(e) => e.target.style.background = 'rgba(139,92,246,0.25)'}
+                                                        onMouseLeave={(e) => e.target.style.background = 'rgba(139,92,246,0.12)'}>
+                                                        ✏️ Edit
+                                                    </button>
+                                                    <button
+                                                        id={`admin-delete-product-${p.id}`}
+                                                        onClick={() => handleDelete(p)}
+                                                        style={{ padding: '5px 14px', borderRadius: 8, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 500, background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', transition: 'all 0.2s' }}
+                                                        onMouseEnter={(e) => e.target.style.background = 'rgba(239,68,68,0.22)'}
+                                                        onMouseLeave={(e) => e.target.style.background = 'rgba(239,68,68,0.10)'}>
+                                                        🗑 Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
