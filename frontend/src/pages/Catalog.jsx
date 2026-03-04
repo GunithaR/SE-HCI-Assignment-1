@@ -13,7 +13,7 @@ function ProductCard({ product }) {
     }[product.budgetLevel] || '#94a3b8';
 
     return (
-        <div className="card fade-in-up" style={{ display: 'flex', flexDirection: 'column', gap: 0, overflow: 'hidden', padding: 0, background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+        <div className="card fade-in-up" style={{ display: 'flex', flexDirection: 'column', gap: 0, overflow: 'hidden', padding: 0, background: 'var(--color-surface)', border: '2px solid #a78bfa', boxShadow: '0 4px 12px rgba(139,92,246,0.1)' }}>
             {/* Product Image */}
             {product.imageUrl && (
                 <div style={{ width: '100%', height: 180, overflow: 'hidden', background: 'var(--color-surface-alt)' }}>
@@ -180,13 +180,13 @@ export default function Catalog() {
                                     padding: '8px 18px',
                                     borderRadius: '9999px',
                                     border: activeCategoryId === cat.id
-                                        ? '1px solid rgba(139,92,246,0.7)'
-                                        : '1px solid var(--color-border)',
+                                        ? '2px solid #8b5cf6'
+                                        : '2px solid #c4b5fd',
                                     background: activeCategoryId === cat.id
                                         ? 'rgba(139,92,246,0.1)'
                                         : 'var(--color-surface)',
-                                    color: activeCategoryId === cat.id ? '#8b5cf6' : 'var(--color-muted)',
-                                    fontWeight: activeCategoryId === cat.id ? 600 : 400,
+                                    color: activeCategoryId === cat.id ? '#8b5cf6' : '#4c1d95',
+                                    fontWeight: activeCategoryId === cat.id ? 700 : 500,
                                     cursor: 'pointer',
                                     fontSize: '0.85rem',
                                     transition: 'all 0.2s',
@@ -206,7 +206,7 @@ export default function Catalog() {
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search products in this category…"
                         className="input-field"
-                        style={{ width: '100%' }}
+                        style={{ width: '100%', border: '2px solid #c4b5fd', color: '#3b0764', fontWeight: 500, background: 'var(--color-surface)' }}
                     />
                 </div>
 

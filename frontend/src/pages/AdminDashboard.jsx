@@ -59,9 +59,9 @@ function AddSubAdminModal({ onClose, onSuccess }) {
     };
 
     return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="card" style={{ width: '100%', maxWidth: 440, padding: '2rem', borderRadius: 16 }}>
+            <div className="card" style={{ width: '100%', maxWidth: 440, padding: '2rem', borderRadius: 16, background: 'var(--color-surface)', border: '2px solid #a78bfa', boxShadow: '0 10px 40px rgba(139,92,246,0.15)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                     <h2 style={{ fontWeight: 700, fontSize: '1.2rem', color: '#f59e0b' }}>➕ Add Sub-Admin</h2>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '1.3rem', cursor: 'pointer' }}>✕</button>
@@ -72,14 +72,14 @@ function AddSubAdminModal({ onClose, onSuccess }) {
                 {error && <p style={{ color: '#f87171', fontSize: '0.82rem', marginBottom: '1rem', background: 'rgba(239,68,68,0.08)', padding: '8px 12px', borderRadius: 8 }}>{error}</p>}
                 <form onSubmit={handleSubmit}>
                     <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.78rem', marginBottom: 4 }}>Email</label>
+                        <label style={{ display: 'block', color: '#4c1d95', fontSize: '0.85rem', marginBottom: 4, fontWeight: 700 }}>Email</label>
                         <input type="email" value={form.email} onChange={set('email')} required
-                            style={{ width: '100%', padding: '9px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(245,158,11,0.35)', color: '#e2e8f0', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+                            style={{ width: '100%', padding: '9px 12px', borderRadius: 8, background: 'var(--color-surface-alt)', border: '2px solid #c4b5fd', color: '#3b0764', fontSize: '0.9rem', boxSizing: 'border-box', fontWeight: 500 }} />
                     </div>
                     <div style={{ marginBottom: '1.5rem' }}>
-                        <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.78rem', marginBottom: 4 }}>Password</label>
+                        <label style={{ display: 'block', color: '#4c1d95', fontSize: '0.85rem', marginBottom: 4, fontWeight: 700 }}>Password</label>
                         <input type="password" value={form.password} onChange={set('password')} required minLength={6}
-                            style={{ width: '100%', padding: '9px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(245,158,11,0.35)', color: '#e2e8f0', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+                            style={{ width: '100%', padding: '9px 12px', borderRadius: 8, background: 'var(--color-surface-alt)', border: '2px solid #c4b5fd', color: '#3b0764', fontSize: '0.9rem', boxSizing: 'border-box', fontWeight: 500 }} />
                     </div>
                     <div style={{ display: 'flex', gap: 10 }}>
                         <button type="submit" disabled={submitting}
@@ -99,7 +99,7 @@ function AddSubAdminModal({ onClose, onSuccess }) {
 
 function StatCard({ icon, label, value, color, loading }) {
     return (
-        <div className="card" style={{ padding: '1.5rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+        <div className="card" style={{ padding: '1.5rem', background: 'var(--color-surface)', border: '2px solid #a78bfa', boxShadow: '0 4px 12px rgba(139,92,246,0.1)' }}>
             <div style={{ fontSize: '2rem', marginBottom: 8 }}>{icon}</div>
             <div style={{ fontSize: '2.2rem', fontWeight: 800, color, marginBottom: 4 }}>
                 {loading ? '—' : value}
@@ -198,16 +198,16 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
 
     const inp = (field) => ({
         width: '100%', padding: '10px 14px', borderRadius: 8,
-        background: 'rgba(255,255,255,0.05)',
-        border: errors[field] ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.1)',
-        color: '#e2e8f0', fontSize: '0.85rem', outline: 'none',
+        background: 'var(--color-surface-alt)',
+        border: errors[field] ? '2px solid #ef4444' : '2px solid #c4b5fd',
+        color: '#3b0764', fontSize: '0.9rem', outline: 'none', fontWeight: 500,
     });
-    const lbl = { display: 'block', color: '#94a3b8', fontSize: '0.78rem', marginBottom: 4, fontWeight: 500 };
-    const err = { color: '#f87171', fontSize: '0.72rem', marginTop: 3 };
+    const lbl = { display: 'block', color: '#4c1d95', fontSize: '0.85rem', marginBottom: 4, fontWeight: 700 };
+    const err = { color: '#f87171', fontSize: '0.72rem', marginTop: 3, fontWeight: 600 };
 
     return (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-            <div className="glass" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 16, padding: '2rem', width: '100%', maxWidth: 680, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
+            <div className="glass" style={{ background: 'var(--color-surface)', border: '2px solid #a78bfa', borderRadius: 16, padding: '2rem', width: '100%', maxWidth: 680, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 40px rgba(139,92,246,0.15)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                     <h2 style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--color-text)' }}>
                         {isEdit ? `✏️ Edit: ${editingProduct.name}` : '➕ Add New Product'}
@@ -306,13 +306,13 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                         <div>
                             <label style={lbl}>Stock Status</label>
                             <div style={{ display: 'flex', gap: 10 }}>
-                                {[{ v: true, label: '✅ In Stock', color: '#22c55e' }, { v: false, label: '⛔ Out of Stock', color: '#ef4444' }].map(({ v, label, color }) => (
+                                {[{ v: true, label: '✅ In Stock', color: '#15803d' }, { v: false, label: '⛔ Out of Stock', color: '#b91c1c' }].map(({ v, label, color }) => (
                                     <button key={String(v)} type="button" onClick={() => setForm((f) => ({ ...f, isActive: v }))}
                                         style={{
-                                            flex: 1, padding: '9px 8px', borderRadius: 8, cursor: 'pointer', fontSize: '0.78rem', fontWeight: form.isActive === v ? 700 : 400,
-                                            background: form.isActive === v ? `${color}22` : 'rgba(255,255,255,0.03)',
-                                            border: `1px solid ${form.isActive === v ? color + '88' : 'rgba(255,255,255,0.08)'}`,
-                                            color: form.isActive === v ? color : '#64748b',
+                                            flex: 1, padding: '9px 8px', borderRadius: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+                                            background: form.isActive === v ? `${color}22` : 'var(--color-surface-alt)',
+                                            border: `2px solid ${form.isActive === v ? color : '#c4b5fd'}`,
+                                            color: form.isActive === v ? color : '#4c1d95',
                                             transition: 'all 0.2s',
                                         }}>
                                         {label}
@@ -587,8 +587,8 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Products Table */}
-                <div className="glass" style={{ overflow: 'hidden', borderRadius: 14 }}>
-                    <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-surface)' }}>
+                <div className="glass" style={{ overflow: 'hidden', borderRadius: 14, border: '2px solid #a78bfa', boxShadow: '0 4px 12px rgba(139,92,246,0.1)' }}>
+                    <div style={{ padding: '1rem 1.5rem', borderBottom: '2px solid #a78bfa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-surface)' }}>
                         <h2 style={{ fontWeight: 600, color: 'var(--color-text)', fontSize: '0.95rem' }}>
                             {viewAll ? 'All Products' : categories.find((c) => c.id === activeCatId)?.name ?? 'Products'}
                         </h2>
