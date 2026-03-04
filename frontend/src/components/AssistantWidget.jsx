@@ -64,7 +64,7 @@ export default function AssistantWidget() {
                 <div
                     id="assistant-panel"
                     className="light-theme fixed bottom-24 right-6 z-50 w-80 glass shadow-2xl flex flex-col overflow-hidden fade-in-up"
-                    style={{ maxHeight: '420px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
+                    style={{ maxHeight: '420px', background: 'var(--color-surface)', border: '2px solid #a78bfa', boxShadow: '0 10px 40px rgba(139,92,246,0.15)', color: 'var(--color-text)' }}
                 >
                     {/* Header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
@@ -94,7 +94,7 @@ export default function AssistantWidget() {
                                         ? 'bg-violet-600 text-white rounded-br-sm'
                                         : 'rounded-bl-sm'
                                         }`}
-                                    style={msg.from !== 'user' ? { background: 'var(--color-surface-alt)', color: 'var(--color-text)', border: '1px solid var(--color-border)' } : {}}
+                                    style={msg.from !== 'user' ? { background: 'var(--color-surface-alt)', color: '#3b0764', border: '1px solid #c4b5fd', fontWeight: 500 } : {}}
                                 >
                                     {msg.text}
                                 </div>
@@ -135,6 +135,7 @@ export default function AssistantWidget() {
                             onKeyDown={handleKey}
                             placeholder="Ask a question…"
                             className="input-field text-sm py-2"
+                            style={{ border: '2px solid #c4b5fd', color: '#3b0764', fontWeight: 500 }}
                         />
                         <button
                             id="assistant-send-btn"
