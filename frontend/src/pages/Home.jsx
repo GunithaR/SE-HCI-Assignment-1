@@ -176,7 +176,7 @@ export default function Home() {
                 <div style={{ position: 'absolute', top: '10%', right: '10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
                 <p style={{ color: '#8b5cf6', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '1.2rem' }}>
-                    L+ SIVILIMA · Construction Platform
+                    CONSTRUCTION PLATFORM
                 </p>
 
                 <h1 style={{
@@ -184,11 +184,11 @@ export default function Home() {
                     fontSize: 'clamp(3.5rem, 10vw, 8rem)',
                     fontWeight: 900,
                     letterSpacing: '-0.03em',
-                    lineHeight: 1,
-                    color: 'var(--color-text)',
+                    lineHeight: 1.1,
+                    color: '#8b5cf6',
                     marginBottom: '1.5rem',
                 }}>
-                    CONSTRUCTION
+                    L+<br /><span style={{ display: 'block', marginTop: '0.2em' }}>සිවිලිම</span>
                 </h1>
 
                 <p style={{ color: 'var(--color-muted)', fontSize: '1.05rem', maxWidth: 520, margin: '0 auto 2.5rem', lineHeight: 1.7 }}>
