@@ -25,8 +25,8 @@ function ProductCard({ product }) {
     const bc = BUDGET_COLORS[product.budgetLevel] || { bg: 'rgba(148,163,184,0.1)', fg: '#94a3b8' };
     return (
         <div style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.07)',
+            background: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
             borderRadius: 16,
             overflow: 'hidden',
             padding: 0,
@@ -34,12 +34,12 @@ function ProductCard({ product }) {
             transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s',
             cursor: 'default',
         }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.4)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.4)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.boxShadow = 'none'; }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.4)'; e.currentTarget.style.boxShadow = 'var(--shadow-glow)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.boxShadow = 'none'; }}
         >
             {/* Product Image */}
             {product.imageUrl && (
-                <div style={{ width: '100%', height: 180, overflow: 'hidden', background: 'rgba(0,0,0,0.2)' }}>
+                <div style={{ width: '100%', height: 180, overflow: 'hidden', background: 'var(--color-surface-alt)' }}>
                     <img
                         src={product.imageUrl}
                         alt={product.name}
@@ -51,62 +51,62 @@ function ProductCard({ product }) {
 
             {/* Card body */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '1.25rem', flex: 1 }}>
-            {/* Top row */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                <div style={{ flex: 1 }}>
-                    <h3 style={{ color: '#f1f5f9', fontWeight: 600, fontSize: '0.95rem', marginBottom: 2 }}>
-                        {product.name}
-                    </h3>
-                    <p style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                        {product.brandName && <span>{product.brandName}</span>}
-                        {product.brandName && product.categoryName && <span> · </span>}
-                        {product.categoryName && <span style={{ color: '#a78bfa' }}>{product.categoryName}</span>}
-                    </p>
+                {/* Top row */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                    <div style={{ flex: 1 }}>
+                        <h3 style={{ color: 'var(--color-text)', fontWeight: 600, fontSize: '0.95rem', marginBottom: 2 }}>
+                            {product.name}
+                        </h3>
+                        <p style={{ color: 'var(--color-muted)', fontSize: '0.75rem' }}>
+                            {product.brandName && <span>{product.brandName}</span>}
+                            {product.brandName && product.categoryName && <span> · </span>}
+                            {product.categoryName && <span style={{ color: '#a78bfa' }}>{product.categoryName}</span>}
+                        </p>
+                    </div>
+                    {product.budgetLevel && (
+                        <span style={{ background: bc.bg, color: bc.fg, border: `1px solid ${bc.fg}44`, borderRadius: 9999, padding: '2px 10px', fontSize: '0.7rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                            {product.budgetLevel}
+                        </span>
+                    )}
                 </div>
-                {product.budgetLevel && (
-                    <span style={{ background: bc.bg, color: bc.fg, border: `1px solid ${bc.fg}44`, borderRadius: 9999, padding: '2px 10px', fontSize: '0.7rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                        {product.budgetLevel}
-                    </span>
-                )}
-            </div>
 
-            {/* Description */}
-            <p style={{ color: '#94a3b8', fontSize: '0.78rem', lineHeight: 1.65, flex: 1 }}>
-                {product.description || 'Premium construction material.'}
-            </p>
+                {/* Description */}
+                <p style={{ color: 'var(--color-muted)', fontSize: '0.78rem', lineHeight: 1.65, flex: 1 }}>
+                    {product.description || 'Premium construction material.'}
+                </p>
 
-            {/* Attribute badges */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                {product.climateSuitability && (
-                    <span style={{ background: 'rgba(139,92,246,0.12)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.25)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem' }}>
-                        ☁ {product.climateSuitability}
-                    </span>
-                )}
-                {product.maintenanceLevel && (
-                    <span style={{ background: 'rgba(20,184,166,0.12)', color: '#2dd4bf', border: '1px solid rgba(20,184,166,0.25)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem' }}>
-                        🔧 {product.maintenanceLevel}
-                    </span>
-                )}
-                {product.durabilityRating && (
-                    <span style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem' }}>
-                        ★ {product.durabilityRating}/10
-                    </span>
-                )}
-            </div>
+                {/* Attribute badges */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                    {product.climateSuitability && (
+                        <span style={{ background: 'rgba(139,92,246,0.12)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.25)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem' }}>
+                            ☁ {product.climateSuitability}
+                        </span>
+                    )}
+                    {product.maintenanceLevel && (
+                        <span style={{ background: 'rgba(20,184,166,0.12)', color: '#14b8a6', border: '1px solid rgba(20,184,166,0.25)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem' }}>
+                            🔧 {product.maintenanceLevel}
+                        </span>
+                    )}
+                    {product.durabilityRating && (
+                        <span style={{ background: 'var(--color-surface-alt)', color: 'var(--color-muted)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem', border: '1px solid var(--color-border)' }}>
+                            ★ {product.durabilityRating}/10
+                        </span>
+                    )}
+                </div>
 
-            {/* Price */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 10 }}>
-                <span style={{ color: '#a78bfa', fontWeight: 700, fontSize: '1.15rem' }}>
-                    ${Number(product.basePrice).toFixed(2)}
-                </span>
-                <span style={{
-                    padding: '3px 10px', borderRadius: 9999, fontSize: '0.68rem', fontWeight: 600,
-                    background: product.isActive ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-                    color: product.isActive ? '#4ade80' : '#f87171',
-                }}>
-                    {product.isActive ? 'In Stock' : 'Out of Stock'}
-                </span>
-            </div>
+                {/* Price */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: 10 }}>
+                    <span style={{ color: '#8b5cf6', fontWeight: 700, fontSize: '1.15rem' }}>
+                        ${Number(product.basePrice).toFixed(2)}
+                    </span>
+                    <span style={{
+                        padding: '3px 10px', borderRadius: 9999, fontSize: '0.68rem', fontWeight: 600,
+                        background: product.isActive ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                        color: product.isActive ? '#16a34a' : '#dc2626',
+                    }}>
+                        {product.isActive ? 'In Stock' : 'Out of Stock'}
+                    </span>
+                </div>
             </div>{/* end card body */}
         </div>
     );
@@ -165,15 +165,16 @@ export default function Home() {
     const activeCat = categories.find((c) => c.id === activeCatId);
 
     return (
-        <div style={{ minHeight: '100vh', background: 'var(--bg-primary, #0a0b0f)' }}>
+        <div className="light-theme" style={{ minHeight: '100vh', background: 'var(--bg-color)', position: 'relative' }}>
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500"></div>
 
             {/* ── HERO ──────────────────────────────────────────────────────────── */}
             <section style={{ textAlign: 'center', padding: '9rem 1.5rem 4rem', position: 'relative', overflow: 'hidden' }}>
                 {/* Glow blobs */}
-                <div style={{ position: 'absolute', top: '20%', left: '15%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(108,99,255,0.18) 0%, transparent 70%)', pointerEvents: 'none' }} />
-                <div style={{ position: 'absolute', top: '10%', right: '10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', top: '20%', left: '15%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', top: '10%', right: '10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-                <p style={{ color: '#a78bfa', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '1.2rem' }}>
+                <p style={{ color: '#8b5cf6', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '1.2rem' }}>
                     L+ SIVILIMA · Construction Platform
                 </p>
 
@@ -183,23 +184,23 @@ export default function Home() {
                     fontWeight: 900,
                     letterSpacing: '-0.03em',
                     lineHeight: 1,
-                    color: '#fff',
+                    color: 'var(--color-text)',
                     marginBottom: '1.5rem',
                 }}>
                     CONSTRUCTION
                 </h1>
 
-                <p style={{ color: '#64748b', fontSize: '1.05rem', maxWidth: 520, margin: '0 auto 2.5rem', lineHeight: 1.7 }}>
+                <p style={{ color: 'var(--color-muted)', fontSize: '1.05rem', maxWidth: 520, margin: '0 auto 2.5rem', lineHeight: 1.7 }}>
                     Browse premium construction materials from top brands. Filter by category, compare by budget and climate — all in one place.
                 </p>
             </section>
 
             {/* ── 5 CATEGORY BLOCKS ─────────────────────────────────────────────── */}
             <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1.5rem 4rem' }}>
-                <h2 style={{ textAlign: 'center', fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '1.6rem', color: '#fff', marginBottom: '0.5rem' }}>
+                <h2 style={{ textAlign: 'center', fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '1.6rem', color: 'var(--color-text)', marginBottom: '0.5rem' }}>
                     Browse by Category
                 </h2>
-                <p style={{ textAlign: 'center', color: '#475569', fontSize: '0.85rem', marginBottom: '2rem' }}>
+                <p style={{ textAlign: 'center', color: 'var(--color-muted)', fontSize: '0.85rem', marginBottom: '2rem' }}>
                     Click any category to filter products below
                 </p>
 
@@ -219,26 +220,26 @@ export default function Home() {
                                     style={{
                                         background: isActive
                                             ? `linear-gradient(135deg, ${meta.color}33, ${meta.color}11)`
-                                            : 'rgba(255,255,255,0.03)',
+                                            : 'var(--color-surface)',
                                         border: isActive
                                             ? `2px solid ${meta.color}99`
-                                            : '1px solid rgba(255,255,255,0.08)',
+                                            : '1px solid var(--color-border)',
                                         borderRadius: 20,
                                         padding: '1.75rem 1rem',
                                         cursor: 'pointer',
                                         textAlign: 'center',
                                         transition: 'all 0.25s',
                                         transform: isActive ? 'translateY(-6px)' : 'translateY(0)',
-                                        boxShadow: isActive ? `0 12px 40px ${meta.color}33` : 'none',
+                                        boxShadow: isActive ? `0 12px 40px ${meta.color}33` : '0 4px 6px rgba(0,0,0,0.02)',
                                     }}
                                     onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.background = `${meta.color}15`; e.currentTarget.style.borderColor = `${meta.color}55`; e.currentTarget.style.transform = 'translateY(-3px)'; } }}
-                                    onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'translateY(0)'; } }}
+                                    onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.background = 'var(--color-surface)'; e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.transform = 'translateY(0)'; } }}
                                 >
                                     <div style={{ fontSize: '2.8rem', marginBottom: '0.75rem' }}>{meta.icon}</div>
-                                    <div style={{ color: isActive ? '#fff' : '#e2e8f0', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.35rem' }}>
+                                    <div style={{ color: isActive ? 'var(--color-text)' : 'var(--color-text)', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.35rem' }}>
                                         {cat.name}
                                     </div>
-                                    <div style={{ color: isActive ? `${meta.color}cc` : '#475569', fontSize: '0.72rem', lineHeight: 1.4 }}>
+                                    <div style={{ color: isActive ? `${meta.color}dd` : 'var(--color-muted)', fontSize: '0.72rem', lineHeight: 1.4 }}>
                                         {meta.desc}
                                     </div>
                                     {isActive && (
@@ -256,7 +257,7 @@ export default function Home() {
                 {/* Section header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: '1.5rem' }}>
                     <div>
-                        <h2 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '1.4rem', color: '#fff', marginBottom: 2 }}>
+                        <h2 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '1.4rem', color: 'var(--color-text)', marginBottom: 2 }}>
                             {activeCat ? activeCat.name : 'All Products'}
                         </h2>
                         {activeCatId && (
@@ -273,35 +274,36 @@ export default function Home() {
                         onChange={(e) => setSearch(e.target.value)}
                         style={{
                             padding: '8px 16px', borderRadius: 10, fontSize: '0.85rem',
-                            background: 'rgba(255,255,255,0.05)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            color: '#e2e8f0', outline: 'none', width: 220,
+                            background: 'var(--color-surface)',
+                            border: '1px solid var(--color-border)',
+                            color: 'var(--color-text)', outline: 'none', width: 220,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
                         }}
                     />
                 </div>
 
                 {/* Divider */}
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', marginBottom: '2rem' }} />
+                <div style={{ height: 1, background: 'var(--color-border)', marginBottom: '2rem' }} />
 
                 {loadingProds ? (
                     <div style={{ display: 'flex', justifyContent: 'center', padding: '6rem' }}>
                         <div className="spinner" />
                     </div>
                 ) : filtered.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '5rem', color: '#475569' }}>
+                    <div style={{ textAlign: 'center', padding: '5rem', color: '#64748b' }}>
                         <p style={{ fontSize: '3rem', marginBottom: 12 }}>📭</p>
-                        <p style={{ color: '#64748b', marginBottom: 8 }}>
+                        <p style={{ color: 'var(--color-muted)', marginBottom: 8 }}>
                             {search ? `No products match "${search}"` : 'No products in this category yet.'}
                         </p>
                         {search && (
-                            <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline' }}>
+                            <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: '#8b5cf6', cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline' }}>
                                 Clear search
                             </button>
                         )}
                     </div>
                 ) : (
                     <>
-                        <p style={{ color: '#475569', fontSize: '0.78rem', marginBottom: '1.25rem' }}>
+                        <p style={{ color: 'var(--color-muted)', fontSize: '0.78rem', marginBottom: '1.25rem' }}>
                             {filtered.length} product{filtered.length !== 1 ? 's' : ''}
                             {activeCat ? ` in ${activeCat.name}` : ' across all categories'}
                         </p>
