@@ -63,14 +63,14 @@ export default function AssistantWidget() {
             {open && (
                 <div
                     id="assistant-panel"
-                    className="fixed bottom-24 right-6 z-50 w-80 glass shadow-2xl flex flex-col overflow-hidden fade-in-up"
-                    style={{ maxHeight: '420px' }}
+                    className="light-theme fixed bottom-24 right-6 z-50 w-80 glass shadow-2xl flex flex-col overflow-hidden fade-in-up"
+                    style={{ maxHeight: '420px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+                    <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
                         <div className="flex items-center gap-2">
                             <span className="text-lg">🤖</span>
-                            <span className="font-semibold text-sm text-white">L+ SIVILIMA Assistant</span>
+                            <span className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>L+ SIVILIMA Assistant</span>
                             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                         </div>
                         <button
@@ -92,8 +92,9 @@ export default function AssistantWidget() {
                                 <div
                                     className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${msg.from === 'user'
                                         ? 'bg-violet-600 text-white rounded-br-sm'
-                                        : 'bg-white/5 text-slate-200 rounded-bl-sm'
+                                        : 'rounded-bl-sm'
                                         }`}
+                                    style={msg.from !== 'user' ? { background: 'var(--color-surface-alt)', color: 'var(--color-text)', border: '1px solid var(--color-border)' } : {}}
                                 >
                                     {msg.text}
                                 </div>
@@ -101,7 +102,7 @@ export default function AssistantWidget() {
                         ))}
                         {typing && (
                             <div className="flex justify-start">
-                                <div className="bg-white/5 px-4 py-2 rounded-2xl text-slate-400 text-sm">
+                                <div className="px-4 py-2 rounded-2xl text-sm" style={{ background: 'var(--color-surface-alt)', color: 'var(--color-muted)', border: '1px solid var(--color-border)' }}>
                                     <span className="animate-pulse">● ● ●</span>
                                 </div>
                             </div>
@@ -115,7 +116,10 @@ export default function AssistantWidget() {
                             <button
                                 key={hint}
                                 onClick={() => { setInput(hint); }}
-                                className="text-xs whitespace-nowrap px-2 py-1 rounded-full border border-white/10 text-slate-400 hover:border-violet-500 hover:text-violet-400 transition-colors"
+                                className="text-xs whitespace-nowrap px-2 py-1 rounded-full border transition-colors"
+                                style={{ borderColor: 'var(--color-border)', color: 'var(--color-muted)' }}
+                                onMouseEnter={(e) => { e.target.style.borderColor = '#8b5cf6'; e.target.style.color = '#8b5cf6'; }}
+                                onMouseLeave={(e) => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.color = 'var(--color-muted)'; }}
                             >
                                 {hint}
                             </button>
@@ -123,7 +127,7 @@ export default function AssistantWidget() {
                     </div>
 
                     {/* Input */}
-                    <div className="px-4 py-3 border-t border-white/5 flex gap-2">
+                    <div className="px-4 py-3 border-t flex gap-2" style={{ borderColor: 'var(--color-border)' }}>
                         <input
                             id="assistant-input"
                             value={input}

@@ -59,10 +59,11 @@ export default function Wizard() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 py-28 hero-bg">
+        <div className="light-theme min-h-screen flex items-center justify-center px-4 py-28 hero-bg relative">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500"></div>
             <div className="w-full max-w-2xl fade-in-up">
                 {/* Progress bar */}
-                <div className="w-full h-1.5 bg-white/5 rounded-full mb-10 overflow-hidden">
+                <div className="w-full h-1.5 bg-slate-200/50 rounded-full mb-10 overflow-hidden shadow-inner">
                     <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
@@ -73,16 +74,16 @@ export default function Wizard() {
                 </div>
 
                 <div className="glass p-8 md:p-12">
-                    <p className="text-xs text-violet-400 font-semibold uppercase tracking-widest mb-3">
+                    <p className="text-xs text-violet-600 font-bold uppercase tracking-widest mb-3">
                         Step {step + 1} of {STEPS.length}
                     </p>
                     <h2
-                        className="text-2xl md:text-3xl font-bold text-white mb-2"
+                        className="text-2xl md:text-3xl font-bold text-slate-800 mb-2"
                         style={{ fontFamily: 'Outfit, sans-serif' }}
                     >
                         {currentStep.question}
                     </h2>
-                    <p className="text-slate-400 text-sm mb-8">{currentStep.subtext}</p>
+                    <p className="text-slate-500 text-sm mb-8">{currentStep.subtext}</p>
 
                     {error && (
                         <div className="mb-6 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
@@ -102,13 +103,13 @@ export default function Wizard() {
                                     key={opt.value}
                                     id={`wizard-${currentStep.id}-${opt.value.toLowerCase()}`}
                                     onClick={() => select(opt.value)}
-                                    className="text-left p-5 rounded-xl border border-white/8 bg-white/3 hover:border-violet-500 hover:bg-violet-500/10 transition-all duration-200 group"
+                                    className="text-left p-5 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-violet-500 hover:bg-violet-50 hover:shadow-md transition-all duration-200 group"
                                 >
                                     <div className="text-2xl mb-2">{opt.label.split(' ')[0]}</div>
-                                    <div className="font-semibold text-white text-sm group-hover:text-violet-300 transition-colors">
+                                    <div className="font-semibold text-slate-800 text-sm group-hover:text-violet-700 transition-colors">
                                         {opt.label.slice(opt.label.indexOf(' ') + 1)}
                                     </div>
-                                    <div className="text-slate-400 text-xs mt-1">{opt.desc}</div>
+                                    <div className="text-slate-500 text-xs mt-1">{opt.desc}</div>
                                 </button>
                             ))}
                         </div>
@@ -118,7 +119,7 @@ export default function Wizard() {
                         <button
                             id="wizard-back-btn"
                             onClick={() => setStep(step - 1)}
-                            className="mt-6 text-sm text-slate-400 hover:text-white transition-colors"
+                            className="mt-6 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors"
                         >
                             ← Back
                         </button>
@@ -129,7 +130,7 @@ export default function Wizard() {
                 {Object.keys(answers).length > 0 && (
                     <div className="mt-4 flex gap-2 justify-center flex-wrap">
                         {Object.entries(answers).map(([key, val]) => (
-                            <span key={key} className="badge" style={{ background: 'rgba(108,99,255,0.15)', color: '#a78bfa' }}>
+                            <span key={key} className="badge shadow-sm border border-violet-200" style={{ background: 'rgba(108,99,255,0.1)', color: '#6c63ff' }}>
                                 {key}: {val}
                             </span>
                         ))}
