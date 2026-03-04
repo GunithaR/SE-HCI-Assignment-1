@@ -11,7 +11,7 @@ export default function Navbar() {
     };
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-white/5">
+        <nav className="light-theme fixed top-0 left-0 right-0 z-50 glass border-b" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
             <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
 
                 {/* ── Logo / Brand ─────────────────────────────────────────── */}
@@ -43,11 +43,11 @@ export default function Navbar() {
                 </Link>
 
                 {/* ── Nav links ────────────────────────────────────────────── */}
-                <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-400">
-                    <Link to="/catalog" className="hover:text-white transition-colors">Catalog</Link>
-                    <Link to="/wizard" className="hover:text-white transition-colors">Get Recommendations</Link>
+                <div className="hidden md:flex items-center gap-6 text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+                    <Link to="/catalog" className="transition-colors hover:text-violet-600">Catalog</Link>
+                    <Link to="/wizard" className="transition-colors hover:text-violet-600">Get Recommendations</Link>
                     {isAdmin && (
-                        <Link to="/admin" className="hover:text-white transition-colors text-violet-400">
+                        <Link to="/admin" className="transition-colors text-violet-600 hover:text-violet-800 font-bold">
                             Admin
                         </Link>
                     )}
@@ -57,7 +57,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-3">
                     {isAuthenticated ? (
                         <>
-                            <span className="text-xs text-slate-500 hidden sm:block">{user?.email}</span>
+                            <span className="text-xs hidden sm:block" style={{ color: 'var(--color-muted)' }}>{user?.email}</span>
                             <button id="nav-logout-btn" onClick={handleLogout} className="btn-secondary text-sm py-2 px-4">
                                 Logout
                             </button>
