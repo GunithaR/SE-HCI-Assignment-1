@@ -26,7 +26,8 @@ function ProductCard({ product }) {
     return (
         <div style={{
             background: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
+            border: '2px solid #a78bfa',
+            boxShadow: '0 4px 12px rgba(139,92,246,0.1)',
             borderRadius: 16,
             overflow: 'hidden',
             padding: 0,
@@ -222,8 +223,8 @@ export default function Home() {
                                             ? `linear-gradient(135deg, ${meta.color}33, ${meta.color}11)`
                                             : 'var(--color-surface)',
                                         border: isActive
-                                            ? `2px solid ${meta.color}99`
-                                            : '1px solid var(--color-border)',
+                                            ? `2px solid ${meta.color}`
+                                            : '2px solid #c4b5fd',
                                         borderRadius: 20,
                                         padding: '1.75rem 1rem',
                                         cursor: 'pointer',
@@ -267,7 +268,6 @@ export default function Home() {
                         )}
                     </div>
 
-                    {/* Search */}
                     <input
                         placeholder="Search products…"
                         value={search}
@@ -275,9 +275,10 @@ export default function Home() {
                         style={{
                             padding: '8px 16px', borderRadius: 10, fontSize: '0.85rem',
                             background: 'var(--color-surface)',
-                            border: '1px solid var(--color-border)',
-                            color: 'var(--color-text)', outline: 'none', width: 220,
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                            border: '2px solid #c4b5fd',
+                            color: '#3b0764', outline: 'none', width: 220,
+                            boxShadow: '0 2px 4px rgba(139,92,246,0.1)',
+                            fontWeight: 500
                         }}
                     />
                 </div>

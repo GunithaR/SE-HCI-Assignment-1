@@ -3,7 +3,7 @@ import { useLocation, Link } from 'react-router-dom';
 function ResultCard({ product, rank }) {
     const attr = product.attribute || {};
     return (
-        <div className="card p-5 fade-in-up flex gap-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+        <div className="card p-5 fade-in-up flex gap-4" style={{ background: 'var(--color-surface)', border: '2px solid #a78bfa', boxShadow: '0 4px 12px rgba(139,92,246,0.1)' }}>
             {/* Rank badge */}
             <div className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm"
                 style={{ background: rank <= 3 ? 'linear-gradient(135deg,#6c63ff,#f59e0b)' : 'var(--color-surface-alt)', color: rank <= 3 ? '#fff' : 'var(--color-muted)', border: rank > 3 ? '1px solid var(--color-border)' : 'none' }}>
@@ -70,7 +70,7 @@ export default function Results() {
                 </div>
 
                 {products.length === 0 ? (
-                    <div className="glass p-12 text-center" style={{ background: 'var(--color-surface)' }}>
+                    <div className="glass p-12 text-center" style={{ background: 'var(--color-surface)', border: '2px solid #a78bfa', boxShadow: '0 4px 12px rgba(139,92,246,0.1)' }}>
                         <p className="text-4xl mb-4">🔍</p>
                         <p className="text-slate-500 mb-6">
                             No products matched your criteria. Try broadening your filters.
