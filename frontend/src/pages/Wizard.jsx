@@ -73,7 +73,7 @@ export default function Wizard() {
                     />
                 </div>
 
-                <div className="glass p-8 md:p-12">
+                <div className="glass p-8 md:p-12" style={{ border: '2px solid #a78bfa', boxShadow: '0 4px 12px rgba(139,92,246,0.1)' }}>
                     <p className="text-xs text-violet-600 font-bold uppercase tracking-widest mb-3">
                         Step {step + 1} of {STEPS.length}
                     </p>
@@ -103,10 +103,11 @@ export default function Wizard() {
                                     key={opt.value}
                                     id={`wizard-${currentStep.id}-${opt.value.toLowerCase()}`}
                                     onClick={() => select(opt.value)}
-                                    className="text-left p-5 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-violet-500 hover:bg-violet-50 hover:shadow-md transition-all duration-200 group"
+                                    className="text-left p-5 rounded-xl bg-white shadow-sm hover:bg-violet-50 transition-all duration-200 group"
+                                    style={{ border: '2px solid #c4b5fd' }}
                                 >
                                     <div className="text-2xl mb-2">{opt.label.split(' ')[0]}</div>
-                                    <div className="font-semibold text-slate-800 text-sm group-hover:text-violet-700 transition-colors">
+                                    <div className="font-semibold text-indigo-950 text-sm group-hover:text-violet-700 transition-colors">
                                         {opt.label.slice(opt.label.indexOf(' ') + 1)}
                                     </div>
                                     <div className="text-slate-500 text-xs mt-1">{opt.desc}</div>
