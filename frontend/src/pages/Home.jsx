@@ -166,8 +166,8 @@ export default function Home() {
     const activeCat = categories.find((c) => c.id === activeCatId);
 
     return (
-        <div className="light-theme" style={{ minHeight: '100vh', background: 'var(--bg-color)', position: 'relative' }}>
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500"></div>
+        <div className="light-theme" style={{ minHeight: '100vh', background: 'var(--bg-color)', position: 'relative', paddingTop: '5rem' }}>
+
 
             {/* ── HERO ──────────────────────────────────────────────────────────── */}
             <section style={{ textAlign: 'center', padding: '9rem 1.5rem 4rem', position: 'relative', overflow: 'hidden' }}>

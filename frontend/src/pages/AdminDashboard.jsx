@@ -230,6 +230,7 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                                 <option value="">Select category…</option>
                                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
+                            {errors.categoryId && <p style={err}>{errors.categoryId}</p>}
                         </div>
                         <div>
                             <label style={lbl}>Product Name *</label>
@@ -242,6 +243,7 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                     <div>
                         <label style={lbl}>Description</label>
                         <textarea value={form.description} onChange={set('description')} rows={2} style={{ ...inp('description'), resize: 'vertical' }} placeholder="Short product description…" />
+                        {errors.description && <p style={err}>{errors.description}</p>}
                     </div>
 
                     {/* Price + Brand */}
@@ -272,6 +274,7 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                                 <option value="">Select…</option>
                                 {(options.budgetLevels || ['LOW', 'MEDIUM', 'HIGH']).map((v) => <option key={v} value={v}>{v}</option>)}
                             </select>
+                            {errors.budgetLevel && <p style={err}>{errors.budgetLevel}</p>}
                         </div>
                         <div>
                             <label style={lbl}>Climate Suitability *</label>
@@ -279,6 +282,7 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                                 <option value="">Select…</option>
                                 {(options.climateSuitabilities || ['TROPICAL', 'ARID', 'TEMPERATE', 'COLD', 'ALL']).map((v) => <option key={v} value={v}>{v}</option>)}
                             </select>
+                            {errors.climateSuitability && <p style={err}>{errors.climateSuitability}</p>}
                         </div>
                     </div>
 
@@ -290,10 +294,12 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                                 <option value="">Select…</option>
                                 {(options.maintenanceLevels || ['LOW', 'MEDIUM', 'HIGH']).map((v) => <option key={v} value={v}>{v}</option>)}
                             </select>
+                            {errors.maintenanceLevel && <p style={err}>{errors.maintenanceLevel}</p>}
                         </div>
                         <div>
                             <label style={lbl}>Durability Rating * (1–10)</label>
                             <input type="number" min="1" max="10" value={form.durabilityRating} onChange={set('durabilityRating')} style={inp('durabilityRating')} placeholder="8" required />
+                            {errors.durabilityRating && <p style={err}>{errors.durabilityRating}</p>}
                         </div>
                     </div>
 
@@ -302,6 +308,7 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                         <div>
                             <label style={lbl}>Style (optional)</label>
                             <input value={form.style} onChange={set('style')} style={inp('style')} placeholder="e.g. Contemporary, Rustic…" />
+                            {errors.style && <p style={err}>{errors.style}</p>}
                         </div>
                         <div>
                             <label style={lbl}>Stock Status</label>
@@ -509,7 +516,7 @@ export default function AdminDashboard() {
     return (
         <div className="light-theme" style={{ minHeight: '100vh', background: 'var(--bg-color)', padding: '7rem 1.5rem 3rem', position: 'relative' }}>
             {/* Top Purple Line */}
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500"></div>
+
 
             <div style={{ maxWidth: 1280, margin: '0 auto' }}>
                 <Toast toast={toast} />

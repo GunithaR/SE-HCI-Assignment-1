@@ -2,10 +2,18 @@ package com.constructionplatform.app.config;
 
 import com.constructionplatform.app.entity.Brand;
 import com.constructionplatform.app.entity.Category;
+import com.constructionplatform.app.entity.Product;
+import com.constructionplatform.app.entity.ProductAttribute;
+import com.constructionplatform.app.entity.ProductAttribute.BudgetLevel;
+import com.constructionplatform.app.entity.ProductAttribute.ClimateSuitability;
+import com.constructionplatform.app.entity.ProductAttribute.MaintenanceLevel;
+import com.constructionplatform.app.entity.ProductAttribute.Material;
+import com.constructionplatform.app.entity.ProductAttribute.ProductSize;
 import com.constructionplatform.app.entity.Role;
 import com.constructionplatform.app.entity.User;
 import com.constructionplatform.app.repository.BrandRepository;
 import com.constructionplatform.app.repository.CategoryRepository;
+import com.constructionplatform.app.repository.ProductRepository;
 import com.constructionplatform.app.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Component
@@ -51,6 +60,7 @@ public class DataSeeder implements ApplicationRunner {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
+    private final ProductRepository productRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.seed.admin-email:admin@platform.com}")
@@ -62,10 +72,12 @@ public class DataSeeder implements ApplicationRunner {
     public DataSeeder(UserRepository userRepository,
             CategoryRepository categoryRepository,
             BrandRepository brandRepository,
+            ProductRepository productRepository,
             PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.brandRepository = brandRepository;
+        this.productRepository = productRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -76,6 +88,7 @@ public class DataSeeder implements ApplicationRunner {
         seedCategories();
         removeDeprecatedBrands();
         seedBrands();
+        seedDemoProducts();
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -112,6 +125,11 @@ public class DataSeeder implements ApplicationRunner {
      * orphaning existing data.
      */
     private void removeDeprecatedBrands() {
+        // Only safe to delete when no products exist (otherwise FK constraints may fail).
+        if (productRepository.count() > 0) {
+            log.debug("DataSeeder: Products exist — skipping deprecated brand cleanup.");
+            return;
+        }
         for (String name : DEPRECATED_BRANDS) {
             brandRepository.findByName(name).ifPresent(brand -> {
                 brandRepository.delete(brand);
@@ -129,5 +147,70 @@ public class DataSeeder implements ApplicationRunner {
                 log.info("DataSeeder: Brand '{}' created.", name);
             }
         }
+    }
+
+    /**
+     * Seeds some demo product catalog for development.
+     *
+     * <p>Rule: only runs when there are no products in the database so that it never
+     * overwrites or duplicates real data.</p>
+     */
+    private void seedDemoProducts() {
+        long existing = productRepository.count();
+        if (existing > 0) {
+            log.info("DataSeeder: Products already exist (count={}) — skipping demo product seeding.", existing);
+            return;
+        }
+
+        List<Category> categories = categoryRepository.findAll();
+        List<Brand> brands = brandRepository.findAll();
+        if (categories.isEmpty() || brands.isEmpty()) {
+            log.warn("DataSeeder: Cannot seed products — categories or brands are missing.");
+            return;
+        }
+
+        ProductSize[] sizes = ProductSize.values();
+        Material[] materials = Material.values();
+        MaintenanceLevel[] maint = MaintenanceLevel.values();
+
+        int created = 0;
+        for (int c = 0; c < categories.size(); c++) {
+            Category category = categories.get(c);
+
+            for (int i = 0; i < 10; i++) {
+                Brand brand = brands.get((c * 10 + i) % brands.size());
+
+                BigDecimal price = BigDecimal.valueOf(50 + (c * 120) + (i * 15));
+                BudgetLevel budget = price.compareTo(BigDecimal.valueOf(200)) < 0
+                        ? BudgetLevel.LOW
+                        : price.compareTo(BigDecimal.valueOf(500)) < 0 ? BudgetLevel.MEDIUM : BudgetLevel.HIGH;
+
+                Product product = Product.builder()
+                        .category(category)
+                        .brand(brand)
+                        .name(category.getName() + " Demo Product " + (i + 1))
+                        .description("Seeded demo product for development/testing.")
+                        .basePrice(price)
+                        .isActive(true)
+                        .build();
+
+                ProductAttribute attr = ProductAttribute.builder()
+                        .product(product)
+                        .budgetLevel(budget)
+                        .durabilityRating(Math.min(10, (i % 10) + 1))
+                        .climateSuitability(ClimateSuitability.ALL)
+                        .maintenanceLevel(maint[i % maint.length])
+                        .style((i % 2 == 0) ? "Modern" : "Classic")
+                        .size(sizes[i % sizes.length])
+                        .material(materials[i % materials.length])
+                        .build();
+
+                product.setAttribute(attr);
+                productRepository.save(product);
+                created++;
+            }
+        }
+
+        log.info("DataSeeder: Seeded {} demo products ({} per category).", created, 10);
     }
 }
