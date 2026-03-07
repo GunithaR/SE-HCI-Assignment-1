@@ -7,10 +7,15 @@ import com.constructionplatform.app.entity.Brand;
 import com.constructionplatform.app.entity.Category;
 import com.constructionplatform.app.entity.Product;
 import com.constructionplatform.app.entity.ProductAttribute;
+import com.constructionplatform.app.entity.ProductAttribute.Material;
+import com.constructionplatform.app.entity.ProductAttribute.ProductSize;
+import com.constructionplatform.app.entity.ProductAttribute.BudgetLevel;
+import com.constructionplatform.app.entity.ProductAttribute.ClimateSuitability;
 import com.constructionplatform.app.exception.ResourceNotFoundException;
 import com.constructionplatform.app.repository.BrandRepository;
 import com.constructionplatform.app.repository.CategoryRepository;
 import com.constructionplatform.app.repository.ProductRepository;
+import com.constructionplatform.app.repository.ProductSpecifications;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -80,6 +85,74 @@ public class ProductService {
                 return ProductResponseDTO.from(product);
         }
 
+        /**
+         * Recommendation use case — returns a list of best-matching products
+         * for the given budget and climate, ordered by durability.
+         */
+        public java.util.List<ProductResponseDTO> recommendByBudgetAndClimate(
+                        BudgetLevel budgetLevel,
+                        ClimateSuitability climate) {
+                java.util.List<Product> products = productRepository.findByRuleFilter(budgetLevel, climate);
+                return products.stream().map(ProductResponseDTO::from).toList();
+        }
+
+        /**
+         * Public catalog search (active products only) with optional filters.
+         */
+        public Page<ProductResponseDTO> findAllPublic(
+                        Pageable pageable,
+                        Long brandId,
+                        java.math.BigDecimal minPrice,
+                        java.math.BigDecimal maxPrice,
+                        ProductSize size,
+                        Material material) {
+                validatePriceRange(minPrice, maxPrice);
+                return productRepository
+                                .findAll(ProductSpecifications.publicCatalogFilters(
+                                                null, brandId, minPrice, maxPrice, size, material),
+                                                pageable)
+                                .map(ProductResponseDTO::from);
+        }
+
+        /**
+         * Public catalog search within a category (active only) with optional filters.
+         */
+        public Page<ProductResponseDTO> findByCategoryIdPublic(
+                        Long categoryId,
+                        Pageable pageable,
+                        Long brandId,
+                        java.math.BigDecimal minPrice,
+                        java.math.BigDecimal maxPrice,
+                        ProductSize size,
+                        Material material) {
+                validatePriceRange(minPrice, maxPrice);
+                if (!categoryRepository.existsById(categoryId)) {
+                        throw new ResourceNotFoundException("Category", categoryId);
+                }
+                return productRepository
+                                .findAll(ProductSpecifications.publicCatalogFilters(
+                                                categoryId, brandId, minPrice, maxPrice, size, material),
+                                                pageable)
+                                .map(ProductResponseDTO::from);
+        }
+
+        /**
+         * Validates the numeric price range filters. Throws {@link IllegalArgumentException}
+         * with a user-friendly message that is mapped to a 409 CONFLICT by
+         * {@link com.constructionplatform.app.exception.GlobalExceptionHandler}.
+         */
+        private void validatePriceRange(java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice) {
+                if (minPrice != null && minPrice.compareTo(java.math.BigDecimal.ZERO) < 0) {
+                        throw new IllegalArgumentException("Minimum price cannot be negative.");
+                }
+                if (maxPrice != null && maxPrice.compareTo(java.math.BigDecimal.ZERO) < 0) {
+                        throw new IllegalArgumentException("Maximum price cannot be negative.");
+                }
+                if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+                        throw new IllegalArgumentException("Minimum price cannot be greater than maximum price.");
+                }
+        }
+
         // ── Admin use cases ───────────────────────────────────────────────────────
 
         /**
@@ -139,6 +212,8 @@ public class ProductService {
                                 .climateSuitability(request.getClimateSuitability())
                                 .maintenanceLevel(request.getMaintenanceLevel())
                                 .style(request.getStyle())
+                                .size(request.getSize())
+                                .material(request.getMaterial())
                                 .build();
 
                 product.setAttribute(attribute);
@@ -166,11 +241,13 @@ public class ProductService {
          */
         @Transactional
         public void deleteProduct(Long productId) {
-                if (!productRepository.existsById(productId)) {
-                        throw new ResourceNotFoundException("Product", productId);
-                }
-                productRepository.deleteById(productId);
-                log.info("ProductService: Deleted product id=[{}]", productId);
+                Product product = productRepository.findById(productId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
+
+                ensureNoCriticalDependencies(product);
+
+                productRepository.delete(product);
+                log.info("ProductService: Deleted product id=[{}] name=[{}]", productId, product.getName());
         }
 
         /**
@@ -213,6 +290,8 @@ public class ProductService {
                 attr.setClimateSuitability(request.getClimateSuitability());
                 attr.setMaintenanceLevel(request.getMaintenanceLevel());
                 attr.setStyle(request.getStyle());
+                attr.setSize(request.getSize());
+                attr.setMaterial(request.getMaterial());
 
                 // Replace image only if a new one was uploaded
                 if (image != null && !image.isEmpty()) {
@@ -238,5 +317,26 @@ public class ProductService {
                 log.info("ProductService: Product id=[{}] set to {}", productId,
                                 inStock ? "IN STOCK" : "OUT OF STOCK");
                 return ProductResponseDTO.from(saved);
+        }
+
+        /**
+         * Guard hook for future domain rules around product deletion.
+         *
+         * <p>In the current version of the platform, products are not referenced by
+         * persistent recommendation or order entities, so physical deletion is safe:
+         * the recommendation engine always queries the live {@code products} table
+         * and will simply stop seeing the removed product.</p>
+         *
+         * <p>If you later introduce critical aggregates (e.g. Orders, SavedProjects),
+         * checks should be added here and throw {@link IllegalArgumentException} with
+         * a clear message, which {@link com.constructionplatform.app.exception.GlobalExceptionHandler}
+         * will surface as a 409 CONFLICT to the admin UI.</p>
+         */
+        private void ensureNoCriticalDependencies(Product product) {
+                // Example for future extension:
+                // if (orderRepository.existsByProductId(product.getId())) {
+                //     throw new IllegalArgumentException(
+                //         "Cannot delete this product because it is referenced by existing orders.");
+                // }
         }
 }

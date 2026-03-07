@@ -36,6 +36,8 @@ public class ProductResponseDTO {
     private String climateSuitability;
     private String maintenanceLevel;
     private String style;
+    private String size;
+    private String material;
 
     // ── Image ─────────────────────────────────────────────────────────────────
     private String imageUrl;
@@ -73,6 +75,8 @@ public class ProductResponseDTO {
             dto.climateSuitability = attr.getClimateSuitability() != null ? attr.getClimateSuitability().name() : null;
             dto.maintenanceLevel = attr.getMaintenanceLevel() != null ? attr.getMaintenanceLevel().name() : null;
             dto.style = attr.getStyle();
+            dto.size = attr.getSize() != null ? attr.getSize().name() : null;
+            dto.material = attr.getMaterial() != null ? attr.getMaterial().name() : null;
         }
 
         dto.imageUrl = product.getImageUrl();
@@ -138,6 +142,14 @@ public class ProductResponseDTO {
         return style;
     }
 
+    public String getSize() {
+        return size;
+    }
+
+    public String getMaterial() {
+        return material;
+    }
+
     public String getImageUrl() {
         return imageUrl;
     }
@@ -198,6 +210,14 @@ public class ProductResponseDTO {
 
     public void setStyle(String style) {
         this.style = style;
+    }
+
+    public void setSize(String size) {
+        this.size = size;
+    }
+
+    public void setMaterial(String material) {
+        this.material = material;
     }
 
     public void setImageUrl(String imageUrl) {

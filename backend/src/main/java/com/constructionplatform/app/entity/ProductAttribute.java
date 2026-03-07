@@ -33,6 +33,14 @@ public class ProductAttribute {
     @Column(name = "style", length = 100)
     private String style;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "size", length = 20)
+    private ProductSize size;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "material", length = 30)
+    private Material material;
+
     public ProductAttribute() {
     }
 
@@ -64,6 +72,14 @@ public class ProductAttribute {
         return style;
     }
 
+    public ProductSize getSize() {
+        return size;
+    }
+
+    public Material getMaterial() {
+        return material;
+    }
+
     public void setProductId(Long id) {
         this.productId = id;
     }
@@ -92,6 +108,14 @@ public class ProductAttribute {
         this.style = s;
     }
 
+    public void setSize(ProductSize size) {
+        this.size = size;
+    }
+
+    public void setMaterial(Material material) {
+        this.material = material;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -104,6 +128,8 @@ public class ProductAttribute {
         private ClimateSuitability climateSuitability;
         private MaintenanceLevel maintenanceLevel;
         private String style;
+        private ProductSize size;
+        private Material material;
 
         public Builder productId(Long id) {
             this.productId = id;
@@ -140,6 +166,16 @@ public class ProductAttribute {
             return this;
         }
 
+        public Builder size(ProductSize size) {
+            this.size = size;
+            return this;
+        }
+
+        public Builder material(Material material) {
+            this.material = material;
+            return this;
+        }
+
         public ProductAttribute build() {
             ProductAttribute a = new ProductAttribute();
             a.productId = productId;
@@ -149,6 +185,8 @@ public class ProductAttribute {
             a.climateSuitability = climateSuitability;
             a.maintenanceLevel = maintenanceLevel;
             a.style = style;
+            a.size = size;
+            a.material = material;
             return a;
         }
     }
@@ -163,5 +201,13 @@ public class ProductAttribute {
 
     public enum MaintenanceLevel {
         LOW, MEDIUM, HIGH
+    }
+
+    public enum ProductSize {
+        XS, S, M, L, XL
+    }
+
+    public enum Material {
+        STEEL, WOOD, CONCRETE, BRICK, GLASS, ALUMINUM, PVC, CERAMIC, OTHER
     }
 }

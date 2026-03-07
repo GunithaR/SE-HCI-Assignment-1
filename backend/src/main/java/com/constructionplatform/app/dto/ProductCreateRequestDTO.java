@@ -3,6 +3,8 @@ package com.constructionplatform.app.dto;
 import com.constructionplatform.app.entity.ProductAttribute.BudgetLevel;
 import com.constructionplatform.app.entity.ProductAttribute.ClimateSuitability;
 import com.constructionplatform.app.entity.ProductAttribute.MaintenanceLevel;
+import com.constructionplatform.app.entity.ProductAttribute.Material;
+import com.constructionplatform.app.entity.ProductAttribute.ProductSize;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -54,6 +56,10 @@ public class ProductCreateRequestDTO {
     @Size(max = 100, message = "Style must not exceed 100 characters")
     private String style;
 
+    private ProductSize size;
+
+    private Material material;
+
     // ── Getters ───────────────────────────────────────────────────────────────
 
     public Long getCategoryId() {
@@ -96,6 +102,14 @@ public class ProductCreateRequestDTO {
         return style;
     }
 
+    public ProductSize getSize() {
+        return size;
+    }
+
+    public Material getMaterial() {
+        return material;
+    }
+
     // ── Setters ───────────────────────────────────────────────────────────────
 
     public void setCategoryId(Long categoryId) {
@@ -136,5 +150,13 @@ public class ProductCreateRequestDTO {
 
     public void setStyle(String style) {
         this.style = style;
+    }
+
+    public void setSize(ProductSize size) {
+        this.size = size;
+    }
+
+    public void setMaterial(Material material) {
+        this.material = material;
     }
 }
