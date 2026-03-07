@@ -5,11 +5,11 @@ import catalogService from '../services/catalogService';
 // Category metadata — icons + accent colours for the 5 blocks
 // ─────────────────────────────────────────────────────────────────────────────
 const CATEGORY_META = {
-    'Roofing Solution': { icon: '🏠', color: '#6c63ff', desc: 'Durable roofing for every climate' },
-    'Flooring Solution': { icon: '🪵', color: '#f59e0b', desc: 'Tiles, wood & beyond' },
-    'Ceiling Solution': { icon: '🏛️', color: '#10b981', desc: 'Finish every room with style' },
-    'Wall Solution': { icon: '🧱', color: '#3b82f6', desc: 'Insulation, cladding & renders' },
-    'Accessories': { icon: '🔩', color: '#a855f7', desc: 'Fittings, fixings & more' },
+    'Roofing Solution': { img: '/Roofing_Solution.jpg', color: '#6c63ff', desc: 'Durable roofing for every climate' },
+    'Flooring Solution': { img: '/Flooring_Solution.jpg', color: '#f59e0b', desc: 'Tiles, wood & beyond' },
+    'Ceiling Solution': { img: '/Ceiling_Solution.jpg', color: '#10b981', desc: 'Finish every room with style' },
+    'Wall Solution': { img: '/Wall_Solution.jpg', color: '#3b82f6', desc: 'Insulation, cladding & renders' },
+    'Accessories': { img: '/Accessories.jpg', color: '#a855f7', desc: 'Fittings, fixings & more' },
 };
 
 const BUDGET_COLORS = {
@@ -170,30 +170,44 @@ export default function Home() {
 
 
             {/* ── HERO ──────────────────────────────────────────────────────────── */}
-            <section style={{ textAlign: 'center', padding: '9rem 1.5rem 4rem', position: 'relative', overflow: 'hidden' }}>
-                {/* Glow blobs */}
-                <div style={{ position: 'absolute', top: '20%', left: '15%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
-                <div style={{ position: 'absolute', top: '10%', right: '10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <section style={{
+                textAlign: 'center',
+                padding: '9rem 1.5rem 4rem',
+                position: 'relative',
+                overflow: 'hidden',
+                backgroundImage: 'url("/store-bg.jpg")',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+            }}>
+                {/* White/gray overlay layer */}
+                <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(255, 255, 255, 0.70)', zIndex: 0 }} />
 
-                <p style={{ color: '#8b5cf6', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '1.2rem' }}>
-                    CONSTRUCTION PLATFORM
-                </p>
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                    {/* Glow blobs */}
+                    <div style={{ position: 'absolute', top: '20%', left: '15%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%)', pointerEvents: 'none', zIndex: -1 }} />
+                    <div style={{ position: 'absolute', top: '10%', right: '10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%)', pointerEvents: 'none', zIndex: -1 }} />
 
-                <h1 style={{
-                    fontFamily: 'Outfit, sans-serif',
-                    fontSize: 'clamp(3.5rem, 10vw, 8rem)',
-                    fontWeight: 900,
-                    letterSpacing: '-0.03em',
-                    lineHeight: 1.1,
-                    color: '#8b5cf6',
-                    marginBottom: '1.5rem',
-                }}>
-                    L+<br /><span style={{ display: 'block', marginTop: '0.2em' }}>සිවිලිම</span>
-                </h1>
+                    <p style={{ color: '#8b5cf6', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '1.2rem' }}>
+                        CONSTRUCTION PLATFORM
+                    </p>
 
-                <p style={{ color: 'var(--color-muted)', fontSize: '1.05rem', maxWidth: 520, margin: '0 auto 2.5rem', lineHeight: 1.7 }}>
-                    Browse premium construction materials from top brands. Filter by category, compare by budget and climate — all in one place.
-                </p>
+                    <h1 style={{
+                        fontFamily: 'Outfit, sans-serif',
+                        fontSize: 'clamp(3.5rem, 10vw, 8rem)',
+                        fontWeight: 900,
+                        letterSpacing: '-0.03em',
+                        lineHeight: 1.1,
+                        color: '#8b5cf6',
+                        marginBottom: '1.5rem',
+                    }}>
+                        L+<br /><span style={{ display: 'block', marginTop: '0.2em' }}>සිවිලිම</span>
+                    </h1>
+
+                    <p style={{ color: '#475569', fontSize: '1.05rem', maxWidth: 520, margin: '0 auto 2.5rem', lineHeight: 1.7, fontWeight: 500 }}>
+                        Browse premium construction materials from top brands. Filter by category, compare by budget and climate — all in one place.
+                    </p>
+                </div>
             </section>
 
             {/* ── 5 CATEGORY BLOCKS ─────────────────────────────────────────────── */}
@@ -236,7 +250,13 @@ export default function Home() {
                                     onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.background = `${meta.color}15`; e.currentTarget.style.borderColor = `${meta.color}55`; e.currentTarget.style.transform = 'translateY(-3px)'; } }}
                                     onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.background = 'var(--color-surface)'; e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.transform = 'translateY(0)'; } }}
                                 >
-                                    <div style={{ fontSize: '2.8rem', marginBottom: '0.75rem' }}>{meta.icon}</div>
+                                    <div style={{ height: '64px', marginBottom: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', mixBlendMode: 'multiply' }}>
+                                        {meta.img ? (
+                                            <img src={meta.img} alt={cat.name} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', borderRadius: 8 }} />
+                                        ) : (
+                                            <span style={{ fontSize: '2.8rem' }}>📦</span>
+                                        )}
+                                    </div>
                                     <div style={{ color: isActive ? 'var(--color-text)' : 'var(--color-text)', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.35rem' }}>
                                         {cat.name}
                                     </div>
