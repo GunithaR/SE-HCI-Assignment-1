@@ -26,6 +26,8 @@ const STEPS = [
     },
 ];
 
+
+
 export default function Wizard() {
     const navigate = useNavigate();
     const [step, setStep] = useState(0);
@@ -59,8 +61,8 @@ export default function Wizard() {
     };
 
     return (
-        <div className="light-theme min-h-screen flex items-center justify-center px-4 py-28 hero-bg relative">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500"></div>
+        <div className="light-theme min-h-screen flex items-center justify-center px-4 pt-28 pb-16 hero-bg relative">
+
             <div className="w-full max-w-2xl fade-in-up">
                 {/* Progress bar */}
                 <div className="w-full h-1.5 bg-slate-200/50 rounded-full mb-10 overflow-hidden shadow-inner">
