@@ -42,6 +42,11 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 body {
@@ -50,20 +55,12 @@ body {
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* ── Scrollbar ────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #13131f;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-primary);
-  border-radius: 3px;
+  display: none;
 }
 
 /* ── Glassmorphism utility ────────────────────────────────────────────────── */
@@ -78,6 +75,59 @@ body {
 .light-theme .glass {
   background: rgba(255, 255, 255, 0.85);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+}
+
+/* ── Glassmorphism pill ───────────────────────────────────────────────────── */
+.glass-pill {
+  background: linear-gradient(
+      135deg,
+      rgba(108, 99, 255, 0.25),
+      rgba(245, 158, 11, 0.15)
+  );
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(108, 99, 255, 0.25);
+  border-radius: 9999px;
+  box-shadow: 0 10px 40px rgba(108, 99, 255, 0.18);
+}
+
+.light-theme .glass-pill {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(108, 99, 255, 0.12);
+  box-shadow: 0 6px 20px rgba(108, 99, 255, 0.08);
+}
+
+/* ── Animated Nav Links ───────────────────────────────────────────────────── */
+.nav-link {
+  position: relative;
+  text-decoration: none;
+  font-weight: 500;
+  color: var(--color-muted);
+  /* Softer default text color */
+  padding: 0.25rem 0.1rem;
+  transition: color 0.3s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -2px;
+  left: 50%;
+  background: var(--color-text);
+  /* Matches updated text color instead of primary color */
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+
+.nav-link:hover {
+  color: var(--color-text);
+  /* Hover to darker/solid text color */
+}
+
+.nav-link:hover::after {
+  width: 100%;
 }
 
 /* ── Gradient text ────────────────────────────────────────────────────────── */
@@ -95,7 +145,8 @@ body {
     var(--bg-color);
 }
 
-.light-theme.hero-bg, .light-theme .hero-bg {
+.light-theme.hero-bg,
+.light-theme .hero-bg {
   background: radial-gradient(ellipse at 20% 50%, rgba(108, 99, 255, 0.08) 0%, transparent 60%),
     radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.05) 0%, transparent 50%),
     var(--bg-color);
@@ -210,6 +261,10 @@ body {
 .badge-climate {
   background: rgba(59, 130, 246, 0.15);
   color: #3b82f6;
+}
+
+.page-with-navbar {
+  padding-top: 8rem;
 }
 
 /* ── Page fade-in animation ───────────────────────────────────────────────── */
