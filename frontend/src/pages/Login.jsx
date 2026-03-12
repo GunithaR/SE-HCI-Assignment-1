@@ -27,9 +27,9 @@ export default function Login() {
     };
 
     return (
-        <div className="light-theme min-h-screen flex items-center justify-center px-4 hero-bg fade-in-up relative">
+        <div className="light-theme min-h-screen flex items-center justify-center px-4 hero-bg fade-in-up relative pt-24">
             {/* Top Purple Accent Line */}
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500"></div>
+
 
             <div className="w-full max-w-md glass p-8" style={{ border: '2px solid #a78bfa', boxShadow: '0 4px 12px rgba(139,92,246,0.1)' }}>
                 <div className="text-center mb-8">

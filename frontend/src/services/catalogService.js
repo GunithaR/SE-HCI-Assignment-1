@@ -6,9 +6,9 @@ import apiClient from './apiClient';
 const catalogService = {
     // ── Public endpoints (no auth required) ──────────────────────────────────
 
-    getProductsByCategory: (categoryId, page = 0, size = 20) =>
+    getProductsByCategory: (categoryId, page = 0, size = 20, filters = {}) =>
         apiClient
-            .get(`/public/categories/${categoryId}/products`, { params: { page, size } })
+            .get(`/public/categories/${categoryId}/products`, { params: { page, size, ...filters } })
             .then((r) => r.data),
 
     getProductById: (id) => apiClient.get(`/public/products/${id}`).then((r) => r.data),
@@ -23,8 +23,17 @@ const catalogService = {
      * GET /api/public/products — all in-stock products across every category.
      * No authentication required — used by the public home page.
      */
-    getAllProducts: (page = 0, size = 24) =>
-        apiClient.get('/public/products', { params: { page, size } }).then((r) => r.data),
+    getAllProducts: (page = 0, size = 24, filters = {}) =>
+        apiClient.get('/public/products', { params: { page, size, ...filters } }).then((r) => r.data),
+
+    /**
+     * Recommendation endpoint used by the two-step wizard.
+     * GET /api/public/recommendations?budgetLevel=&climate=
+     */
+    getRecommendations: (budgetLevel, climate) =>
+        apiClient
+            .get('/public/recommendations', { params: { budgetLevel, climate } })
+            .then((r) => r.data),
 
     // ── Admin endpoints (ADMIN role required) ────────────────────────────────
 
