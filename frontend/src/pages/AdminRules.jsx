@@ -1,0 +1,470 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import ruleService from '../services/ruleService';
+import catalogService from '../services/catalogService';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
+const EMPTY_RULE_FORM = {
+    name: '',
+    description: '',
+    ruleType: 'SOFT_PREFERENCE',
+    ruleStatus: 'ACTIVE',
+    targetScope: 'GLOBAL',
+    targetCategoryName: '',
+    combinationType: 'ALL',
+    dynamicAttribute: 'budget',
+    priority: 10,
+    weight: 10,
+    conditions: []
+};
+
+const OPERATORS = ['EQUALS', 'NOT_EQUALS', 'GREATER_THAN', 'LESS_THAN', 'GREATER_OR_EQUAL', 'LESS_OR_EQUAL', 'IN', 'CONTAINS'];
+const INPUT_ATTRIBUTES = ['budget', 'climate', 'style', 'durabilityPreference', 'maintenancePreference'];
+const PRODUCT_ATTRIBUTES = ['budgetLevel', 'climateSuitability', 'style', 'durabilityRating', 'maintenanceLevel', 'categoryName'];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Toast
+// ─────────────────────────────────────────────────────────────────────────────
+function Toast({ toast }) {
+    if (!toast.msg) return null;
+    return (
+        <div style={{
+            position: 'fixed', top: 80, right: 24, zIndex: 9999,
+            padding: '12px 20px', borderRadius: 12, fontSize: '0.85rem', fontWeight: 500,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            background: toast.isError ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',
+            color: toast.isError ? '#f87171' : '#4ade80',
+            border: `1px solid ${toast.isError ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)'}`,
+        }}>
+            {toast.msg}
+        </div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rule Form Modal
+// ─────────────────────────────────────────────────────────────────────────────
+function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
+    const isEdit = Boolean(editingRule);
+    const [form, setForm] = useState(() => {
+        if (isEdit) {
+            return {
+                ...editingRule,
+                conditions: editingRule.conditions ? [...editingRule.conditions] : []
+            };
+        }
+        return { ...EMPTY_RULE_FORM, conditions: [{ operandSource: 'PRODUCT', attributeName: '', operator: 'EQUALS', expectedValue: '' }] };
+    });
+
+    const [errors, setErrors] = useState({});
+    const [submitting, setSubmitting] = useState(false);
+
+    const set = (field) => (e) => {
+        const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+        setForm((f) => ({ ...f, [field]: value }));
+    };
+
+    const addCondition = () => {
+        setForm(f => ({ ...f, conditions: [...f.conditions, { operandSource: 'PRODUCT', attributeName: '', operator: 'EQUALS', expectedValue: '' }] }));
+    };
+
+    const updateCondition = (index, field, value) => {
+        setForm(f => {
+            const newCond = [...f.conditions];
+            newCond[index][field] = value;
+            return { ...f, conditions: newCond };
+        });
+    };
+
+    const removeCondition = (index) => {
+        setForm(f => ({ ...f, conditions: f.conditions.filter((_, i) => i !== index) }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setErrors({});
+        setSubmitting(true);
+        try {
+            const payload = { ...form };
+            if (payload.targetScope === 'GLOBAL') {
+                payload.targetCategoryName = null;
+            }
+            if (payload.ruleType === 'HARD_CONSTRAINT') {
+                payload.weight = 0; // Not used for hard constraints
+            }
+            if (payload.combinationType === 'NONE') {
+                payload.conditions = []; // Ignore conditions if using a dynamic attribute
+            } else {
+                payload.dynamicAttribute = null; // Ignore dynamic attribute if using conditions
+            }
+
+            let result;
+            if (isEdit) {
+                result = await ruleService.updateRule(editingRule.id, payload);
+            } else {
+                result = await ruleService.createRule(payload);
+            }
+            onSuccess(`Rule "${result.name}" ${isEdit ? 'updated' : 'created'} successfully! ✅`, result);
+            onClose();
+        } catch (err) {
+            setErrors({ _general: err?.response?.data?.message || `Failed to ${isEdit ? 'update' : 'create'} rule.` });
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const inp = (field) => ({
+        width: '100%', padding: '8px 12px', borderRadius: 8,
+        background: 'var(--color-surface-alt)',
+        border: errors[field] ? '2px solid #ef4444' : '2px solid #c4b5fd',
+        color: '#3b0764', fontSize: '0.85rem', outline: 'none', fontWeight: 500, boxSizing: 'border-box'
+    });
+    const lbl = { display: 'block', color: '#4c1d95', fontSize: '0.8rem', mb: 4, fontWeight: 700 };
+
+    return (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+            <div className="glass" style={{ background: 'var(--color-surface)', border: '2px solid #a78bfa', borderRadius: 16, padding: '2rem', width: '100%', maxWidth: 800, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 40px rgba(139,92,246,0.15)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h2 style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--color-text)' }}>
+                        {isEdit ? `✏️ Edit Rule: ${editingRule.name}` : '➕ Create New Rule'}
+                    </h2>
+                    <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1.4rem' }}>✕</button>
+                </div>
+
+                {errors._general && (
+                    <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', color: '#f87171', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                        ⚠ {errors._general}
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    
+                    {/* Basic Info */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem' }}>
+                        <div>
+                            <label style={lbl}>Rule Name *</label>
+                            <input value={form.name} onChange={set('name')} style={inp('name')} placeholder="e.g. Budget Strict Match" required />
+                        </div>
+                        <div>
+                            <label style={lbl}>Description</label>
+                            <input value={form.description} onChange={set('description')} style={inp('description')} placeholder="Explains what this rule does" />
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <label style={lbl}>Rule Type *</label>
+                            <select value={form.ruleType} onChange={set('ruleType')} style={inp('ruleType')} required>
+                                <option value="HARD_CONSTRAINT">HARD_CONSTRAINT (Excludes if match fails)</option>
+                                <option value="SOFT_PREFERENCE">SOFT_PREFERENCE (Adds points to score)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style={lbl}>Priority (Higher = run first) *</label>
+                            <input type="number" value={form.priority} onChange={set('priority')} style={inp('priority')} required />
+                        </div>
+                        <div>
+                            <label style={lbl}>Weight (For Soft Prefs)</label>
+                            <input type="number" disabled={form.ruleType === 'HARD_CONSTRAINT'} value={form.weight} onChange={set('weight')} style={{...inp('weight'), opacity: form.ruleType === 'HARD_CONSTRAINT' ? 0.5 : 1}} />
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <label style={lbl}>Target Scope *</label>
+                            <select value={form.targetScope} onChange={set('targetScope')} style={inp('targetScope')} required>
+                                <option value="GLOBAL">GLOBAL (Applies to all products)</option>
+                                <option value="CATEGORY">CATEGORY (Only applies to specific category)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style={lbl}>Target Category</label>
+                            <select disabled={form.targetScope === 'GLOBAL'} value={form.targetCategoryName || ''} onChange={set('targetCategoryName')} style={{...inp('targetCategoryName'), opacity: form.targetScope === 'GLOBAL' ? 0.5 : 1}} required={form.targetScope === 'CATEGORY'}>
+                                <option value="">Select category...</option>
+                                {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={lbl}>Combination Type *</label>
+                            <select value={form.combinationType} onChange={set('combinationType')} style={inp('combinationType')} required>
+                                <option value="ALL">ALL (All conditions must match)</option>
+                                <option value="ANY">ANY (At least one condition must match)</option>
+                                <option value="NONE">NONE (Dynamic Attribute Target)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Dynamic Target Attribute (Visible only if NONE) */}
+                    {form.combinationType === 'NONE' && (
+                        <div style={{ background: 'rgba(56,189,248,0.1)', padding: 16, borderRadius: 12, border: '1px solid rgba(56,189,248,0.3)', marginTop: 8 }}>
+                            <label style={lbl}>Dynamic Target Attribute *</label>
+                            <p style={{ fontSize: '0.75rem', color: '#6290A0', marginBottom: 10 }}>This rule will dynamically evaluate the user's input against the product's corresponding attribute.</p>
+                            <select value={form.dynamicAttribute || 'budget'} onChange={set('dynamicAttribute')} style={inp('dynamicAttribute')} required>
+                                {INPUT_ATTRIBUTES.map(attr => <option key={attr} value={attr}>{attr}</option>)}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Conditions Builder (Hidden if NONE) */}
+                    {form.combinationType !== 'NONE' && (
+                        <div style={{ marginTop: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <label style={{ ...lbl, margin: 0 }}>Conditions *</label>
+                                <button type="button" onClick={addCondition} style={{ padding: '4px 10px', fontSize: '0.75rem', borderRadius: 6, background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.3)', cursor: 'pointer', fontWeight: 600 }}>
+                                    + Add Condition
+                                </button>
+                            </div>
+                            
+                            {form.conditions.length === 0 && (
+                                <div style={{ fontSize: '0.8rem', color: '#ef4444', padding: '10px', background: 'rgba(239,68,68,0.1)', borderRadius: 8 }}>
+                                    At least one condition is required.
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {form.conditions.map((cond, index) => (
+                                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1.2fr 1.5fr auto', gap: 8, alignItems: 'center', background: 'var(--color-surface-alt)', padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.05)' }}>
+                                        
+                                        <select value={cond.operandSource} onChange={(e) => updateCondition(index, 'operandSource', e.target.value)} style={inp(`cond_${index}_source`)} required>
+                                            <option value="PRODUCT">PRODUCT</option>
+                                            <option value="INPUT">INPUT (Profile)</option>
+                                        </select>
+                                        
+                                        <select value={cond.attributeName} onChange={(e) => updateCondition(index, 'attributeName', e.target.value)} style={inp(`cond_${index}_attr`)} required>
+                                            <option value="">Select Attribute...</option>
+                                            {(cond.operandSource === 'PRODUCT' ? PRODUCT_ATTRIBUTES : INPUT_ATTRIBUTES).map(attr => (
+                                                <option key={attr} value={attr}>{attr}</option>
+                                            ))}
+                                        </select>
+
+                                        <select value={cond.operator} onChange={(e) => updateCondition(index, 'operator', e.target.value)} style={inp(`cond_${index}_op`)} required>
+                                            {OPERATORS.map(op => <option key={op} value={op}>{op}</option>)}
+                                        </select>
+
+                                        <input value={cond.expectedValue} onChange={(e) => updateCondition(index, 'expectedValue', e.target.value)} style={inp(`cond_${index}_val`)} placeholder="Expected Value" required />
+                                        
+                                        <button type="button" onClick={() => removeCondition(index)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '1.2rem', padding: '0 4px' }} title="Remove condition">✕</button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 16 }}>
+                        <button type="button" onClick={onClose}
+                            style={{ padding: '10px 22px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', cursor: 'pointer' }}>
+                            Cancel
+                        </button>
+                        <button type="submit" disabled={submitting || (form.combinationType !== 'NONE' && form.conditions.length === 0)}
+                            style={{ padding: '10px 28px', borderRadius: 8, background: 'linear-gradient(135deg, #6c63ff, #a855f7)', border: 'none', color: '#fff', fontWeight: 600, cursor: submitting || (form.combinationType !== 'NONE' && form.conditions.length === 0) ? 'not-allowed' : 'pointer', opacity: submitting || (form.combinationType !== 'NONE' && form.conditions.length === 0) ? 0.7 : 1 }}>
+                            {submitting ? 'Saving...' : 'Save Rule'}
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin Rules Page
+// ─────────────────────────────────────────────────────────────────────────────
+export default function AdminRules() {
+    const { isAdmin } = useAuth();
+    const navigate = useNavigate();
+
+    const [rules, setRules] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [editingRule, setEditingRule] = useState(null);
+    const [toast, setToast] = useState({ msg: '', isError: false });
+
+    const showToast = (msg, isError = false) => {
+        setToast({ msg, isError });
+        setTimeout(() => setToast({ msg: '', isError: false }), 4000);
+    };
+
+    useEffect(() => {
+        if (!isAdmin) {
+            navigate('/login');
+            return;
+        }
+
+        Promise.all([
+            ruleService.getAllRules(),
+            catalogService.getCategories()
+        ])
+        .then(([r, cats]) => {
+            setRules(r);
+            setCategories(cats);
+        })
+        .catch((err) => console.error('Could not load rules data:', err))
+        .finally(() => setLoading(false));
+    }, [isAdmin, navigate]);
+
+    const openCreate = () => { setEditingRule(null); setShowModal(true); };
+    const openEdit = (rule) => { setEditingRule(rule); setShowModal(true); };
+    const closeModal = () => { setShowModal(false); setEditingRule(null); };
+
+    const handleFormSuccess = (msg, updatedRule) => {
+        showToast(msg);
+        if (editingRule) {
+            setRules(prev => prev.map(r => r.id === updatedRule.id ? updatedRule : r));
+        } else {
+            setRules(prev => [...prev, updatedRule]);
+        }
+    };
+
+    const handleToggleStatus = async (rule) => {
+        const newStatus = rule.ruleStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+        try {
+            const updated = await ruleService.toggleRuleStatus(rule.id, newStatus);
+            showToast(`Rule "${updated.name}" is now ${newStatus}`);
+            setRules(prev => prev.map(r => r.id === updated.id ? updated : r));
+        } catch {
+            showToast('Failed to toggle rule status.', true);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="spinner" />
+                <p style={{ color: '#64748b', marginLeft: 16 }}>Loading rules...</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="light-theme" style={{ minHeight: '100vh', background: 'var(--bg-color)', padding: '7rem 1.5rem 3rem', position: 'relative' }}>
+            <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+                <Toast toast={toast} />
+                
+                {showModal && (
+                    <RuleFormModal 
+                        editingRule={editingRule} 
+                        categories={categories} 
+                        onClose={closeModal} 
+                        onSuccess={handleFormSuccess} 
+                    />
+                )}
+
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: 16 }}>
+                    <div>
+                        <p style={{ color: '#38bdf8', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>
+                            Recommendation Engine
+                        </p>
+                        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', color: 'var(--color-text)', marginBottom: 4 }}>
+                            Manage Rules
+                        </h1>
+                        <p style={{ color: 'var(--color-muted)', fontSize: '0.85rem' }}>
+                            Define constraints and preferences affecting recommendation scoring.
+                        </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <button onClick={() => navigate('/admin')}
+                            style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#64748b', cursor: 'pointer', fontSize: '0.9rem' }}>
+                            ← Back to Dashboard
+                        </button>
+                        <button onClick={openCreate}
+                            style={{ padding: '10px 22px', borderRadius: 10, background: 'linear-gradient(135deg, #0ea5e9, #3b82f6)', border: 'none', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
+                            + Create Rule
+                        </button>
+                    </div>
+                </div>
+
+                {/* Rules Table */}
+                <div className="glass" style={{ overflow: 'hidden', borderRadius: 14, border: '2px solid #38bdf8', boxShadow: '0 4px 12px rgba(56,189,248,0.1)' }}>
+                    <div style={{ padding: '1rem 1.5rem', borderBottom: '2px solid #38bdf8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-surface)' }}>
+                        <h2 style={{ fontWeight: 600, color: 'var(--color-text)', fontSize: '0.95rem' }}>Engine Rules</h2>
+                        <span style={{ color: 'var(--color-muted)', fontSize: '0.78rem' }}>{rules.length} total</span>
+                    </div>
+
+                    {rules.length === 0 ? (
+                        <div style={{ padding: '4rem', textAlign: 'center', color: '#475569' }}>
+                            <p style={{ fontSize: '2.5rem', marginBottom: 12 }}>🧩</p>
+                            <p style={{ color: '#64748b' }}>No rules created yet.</p>
+                            <p style={{ fontSize: '0.78rem', marginTop: 8 }}>Click <strong style={{ color: '#38bdf8' }}>+ Create Rule</strong> to begin configuring the matching logic.</p>
+                        </div>
+                    ) : (
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', background: 'var(--color-surface)' }}>
+                                <thead>
+                                    <tr style={{ color: 'var(--color-muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.08em', borderBottom: '1px solid var(--color-border)' }}>
+                                        <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Rule Name</th>
+                                        <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Type</th>
+                                        <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Scope</th>
+                                        <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Priority</th>
+                                        <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Status</th>
+                                        <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {rules.sort((a,b) => b.priority - a.priority).map((r) => (
+                                        <tr key={r.id} style={{ borderBottom: '1px solid var(--color-border)', transition: 'background 0.15s' }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-alt)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                                            <td style={{ padding: '14px 16px', color: 'var(--color-text)', fontWeight: 500 }}>
+                                                {r.name}
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)', marginTop: 4, fontWeight: 400 }}>
+                                                    {r.description && <span>{r.description}</span>}
+                                                    {r.combinationType === 'NONE' && r.dynamicAttribute && (
+                                                        <span style={{ display: 'block', color: '#0ea5e9', marginTop: 2 }}>🔗 Dynamic Attribute: {r.dynamicAttribute}</span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '14px 16px' }}>
+                                                <span style={{
+                                                    padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700,
+                                                    background: r.ruleType === 'HARD_CONSTRAINT' ? 'rgba(239,68,68,0.1)' : 'rgba(168,85,247,0.1)',
+                                                    color: r.ruleType === 'HARD_CONSTRAINT' ? '#ef4444' : '#a855f7'
+                                                }}>
+                                                    {r.ruleType === 'HARD_CONSTRAINT' ? 'CONSTRAINT' : `PREFERENCE (+${r.weight})`}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '14px 16px', color: 'var(--color-muted)', fontSize: '0.8rem' }}>
+                                                {r.targetScope === 'GLOBAL' ? '🌍 GLOBAL' : `🏷️ ${r.targetCategoryName || 'CATEGORY'}`}
+                                            </td>
+                                            <td style={{ padding: '14px 16px', color: 'var(--color-text)', fontWeight: 600 }}>
+                                                {r.priority}
+                                            </td>
+                                            <td style={{ padding: '14px 16px' }}>
+                                                <button
+                                                    onClick={() => handleToggleStatus(r)}
+                                                    title="Click to toggle status"
+                                                    style={{
+                                                        padding: '4px 12px', borderRadius: 9999, fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', border: 'none',
+                                                        background: r.ruleStatus === 'ACTIVE' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+                                                        color: r.ruleStatus === 'ACTIVE' ? '#4ade80' : '#f87171',
+                                                        transition: 'all 0.2s',
+                                                    }}>
+                                                    {r.ruleStatus === 'ACTIVE' ? '🟢 Active' : '⚪ Inactive'}
+                                                </button>
+                                            </td>
+                                            <td style={{ padding: '14px 16px' }}>
+                                                <button
+                                                    onClick={() => openEdit(r)}
+                                                    style={{ padding: '5px 14px', borderRadius: 8, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 500, background: 'rgba(56,189,248,0.12)', border: '1px solid rgba(56,189,248,0.3)', color: '#38bdf8', transition: 'all 0.2s' }}
+                                                    onMouseEnter={(e) => e.target.style.background = 'rgba(56,189,248,0.25)'}
+                                                    onMouseLeave={(e) => e.target.style.background = 'rgba(56,189,248,0.12)'}>
+                                                    ✏️ Edit
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}

@@ -88,7 +88,7 @@ public class DataSeeder implements ApplicationRunner {
         seedCategories();
         removeDeprecatedBrands();
         seedBrands();
-        //seedDemoProducts();
+        seedDemoProducts();
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -155,7 +155,7 @@ public class DataSeeder implements ApplicationRunner {
      * <p>Rule: only runs when there are no products in the database so that it never
      * overwrites or duplicates real data.</p>
      */
-    /* 
+    
     private void seedDemoProducts() {
         long existing = productRepository.count();
         if (existing > 0) {
@@ -214,5 +214,5 @@ public class DataSeeder implements ApplicationRunner {
 
         log.info("DataSeeder: Seeded {} demo products ({} per category).", created, 10);
     } 
-        */
+        
 }

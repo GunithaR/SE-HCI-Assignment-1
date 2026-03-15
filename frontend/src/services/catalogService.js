@@ -27,12 +27,12 @@ const catalogService = {
         apiClient.get('/public/products', { params: { page, size, ...filters } }).then((r) => r.data),
 
     /**
-     * Recommendation endpoint used by the two-step wizard.
-     * GET /api/public/recommendations?budgetLevel=&climate=
+     * Recommendation endpoint used by the wizard.
+     * POST /api/public/recommendations
      */
-    getRecommendations: (budgetLevel, climate) =>
+    getRecommendations: (profile) =>
         apiClient
-            .get('/public/recommendations', { params: { budgetLevel, climate } })
+            .post('/public/recommendations', profile)
             .then((r) => r.data),
 
     // ── Admin endpoints (ADMIN role required) ────────────────────────────────
