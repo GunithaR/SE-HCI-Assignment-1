@@ -11,6 +11,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -53,6 +54,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException ex) {
         return buildError(HttpStatus.FORBIDDEN, "You do not have permission to access this resource.");
+    }
+
+    /** 400 — Invalid Rule definitions. */
+    @ExceptionHandler(InvalidRuleException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidRule(InvalidRuleException ex) {
+        return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    /** 409 — Database constraints violated (e.g. unique rule name). */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        return buildError(HttpStatus.CONFLICT, "A record with this unique value already exists (e.g. duplicate name).");
     }
 
     /** 500 — Catch-all for any unexpected exception. */
