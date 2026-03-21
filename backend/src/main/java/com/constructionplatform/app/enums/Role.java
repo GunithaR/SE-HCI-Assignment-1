@@ -1,4 +1,4 @@
-package com.constructionplatform.app.entity;
+package com.constructionplatform.app.enums;
 
 /**
  * Application-level roles used for Spring Security authority mapping.

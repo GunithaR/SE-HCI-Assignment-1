@@ -5,7 +5,7 @@ import com.constructionplatform.app.entity.Category;
 import com.constructionplatform.app.entity.Product;
 import com.constructionplatform.app.entity.ProductAttribute;
 import com.constructionplatform.app.entity.ProductAttribute.*;
-import com.constructionplatform.app.entity.Role;
+import com.constructionplatform.app.enums.Role;
 import com.constructionplatform.app.entity.Rule;
 import com.constructionplatform.app.entity.RuleCondition;
 import com.constructionplatform.app.entity.User;
