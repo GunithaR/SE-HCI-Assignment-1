@@ -30,10 +30,25 @@ const catalogService = {
      * Recommendation endpoint used by the wizard.
      * POST /api/public/recommendations
      */
-    getRecommendations: (profile) =>
+    getRecommendations: (payload) =>
         apiClient
-            .post('/public/recommendations', profile)
+            .post('/public/recommendations', payload)
             .then((r) => r.data),
+
+    /**
+     * GET /api/public/questions/categories — available recommendation categories
+     */
+    getQuestionCategories: () =>
+        apiClient.get('/public/questions/categories').then((r) => r.data),
+
+    /**
+     * GET /api/public/questions/{category} — category-specific questions
+     */
+    getQuestions: (category) =>
+        apiClient
+            .get(`/public/questions/${encodeURIComponent(category)}`)
+            .then((r) => r.data),
+
 
     // ── Admin endpoints (ADMIN role required) ────────────────────────────────
 

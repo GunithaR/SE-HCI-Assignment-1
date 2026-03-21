@@ -18,12 +18,35 @@ const EMPTY_RULE_FORM = {
     dynamicAttribute: 'budget',
     priority: 10,
     weight: 10,
+    effectType: 'ADD_SCORE',
+    effectValue: 10,
     conditions: []
 };
 
 const OPERATORS = ['EQUALS', 'NOT_EQUALS', 'GREATER_THAN', 'LESS_THAN', 'GREATER_OR_EQUAL', 'LESS_OR_EQUAL', 'IN', 'CONTAINS'];
-const INPUT_ATTRIBUTES = ['budget', 'climate', 'style', 'durabilityPreference', 'maintenancePreference'];
-const PRODUCT_ATTRIBUTES = ['budgetLevel', 'climateSuitability', 'style', 'durabilityRating', 'maintenanceLevel', 'categoryName'];
+
+const USER_INPUT_ATTRIBUTES = [
+    'budget', 'climate', 'style', 'durabilityPreference', 'maintenancePreference',
+    'location', 'concern', 'maintenance', 'flooring_usage', 'traffic',
+    'priority', 'slip_resistance', 'wall_usage', 'environment', 'goal',
+    'room_type', 'accessory_type', 'usage_duration', 'usage_environment'
+];
+
+const PRODUCT_ATTRIBUTES = [
+    'budgetLevel', 'climateSuitability', 'style', 'durabilityRating',
+    'maintenanceLevel', 'categoryName', 'material',
+    'waterResistance', 'corrosionResistance', 'heatResistance',
+    'slipResistance', 'noiseReduction', 'usageArea'
+];
+
+const EFFECT_TYPES_SOFT = [
+    { value: 'ADD_SCORE', label: 'ADD_SCORE — Adds points to product score' },
+    { value: 'DEDUCT_SCORE', label: 'DEDUCT_SCORE — Deducts points from product score' }
+];
+
+const EFFECT_TYPES_HARD = [
+    { value: 'FILTER_OUT', label: 'FILTER_OUT — Exclude product from results' }
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Toast
@@ -53,6 +76,8 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
         if (isEdit) {
             return {
                 ...editingRule,
+                effectType: editingRule.effectType || (editingRule.ruleType === 'HARD_CONSTRAINT' ? 'FILTER_OUT' : 'ADD_SCORE'),
+                effectValue: editingRule.effectValue || 10,
                 conditions: editingRule.conditions ? [...editingRule.conditions] : []
             };
         }
@@ -61,6 +86,42 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
 
     const [errors, setErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
+
+    const isHardConstraint = form.ruleType === 'HARD_CONSTRAINT';
+    const isFilterOut = form.effectType === 'FILTER_OUT';
+
+    // ── When ruleType changes, auto-adjust effect fields ───────────────────
+    const handleRuleTypeChange = (e) => {
+        const newType = e.target.value;
+        setForm(f => {
+            const updates = { ...f, ruleType: newType };
+            if (newType === 'HARD_CONSTRAINT') {
+                updates.effectType = 'FILTER_OUT';
+                updates.effectValue = null;
+                updates.weight = 0;
+            } else {
+                if (f.effectType === 'FILTER_OUT') {
+                    updates.effectType = 'ADD_SCORE';
+                }
+                if (!f.weight || f.weight === 0) {
+                    updates.weight = 10;
+                }
+                if (!f.effectValue) {
+                    updates.effectValue = 10;
+                }
+            }
+            return updates;
+        });
+    };
+
+    const handleEffectTypeChange = (e) => {
+        const val = e.target.value;
+        setForm(f => ({
+            ...f,
+            effectType: val,
+            effectValue: val === 'FILTER_OUT' ? null : (f.effectValue || 10)
+        }));
+    };
 
     const set = (field) => (e) => {
         const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -74,7 +135,11 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
     const updateCondition = (index, field, value) => {
         setForm(f => {
             const newCond = [...f.conditions];
-            newCond[index][field] = value;
+            newCond[index] = { ...newCond[index], [field]: value };
+            // Reset attributeName when source changes
+            if (field === 'operandSource') {
+                newCond[index].attributeName = '';
+            }
             return { ...f, conditions: newCond };
         });
     };
@@ -86,6 +151,18 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setErrors({});
+
+        // ── Client-side validation ───────────────────────────────────────
+        if (!form.name.trim()) {
+            setErrors({ name: 'Rule name is required' }); return;
+        }
+        if (form.combinationType !== 'NONE' && form.conditions.length === 0) {
+            setErrors({ _general: 'At least one condition is required.' }); return;
+        }
+        if (!isHardConstraint && !isFilterOut && (!form.effectValue || Number(form.effectValue) <= 0)) {
+            setErrors({ effectValue: 'Effect value must be a positive number.' }); return;
+        }
+
         setSubmitting(true);
         try {
             const payload = { ...form };
@@ -93,12 +170,21 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
                 payload.targetCategoryName = null;
             }
             if (payload.ruleType === 'HARD_CONSTRAINT') {
-                payload.weight = 0; // Not used for hard constraints
+                payload.weight = 0;
+                payload.effectType = 'FILTER_OUT';
+                payload.effectValue = null;
+            }
+            if (payload.effectType === 'FILTER_OUT') {
+                payload.effectValue = null;
             }
             if (payload.combinationType === 'NONE') {
-                payload.conditions = []; // Ignore conditions if using a dynamic attribute
+                payload.conditions = [];
             } else {
-                payload.dynamicAttribute = null; // Ignore dynamic attribute if using conditions
+                payload.dynamicAttribute = null;
+            }
+            // Ensure effectValue is a number
+            if (payload.effectValue !== null && payload.effectValue !== undefined) {
+                payload.effectValue = Number(payload.effectValue);
             }
 
             let result;
@@ -122,7 +208,9 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
         border: errors[field] ? '2px solid #ef4444' : '2px solid #c4b5fd',
         color: '#3b0764', fontSize: '0.85rem', outline: 'none', fontWeight: 500, boxSizing: 'border-box'
     });
-    const lbl = { display: 'block', color: '#4c1d95', fontSize: '0.8rem', mb: 4, fontWeight: 700 };
+    const lbl = { display: 'block', color: '#4c1d95', fontSize: '0.8rem', marginBottom: 4, fontWeight: 700 };
+
+    const availableEffects = isHardConstraint ? EFFECT_TYPES_HARD : EFFECT_TYPES_SOFT;
 
     return (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
@@ -142,7 +230,7 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     
-                    {/* Basic Info */}
+                    {/* ─── Basic Info ──────────────────────────────────────────── */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem' }}>
                         <div>
                             <label style={lbl}>Rule Name *</label>
@@ -154,12 +242,13 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
                         </div>
                     </div>
 
+                    {/* ─── Rule Type / Priority / Weight ──────────────────────── */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                         <div>
                             <label style={lbl}>Rule Type *</label>
-                            <select value={form.ruleType} onChange={set('ruleType')} style={inp('ruleType')} required>
-                                <option value="HARD_CONSTRAINT">HARD_CONSTRAINT (Excludes if match fails)</option>
-                                <option value="SOFT_PREFERENCE">SOFT_PREFERENCE (Adds points to score)</option>
+                            <select value={form.ruleType} onChange={handleRuleTypeChange} style={inp('ruleType')} required>
+                                <option value="HARD_CONSTRAINT">HARD_CONSTRAINT (Excludes if match)</option>
+                                <option value="SOFT_PREFERENCE">SOFT_PREFERENCE (Adds/deducts points)</option>
                             </select>
                         </div>
                         <div>
@@ -168,10 +257,23 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
                         </div>
                         <div>
                             <label style={lbl}>Weight (For Soft Prefs)</label>
-                            <input type="number" disabled={form.ruleType === 'HARD_CONSTRAINT'} value={form.weight} onChange={set('weight')} style={{...inp('weight'), opacity: form.ruleType === 'HARD_CONSTRAINT' ? 0.5 : 1}} />
+                            <input
+                                type="number"
+                                step="0.1"
+                                disabled={isHardConstraint}
+                                value={isHardConstraint ? 0 : form.weight}
+                                onChange={set('weight')}
+                                style={{ ...inp('weight'), opacity: isHardConstraint ? 0.4 : 1, cursor: isHardConstraint ? 'not-allowed' : 'text' }}
+                            />
+                            {isHardConstraint && (
+                                <p style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: 4, fontStyle: 'italic' }}>
+                                    Disabled for hard constraints
+                                </p>
+                            )}
                         </div>
                     </div>
 
+                    {/* ─── Scope / Category / Combination ─────────────────────── */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                         <div>
                             <label style={lbl}>Target Scope *</label>
@@ -182,7 +284,7 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
                         </div>
                         <div>
                             <label style={lbl}>Target Category</label>
-                            <select disabled={form.targetScope === 'GLOBAL'} value={form.targetCategoryName || ''} onChange={set('targetCategoryName')} style={{...inp('targetCategoryName'), opacity: form.targetScope === 'GLOBAL' ? 0.5 : 1}} required={form.targetScope === 'CATEGORY'}>
+                            <select disabled={form.targetScope === 'GLOBAL'} value={form.targetCategoryName || ''} onChange={set('targetCategoryName')} style={{...inp('targetCategoryName'), opacity: form.targetScope === 'GLOBAL' ? 0.4 : 1}} required={form.targetScope === 'CATEGORY'}>
                                 <option value="">Select category...</option>
                                 {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                             </select>
@@ -197,20 +299,20 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
                         </div>
                     </div>
 
-                    {/* Dynamic Target Attribute (Visible only if NONE) */}
+                    {/* ─── Dynamic Target Attribute (Visible only if NONE) ───── */}
                     {form.combinationType === 'NONE' && (
                         <div style={{ background: 'rgba(56,189,248,0.1)', padding: 16, borderRadius: 12, border: '1px solid rgba(56,189,248,0.3)', marginTop: 8 }}>
                             <label style={lbl}>Dynamic Target Attribute *</label>
-                            <p style={{ fontSize: '0.75rem', color: '#6290A0', marginBottom: 10 }}>This rule will dynamically evaluate the user's input against the product's corresponding attribute.</p>
+                            <p style={{ fontSize: '0.75rem', color: '#6290A0', marginBottom: 10 }}>This rule dynamically evaluates user input against the product's corresponding attribute.</p>
                             <select value={form.dynamicAttribute || 'budget'} onChange={set('dynamicAttribute')} style={inp('dynamicAttribute')} required>
-                                {INPUT_ATTRIBUTES.map(attr => <option key={attr} value={attr}>{attr}</option>)}
+                                {USER_INPUT_ATTRIBUTES.map(attr => <option key={attr} value={attr}>{attr}</option>)}
                             </select>
                         </div>
                     )}
 
-                    {/* Conditions Builder (Hidden if NONE) */}
+                    {/* ─── Conditions Builder (Hidden if NONE) ────────────────── */}
                     {form.combinationType !== 'NONE' && (
-                        <div style={{ marginTop: '1rem' }}>
+                        <div style={{ marginTop: '0.5rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                 <label style={{ ...lbl, margin: 0 }}>Conditions *</label>
                                 <button type="button" onClick={addCondition} style={{ padding: '4px 10px', fontSize: '0.75rem', borderRadius: 6, background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.3)', cursor: 'pointer', fontWeight: 600 }}>
@@ -226,16 +328,16 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                 {form.conditions.map((cond, index) => (
-                                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1.2fr 1.5fr auto', gap: 8, alignItems: 'center', background: 'var(--color-surface-alt)', padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1.2fr 1.5fr auto', gap: 8, alignItems: 'center', background: 'var(--color-surface-alt)', padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.05)', position: 'relative', zIndex: 10 - index }}>
                                         
                                         <select value={cond.operandSource} onChange={(e) => updateCondition(index, 'operandSource', e.target.value)} style={inp(`cond_${index}_source`)} required>
                                             <option value="PRODUCT">PRODUCT</option>
-                                            <option value="INPUT">INPUT (Profile)</option>
+                                            <option value="USER_INPUT">USER_INPUT</option>
                                         </select>
                                         
                                         <select value={cond.attributeName} onChange={(e) => updateCondition(index, 'attributeName', e.target.value)} style={inp(`cond_${index}_attr`)} required>
                                             <option value="">Select Attribute...</option>
-                                            {(cond.operandSource === 'PRODUCT' ? PRODUCT_ATTRIBUTES : INPUT_ATTRIBUTES).map(attr => (
+                                            {(cond.operandSource === 'PRODUCT' ? PRODUCT_ATTRIBUTES : USER_INPUT_ATTRIBUTES).map(attr => (
                                                 <option key={attr} value={attr}>{attr}</option>
                                             ))}
                                         </select>
@@ -253,7 +355,66 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
                         </div>
                     )}
 
-                    {/* Actions */}
+                    {/* ─── Rule Effect Section ────────────────────────────────── */}
+                    <div style={{
+                        background: isHardConstraint ? 'rgba(239,68,68,0.06)' : 'rgba(139,92,246,0.08)',
+                        padding: 16, borderRadius: 12, marginTop: '0.5rem',
+                        border: `1px solid ${isHardConstraint ? 'rgba(239,68,68,0.2)' : 'rgba(139,92,246,0.25)'}`
+                    }}>
+                        <label style={{ ...lbl, fontSize: '0.9rem', marginBottom: 2 }}>
+                            ⚡ Rule Effect
+                        </label>
+                        <p style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: 12, fontStyle: 'italic' }}>
+                            Defines how this rule affects product scoring when conditions match.
+                        </p>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: isFilterOut || isHardConstraint ? '1fr' : '1fr 1fr', gap: '1rem' }}>
+                            <div>
+                                <label style={lbl}>Effect Type *</label>
+                                <select
+                                    value={form.effectType}
+                                    onChange={handleEffectTypeChange}
+                                    style={inp('effectType')}
+                                    required
+                                    disabled={isHardConstraint}
+                                >
+                                    {availableEffects.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+                                {isHardConstraint && (
+                                    <p style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: 4, fontStyle: 'italic' }}>
+                                        Hard constraints always use FILTER_OUT
+                                    </p>
+                                )}
+                            </div>
+
+                            {!isFilterOut && !isHardConstraint && (
+                                <div>
+                                    <label style={lbl}>Effect Value *</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={form.effectValue || ''}
+                                        onChange={set('effectValue')}
+                                        style={inp('effectValue')}
+                                        placeholder="e.g. 10"
+                                        required
+                                    />
+                                    {errors.effectValue && (
+                                        <p style={{ fontSize: '0.7rem', color: '#ef4444', marginTop: 4 }}>
+                                            {errors.effectValue}
+                                        </p>
+                                    )}
+                                    <p style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: 4 }}>
+                                        Score impact = Value × Weight = {Number(form.effectValue || 0) * Number(form.weight || 0)}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ─── Actions ─────────────────────────────────────────────── */}
                     <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 16 }}>
                         <button type="button" onClick={onClose}
                             style={{ padding: '10px 22px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', cursor: 'pointer' }}>
@@ -268,6 +429,24 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
                 </form>
             </div>
         </div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Effect Badge (for the table)
+// ─────────────────────────────────────────────────────────────────────────────
+function EffectBadge({ effectType, effectValue }) {
+    if (!effectType) return <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>—</span>;
+    const colors = {
+        ADD_SCORE: { bg: 'rgba(34,197,94,0.12)', text: '#4ade80', icon: '➕' },
+        DEDUCT_SCORE: { bg: 'rgba(251,191,36,0.12)', text: '#fbbf24', icon: '➖' },
+        FILTER_OUT: { bg: 'rgba(239,68,68,0.12)', text: '#f87171', icon: '🚫' }
+    };
+    const c = colors[effectType] || colors.FILTER_OUT;
+    return (
+        <span style={{ padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 600, background: c.bg, color: c.text, whiteSpace: 'nowrap' }}>
+            {c.icon} {effectType}{effectValue ? ` (${effectValue})` : ''}
+        </span>
     );
 }
 
@@ -400,6 +579,7 @@ export default function AdminRules() {
                                     <tr style={{ color: 'var(--color-muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.08em', borderBottom: '1px solid var(--color-border)' }}>
                                         <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Rule Name</th>
                                         <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Type</th>
+                                        <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Effect</th>
                                         <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Scope</th>
                                         <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Priority</th>
                                         <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Status</th>
@@ -416,7 +596,7 @@ export default function AdminRules() {
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)', marginTop: 4, fontWeight: 400 }}>
                                                     {r.description && <span>{r.description}</span>}
                                                     {r.combinationType === 'NONE' && r.dynamicAttribute && (
-                                                        <span style={{ display: 'block', color: '#0ea5e9', marginTop: 2 }}>🔗 Dynamic Attribute: {r.dynamicAttribute}</span>
+                                                        <span style={{ display: 'block', color: '#0ea5e9', marginTop: 2 }}>🔗 Dynamic: {r.dynamicAttribute}</span>
                                                     )}
                                                 </div>
                                             </td>
@@ -426,8 +606,11 @@ export default function AdminRules() {
                                                     background: r.ruleType === 'HARD_CONSTRAINT' ? 'rgba(239,68,68,0.1)' : 'rgba(168,85,247,0.1)',
                                                     color: r.ruleType === 'HARD_CONSTRAINT' ? '#ef4444' : '#a855f7'
                                                 }}>
-                                                    {r.ruleType === 'HARD_CONSTRAINT' ? 'CONSTRAINT' : `PREFERENCE (+${r.weight})`}
+                                                    {r.ruleType === 'HARD_CONSTRAINT' ? 'CONSTRAINT' : `PREFERENCE (×${r.weight})`}
                                                 </span>
+                                            </td>
+                                            <td style={{ padding: '14px 16px' }}>
+                                                <EffectBadge effectType={r.effectType} effectValue={r.effectValue} />
                                             </td>
                                             <td style={{ padding: '14px 16px', color: 'var(--color-muted)', fontSize: '0.8rem' }}>
                                                 {r.targetScope === 'GLOBAL' ? '🌍 GLOBAL' : `🏷️ ${r.targetCategoryName || 'CATEGORY'}`}
