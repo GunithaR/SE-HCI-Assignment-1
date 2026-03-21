@@ -1,6 +1,7 @@
 package com.constructionplatform.app.entity;
 
 import com.constructionplatform.app.enums.CombinationType;
+import com.constructionplatform.app.enums.EffectType;
 import com.constructionplatform.app.enums.RuleStatus;
 import com.constructionplatform.app.enums.RuleType;
 import com.constructionplatform.app.enums.TargetScope;
@@ -50,6 +51,13 @@ public class Rule {
 
     @Column(name = "dynamic_attribute")
     private String dynamicAttribute;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "effect_type", length = 20)
+    private EffectType effectType;
+
+    @Column(name = "effect_value")
+    private Integer effectValue;
 
     @OneToMany(mappedBy = "rule", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<RuleCondition> conditions = new ArrayList<>();
@@ -143,6 +151,22 @@ public class Rule {
 
     public void setDynamicAttribute(String dynamicAttribute) {
         this.dynamicAttribute = dynamicAttribute;
+    }
+
+    public EffectType getEffectType() {
+        return effectType;
+    }
+
+    public void setEffectType(EffectType effectType) {
+        this.effectType = effectType;
+    }
+
+    public Integer getEffectValue() {
+        return effectValue;
+    }
+
+    public void setEffectValue(Integer effectValue) {
+        this.effectValue = effectValue;
     }
 
     public List<RuleCondition> getConditions() {

@@ -1,6 +1,7 @@
 package com.constructionplatform.app.dto.rule;
 
 import com.constructionplatform.app.enums.CombinationType;
+import com.constructionplatform.app.enums.EffectType;
 import com.constructionplatform.app.enums.RuleStatus;
 import com.constructionplatform.app.enums.RuleType;
 import com.constructionplatform.app.enums.TargetScope;
@@ -37,6 +38,10 @@ public class RuleCreateRequestDTO {
     private String targetCategoryName;
 
     private String dynamicAttribute;
+
+    private EffectType effectType;
+
+    private Integer effectValue;
 
     @Valid
     private List<RuleConditionDTO> conditions;
@@ -130,5 +135,21 @@ public class RuleCreateRequestDTO {
 
     public void setConditions(List<RuleConditionDTO> conditions) {
         this.conditions = conditions;
+    }
+
+    public EffectType getEffectType() {
+        return effectType;
+    }
+
+    public void setEffectType(EffectType effectType) {
+        this.effectType = effectType;
+    }
+
+    public Integer getEffectValue() {
+        return effectValue;
+    }
+
+    public void setEffectValue(Integer effectValue) {
+        this.effectValue = effectValue;
     }
 }

@@ -4,16 +4,16 @@ import com.constructionplatform.app.entity.Brand;
 import com.constructionplatform.app.entity.Category;
 import com.constructionplatform.app.entity.Product;
 import com.constructionplatform.app.entity.ProductAttribute;
-import com.constructionplatform.app.entity.ProductAttribute.BudgetLevel;
-import com.constructionplatform.app.entity.ProductAttribute.ClimateSuitability;
-import com.constructionplatform.app.entity.ProductAttribute.MaintenanceLevel;
-import com.constructionplatform.app.entity.ProductAttribute.Material;
-import com.constructionplatform.app.entity.ProductAttribute.ProductSize;
+import com.constructionplatform.app.entity.ProductAttribute.*;
 import com.constructionplatform.app.entity.Role;
+import com.constructionplatform.app.entity.Rule;
+import com.constructionplatform.app.entity.RuleCondition;
 import com.constructionplatform.app.entity.User;
+import com.constructionplatform.app.enums.*;
 import com.constructionplatform.app.repository.BrandRepository;
 import com.constructionplatform.app.repository.CategoryRepository;
 import com.constructionplatform.app.repository.ProductRepository;
+import com.constructionplatform.app.repository.RuleRepository;
 import com.constructionplatform.app.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +39,6 @@ public class DataSeeder implements ApplicationRunner {
             "Wall Solution",
             "Accessories");
 
-    /** Current active brands — replaced the early-dev placeholders. */
     private static final List<String> BASE_BRANDS = List.of(
             "PE+",
             "SIVILIMA",
@@ -47,9 +46,6 @@ public class DataSeeder implements ApplicationRunner {
             "AntonRoofing",
             "Other");
 
-    /**
-     * Old placeholder brands — removed on startup when no products reference them.
-     */
     private static final List<String> DEPRECATED_BRANDS = List.of(
             "Asian Paints",
             "Saint-Gobain",
@@ -61,6 +57,7 @@ public class DataSeeder implements ApplicationRunner {
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
     private final ProductRepository productRepository;
+    private final RuleRepository ruleRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.seed.admin-email:admin@platform.com}")
@@ -73,11 +70,13 @@ public class DataSeeder implements ApplicationRunner {
             CategoryRepository categoryRepository,
             BrandRepository brandRepository,
             ProductRepository productRepository,
+            RuleRepository ruleRepository,
             PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.brandRepository = brandRepository;
         this.productRepository = productRepository;
+        this.ruleRepository = ruleRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -89,9 +88,8 @@ public class DataSeeder implements ApplicationRunner {
         removeDeprecatedBrands();
         seedBrands();
         seedDemoProducts();
+        seedSampleRules();
     }
-
-    // ── Private helpers ───────────────────────────────────────────────────────
 
     private void seedAdminUser() {
         if (userRepository.existsByEmail(adminEmail)) {
@@ -105,7 +103,6 @@ public class DataSeeder implements ApplicationRunner {
                 .build();
         userRepository.save(admin);
         log.info("DataSeeder: Default Admin account created → email=[{}]", adminEmail);
-        log.warn("DataSeeder: Change the default admin password before deploying to production!");
     }
 
     private void seedCategories() {
@@ -119,13 +116,7 @@ public class DataSeeder implements ApplicationRunner {
         }
     }
 
-    /**
-     * Removes old placeholder brands that were seeded during early development.
-     * A brand is only deleted if no products currently reference it, to avoid
-     * orphaning existing data.
-     */
     private void removeDeprecatedBrands() {
-        // Only safe to delete when no products exist (otherwise FK constraints may fail).
         if (productRepository.count() > 0) {
             log.debug("DataSeeder: Products exist — skipping deprecated brand cleanup.");
             return;
@@ -149,70 +140,274 @@ public class DataSeeder implements ApplicationRunner {
         }
     }
 
-    /**
-     * Seeds some demo product catalog for development.
-     *
-     * <p>Rule: only runs when there are no products in the database so that it never
-     * overwrites or duplicates real data.</p>
-     */
-    
     private void seedDemoProducts() {
         long existing = productRepository.count();
         if (existing > 0) {
-            log.info("DataSeeder: Products already exist (count={}) — skipping demo product seeding.", existing);
+            log.info("DataSeeder: Products already exist (count={}) — skipping.", existing);
             return;
         }
 
         List<Category> categories = categoryRepository.findAll();
         List<Brand> brands = brandRepository.findAll();
         if (categories.isEmpty() || brands.isEmpty()) {
-            log.warn("DataSeeder: Cannot seed products — categories or brands are missing.");
+            log.warn("DataSeeder: Cannot seed — categories or brands missing.");
             return;
         }
 
-        ProductSize[] sizes = ProductSize.values();
-        Material[] materials = Material.values();
-        MaintenanceLevel[] maint = MaintenanceLevel.values();
-
         int created = 0;
-        for (int c = 0; c < categories.size(); c++) {
-            Category category = categories.get(c);
-
-            for (int i = 0; i < 10; i++) {
-                Brand brand = brands.get((c * 10 + i) % brands.size());
-
-                BigDecimal price = BigDecimal.valueOf(50 + (c * 120) + (i * 15));
-                BudgetLevel budget = price.compareTo(BigDecimal.valueOf(200)) < 0
-                        ? BudgetLevel.LOW
-                        : price.compareTo(BigDecimal.valueOf(500)) < 0 ? BudgetLevel.MEDIUM : BudgetLevel.HIGH;
-
-                Product product = Product.builder()
-                        .category(category)
-                        .brand(brand)
-                        .name(category.getName() + " Demo Product " + (i + 1))
-                        .description("Seeded demo product for development/testing.")
-                        .basePrice(price)
-                        .isActive(true)
-                        .build();
-
-                ProductAttribute attr = ProductAttribute.builder()
-                        .product(product)
-                        .budgetLevel(budget)
-                        .durabilityRating(Math.min(10, (i % 10) + 1))
-                        .climateSuitability(ClimateSuitability.ALL)
-                        .maintenanceLevel(maint[i % maint.length])
-                        .style((i % 2 == 0) ? "Modern" : "Classic")
-                        .size(sizes[i % sizes.length])
-                        .material(materials[i % materials.length])
-                        .build();
-
-                product.setAttribute(attr);
-                productRepository.save(product);
-                created++;
+        for (Category cat : categories) {
+            String catName = cat.getName();
+            switch (catName) {
+                case "Roofing Solution" -> created += seedRoofingProducts(cat, brands);
+                case "Flooring Solution" -> created += seedFlooringProducts(cat, brands);
+                case "Wall Solution" -> created += seedWallProducts(cat, brands);
+                case "Ceiling Solution" -> created += seedCeilingProducts(cat, brands);
+                case "Accessories" -> created += seedAccessoriesProducts(cat, brands);
+                default -> log.warn("DataSeeder: Unknown category '{}'", catName);
             }
         }
+        log.info("DataSeeder: Seeded {} realistic demo products.", created);
+    }
 
-        log.info("DataSeeder: Seeded {} demo products ({} per category).", created, 10);
-    } 
-        
+    // ── Roofing Products ─────────────────────────────────────────────────────
+
+    private int seedRoofingProducts(Category cat, List<Brand> brands) {
+        Object[][] data = {
+            // name, price, budget, durability, climate, maintenance, style, material,
+            // waterRes, corrosionRes, heatRes, slipRes, noiseRed
+            {"Metal Sheet Roofing", 120, BudgetLevel.LOW, 6, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Industrial", Material.STEEL,
+             ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Clay Tile Roof", 350, BudgetLevel.MEDIUM, 8, ClimateSuitability.TROPICAL, MaintenanceLevel.MEDIUM, "Traditional", Material.CERAMIC,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM},
+            {"Asphalt Shingle Roof", 200, BudgetLevel.LOW, 5, ClimateSuitability.TEMPERATE, MaintenanceLevel.LOW, "Modern", Material.OTHER,
+             ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.MEDIUM},
+            {"Concrete Flat Roof", 450, BudgetLevel.MEDIUM, 9, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.CONCRETE,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.HIGH},
+            {"Polycarbonate Roof Sheet", 180, BudgetLevel.LOW, 4, ClimateSuitability.TROPICAL, MaintenanceLevel.LOW, "Modern", Material.PVC,
+             ResistanceLevel.MEDIUM, ResistanceLevel.HIGH, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Premium Copper Roof", 800, BudgetLevel.HIGH, 10, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Traditional", Material.OTHER,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM},
+            {"Aluminum Standing Seam", 550, BudgetLevel.HIGH, 9, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.ALUMINUM,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.MEDIUM},
+            {"Wooden Shingle Roof", 300, BudgetLevel.MEDIUM, 6, ClimateSuitability.TEMPERATE, MaintenanceLevel.HIGH, "Natural", Material.WOOD,
+             ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.HIGH},
+            {"Fiber Cement Roof", 250, BudgetLevel.MEDIUM, 7, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.CONCRETE,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM},
+            {"Thatch Roof Panel", 160, BudgetLevel.LOW, 3, ClimateSuitability.TROPICAL, MaintenanceLevel.HIGH, "Natural", Material.OTHER,
+             ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.HIGH, ResistanceLevel.LOW, ResistanceLevel.HIGH},
+        };
+        return seedProducts(cat, brands, data);
+    }
+
+    // ── Flooring Products ────────────────────────────────────────────────────
+
+    private int seedFlooringProducts(Category cat, List<Brand> brands) {
+        Object[][] data = {
+            {"Ceramic Floor Tile", 80, BudgetLevel.LOW, 7, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.CERAMIC,
+             ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM, ResistanceLevel.LOW},
+            {"Porcelain Floor Tile", 150, BudgetLevel.MEDIUM, 9, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.CERAMIC,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.LOW},
+            {"Hardwood Flooring", 400, BudgetLevel.HIGH, 7, ClimateSuitability.TEMPERATE, MaintenanceLevel.HIGH, "Wooden", Material.WOOD,
+             ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.MEDIUM},
+            {"Vinyl Plank Flooring", 60, BudgetLevel.LOW, 5, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Wooden", Material.PVC,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.LOW, ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM},
+            {"Natural Stone Floor", 500, BudgetLevel.HIGH, 10, ClimateSuitability.ALL, MaintenanceLevel.MEDIUM, "Marble", Material.OTHER,
+             ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM, ResistanceLevel.HIGH, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Laminate Flooring", 90, BudgetLevel.LOW, 4, ClimateSuitability.TEMPERATE, MaintenanceLevel.LOW, "Wooden", Material.OTHER,
+             ResistanceLevel.LOW, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.MEDIUM},
+            {"Concrete Polished Floor", 200, BudgetLevel.MEDIUM, 9, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Industrial", Material.CONCRETE,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.LOW},
+            {"Terracotta Floor Tile", 130, BudgetLevel.MEDIUM, 6, ClimateSuitability.TROPICAL, MaintenanceLevel.MEDIUM, "Rustic", Material.CERAMIC,
+             ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.LOW},
+            {"Rubber Flooring", 70, BudgetLevel.LOW, 6, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.OTHER,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.LOW, ResistanceLevel.HIGH, ResistanceLevel.HIGH},
+            {"Marble Floor Tile", 600, BudgetLevel.HIGH, 8, ClimateSuitability.ALL, MaintenanceLevel.MEDIUM, "Marble", Material.OTHER,
+             ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.LOW},
+        };
+        return seedProducts(cat, brands, data);
+    }
+
+    // ── Wall Products ────────────────────────────────────────────────────────
+
+    private int seedWallProducts(Category cat, List<Brand> brands) {
+        Object[][] data = {
+            {"PVC Wall Panel", 50, BudgetLevel.LOW, 5, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.PVC,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Ceramic Wall Tile", 100, BudgetLevel.MEDIUM, 7, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.CERAMIC,
+             ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM, ResistanceLevel.LOW},
+            {"Wooden Wall Cladding", 250, BudgetLevel.MEDIUM, 6, ClimateSuitability.TEMPERATE, MaintenanceLevel.HIGH, "Wooden", Material.WOOD,
+             ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.MEDIUM},
+            {"Brick Veneer Wall", 180, BudgetLevel.MEDIUM, 8, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Textured", Material.BRICK,
+             ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM},
+            {"Glass Wall Panel", 400, BudgetLevel.HIGH, 6, ClimateSuitability.TEMPERATE, MaintenanceLevel.MEDIUM, "Modern", Material.GLASS,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Concrete Textured Wall", 120, BudgetLevel.LOW, 9, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Industrial", Material.CONCRETE,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM},
+            {"Decorative Wallpaper", 40, BudgetLevel.LOW, 3, ClimateSuitability.TEMPERATE, MaintenanceLevel.MEDIUM, "Minimal", Material.OTHER,
+             ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Stone Wall Cladding", 350, BudgetLevel.HIGH, 9, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Natural", Material.OTHER,
+             ResistanceLevel.MEDIUM, ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM},
+            {"Aluminum Composite Panel", 300, BudgetLevel.MEDIUM, 7, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.ALUMINUM,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Gypsum Plaster Wall", 80, BudgetLevel.LOW, 5, ClimateSuitability.TEMPERATE, MaintenanceLevel.MEDIUM, "Minimal", Material.OTHER,
+             ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.MEDIUM},
+        };
+        return seedProducts(cat, brands, data);
+    }
+
+    // ── Ceiling Products ─────────────────────────────────────────────────────
+
+    private int seedCeilingProducts(Category cat, List<Brand> brands) {
+        Object[][] data = {
+            {"PVC Ceiling Panel", 45, BudgetLevel.LOW, 5, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.PVC,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Gypsum False Ceiling", 120, BudgetLevel.MEDIUM, 6, ClimateSuitability.TEMPERATE, MaintenanceLevel.MEDIUM, "Modern", Material.OTHER,
+             ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.HIGH},
+            {"Wooden Ceiling Panel", 280, BudgetLevel.MEDIUM, 7, ClimateSuitability.TEMPERATE, MaintenanceLevel.HIGH, "Traditional", Material.WOOD,
+             ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.HIGH},
+            {"Metal Grid Ceiling", 200, BudgetLevel.MEDIUM, 8, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Industrial", Material.ALUMINUM,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.MEDIUM},
+            {"Acoustic Ceiling Tile", 150, BudgetLevel.MEDIUM, 6, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Minimal", Material.OTHER,
+             ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.HIGH},
+            {"Fiber Cement Board Ceiling", 100, BudgetLevel.LOW, 7, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.CONCRETE,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.MEDIUM},
+            {"Stretch Ceiling Film", 350, BudgetLevel.HIGH, 5, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.PVC,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.MEDIUM},
+            {"Bamboo Ceiling Panel", 180, BudgetLevel.MEDIUM, 5, ClimateSuitability.TROPICAL, MaintenanceLevel.MEDIUM, "Natural", Material.WOOD,
+             ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.MEDIUM},
+            {"Mineral Fiber Ceiling", 90, BudgetLevel.LOW, 5, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Minimal", Material.OTHER,
+             ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.HIGH},
+            {"Glass Ceiling Panel", 500, BudgetLevel.HIGH, 6, ClimateSuitability.TEMPERATE, MaintenanceLevel.MEDIUM, "Modern", Material.GLASS,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW},
+        };
+        return seedProducts(cat, brands, data);
+    }
+
+    // ── Accessories Products ─────────────────────────────────────────────────
+
+    private int seedAccessoriesProducts(Category cat, List<Brand> brands) {
+        Object[][] data = {
+            {"Stainless Steel Screws Pack", 15, BudgetLevel.LOW, 8, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Industrial", Material.STEEL,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Silicone Sealant Tube", 12, BudgetLevel.LOW, 5, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.OTHER,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Decorative Wall Hook Set", 25, BudgetLevel.LOW, 4, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.STEEL,
+             ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Premium Door Handle", 80, BudgetLevel.MEDIUM, 7, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.STEEL,
+             ResistanceLevel.MEDIUM, ResistanceLevel.HIGH, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Edge Trim Profile", 18, BudgetLevel.LOW, 6, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Minimal", Material.ALUMINUM,
+             ResistanceLevel.MEDIUM, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Heavy Duty Wall Anchors", 20, BudgetLevel.LOW, 9, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Industrial", Material.STEEL,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Brass Cabinet Knobs", 45, BudgetLevel.MEDIUM, 6, ClimateSuitability.ALL, MaintenanceLevel.MEDIUM, "Traditional", Material.OTHER,
+             ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Outdoor Waterproof Tape", 10, BudgetLevel.LOW, 3, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Industrial", Material.OTHER,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Designer Light Switch Plate", 35, BudgetLevel.MEDIUM, 5, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Modern", Material.PVC,
+             ResistanceLevel.MEDIUM, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.LOW, ResistanceLevel.LOW},
+            {"Premium Grout Mix", 30, BudgetLevel.MEDIUM, 7, ClimateSuitability.ALL, MaintenanceLevel.LOW, "Minimal", Material.OTHER,
+             ResistanceLevel.HIGH, ResistanceLevel.HIGH, ResistanceLevel.MEDIUM, ResistanceLevel.LOW, ResistanceLevel.LOW},
+        };
+        return seedProducts(cat, brands, data);
+    }
+
+    // ── Helper ───────────────────────────────────────────────────────────────
+
+    private int seedProducts(Category cat, List<Brand> brands, Object[][] data) {
+        int count = 0;
+        for (int i = 0; i < data.length; i++) {
+            Object[] d = data[i];
+            Brand brand = brands.get(i % brands.size());
+
+            Product product = Product.builder()
+                    .category(cat)
+                    .brand(brand)
+                    .name((String) d[0])
+                    .description("High-quality " + cat.getName().toLowerCase() + " product.")
+                    .basePrice(BigDecimal.valueOf((Integer) d[1]))
+                    .isActive(true)
+                    .build();
+
+            ProductAttribute attr = ProductAttribute.builder()
+                    .product(product)
+                    .budgetLevel((BudgetLevel) d[2])
+                    .durabilityRating((Integer) d[3])
+                    .climateSuitability((ClimateSuitability) d[4])
+                    .maintenanceLevel((MaintenanceLevel) d[5])
+                    .style((String) d[6])
+                    .material((Material) d[7])
+                    .waterResistance((ResistanceLevel) d[8])
+                    .corrosionResistance((ResistanceLevel) d[9])
+                    .heatResistance((ResistanceLevel) d[10])
+                    .slipResistance((ResistanceLevel) d[11])
+                    .noiseReduction((ResistanceLevel) d[12])
+                    .build();
+
+            product.setAttribute(attr);
+            productRepository.save(product);
+            count++;
+        }
+        return count;
+    }
+    // ── Sample Rules ─────────────────────────────────────────────────────────
+
+    private void seedSampleRules() {
+        if (ruleRepository.count() > 0) {
+            log.info("DataSeeder: Rules already exist — skipping.");
+            return;
+        }
+
+        // Sample Rule 1: Low Budget Match (SOFT_PREFERENCE + ADD_SCORE)
+        Rule lowBudgetRule = new Rule();
+        lowBudgetRule.setName("Low Budget Match");
+        lowBudgetRule.setDescription("Add score to products when user selects low budget");
+        lowBudgetRule.setRuleType(RuleType.SOFT_PREFERENCE);
+        lowBudgetRule.setRuleStatus(RuleStatus.ACTIVE);
+        lowBudgetRule.setTargetScope(TargetScope.GLOBAL);
+        lowBudgetRule.setCombinationType(CombinationType.ALL);
+        lowBudgetRule.setPriority(10);
+        lowBudgetRule.setWeight(15);
+        lowBudgetRule.setEffectType(EffectType.ADD_SCORE);
+        lowBudgetRule.setEffectValue(10);
+
+        RuleCondition budgetCondition = new RuleCondition();
+        budgetCondition.setOperandSource(OperandSource.USER_INPUT);
+        budgetCondition.setAttributeName("budget");
+        budgetCondition.setOperator(ConditionOperator.EQUALS);
+        budgetCondition.setExpectedValue("LOW");
+        lowBudgetRule.addCondition(budgetCondition);
+
+        ruleRepository.save(lowBudgetRule);
+        log.info("DataSeeder: Sample rule 'Low Budget Match' created.");
+
+        // Sample Rule 2: Coastal Climate Strict (HARD_CONSTRAINT + FILTER_OUT)
+        Rule coastalRule = new Rule();
+        coastalRule.setName("Coastal Climate Strict");
+        coastalRule.setDescription("Exclude products not suitable for coastal climates");
+        coastalRule.setRuleType(RuleType.HARD_CONSTRAINT);
+        coastalRule.setRuleStatus(RuleStatus.ACTIVE);
+        coastalRule.setTargetScope(TargetScope.GLOBAL);
+        coastalRule.setCombinationType(CombinationType.ALL);
+        coastalRule.setPriority(20);
+        coastalRule.setWeight(0);
+        coastalRule.setEffectType(EffectType.FILTER_OUT);
+        coastalRule.setEffectValue(null);
+
+        RuleCondition climateCondition = new RuleCondition();
+        climateCondition.setOperandSource(OperandSource.USER_INPUT);
+        climateCondition.setAttributeName("climate");
+        climateCondition.setOperator(ConditionOperator.EQUALS);
+        climateCondition.setExpectedValue("COASTAL");
+        coastalRule.addCondition(climateCondition);
+
+        RuleCondition corrosionCondition = new RuleCondition();
+        corrosionCondition.setOperandSource(OperandSource.PRODUCT);
+        corrosionCondition.setAttributeName("corrosionResistance");
+        corrosionCondition.setOperator(ConditionOperator.EQUALS);
+        corrosionCondition.setExpectedValue("LOW");
+        coastalRule.addCondition(corrosionCondition);
+
+        ruleRepository.save(coastalRule);
+        log.info("DataSeeder: Sample rule 'Coastal Climate Strict' created.");
+    }
 }

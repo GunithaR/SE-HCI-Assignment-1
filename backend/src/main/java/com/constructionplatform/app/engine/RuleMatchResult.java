@@ -1,5 +1,7 @@
 package com.constructionplatform.app.engine;
 
+import com.constructionplatform.app.enums.EffectType;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +15,9 @@ public class RuleMatchResult {
     private List<String> failedConditions = new ArrayList<>();
     private Integer weight;
     private Integer priority;
+    private EffectType effectType;
+    private Integer effectValue;
+    private double scoreContribution;
 
     public RuleMatchResult() {
     }
@@ -79,5 +84,29 @@ public class RuleMatchResult {
 
     public void setPriority(Integer priority) {
         this.priority = priority;
+    }
+
+    public EffectType getEffectType() {
+        return effectType;
+    }
+
+    public void setEffectType(EffectType effectType) {
+        this.effectType = effectType;
+    }
+
+    public Integer getEffectValue() {
+        return effectValue;
+    }
+
+    public void setEffectValue(Integer effectValue) {
+        this.effectValue = effectValue;
+    }
+
+    public double getScoreContribution() {
+        return scoreContribution;
+    }
+
+    public void setScoreContribution(double scoreContribution) {
+        this.scoreContribution = scoreContribution;
     }
 }
