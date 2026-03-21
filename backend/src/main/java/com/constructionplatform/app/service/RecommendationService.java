@@ -2,97 +2,150 @@ package com.constructionplatform.app.service;
 
 import com.constructionplatform.app.dto.recommendation.RecommendationRequestDTO;
 import com.constructionplatform.app.dto.recommendation.RecommendationResponseDTO;
-import com.constructionplatform.app.engine.EvaluationResult;
-import com.constructionplatform.app.engine.InputProfile;
-import com.constructionplatform.app.engine.ProductEvaluationResult;
-import com.constructionplatform.app.engine.RuleEvaluator;
-import com.constructionplatform.app.engine.RuleMatchResult;
+import com.constructionplatform.app.engine.RecommendationEngine;
+import com.constructionplatform.app.engine.RecommendationEngine.ProductScore;
+import com.constructionplatform.app.engine.UserAnswers;
 import com.constructionplatform.app.entity.Product;
+import com.constructionplatform.app.entity.ProductAttribute;
 import com.constructionplatform.app.repository.ProductRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Orchestrates the recommendation flow:
+ * 1. Receive category + answers from frontend
+ * 2. Load candidate products by category
+ * 3. Run the Strategy Pattern–based RecommendationEngine
+ * 4. Map results to response DTOs with score breakdowns and trade-off warnings
+ */
 @Service
 public class RecommendationService {
 
-    private final ProductRepository productRepository;
-    private final RuleEvaluator ruleEvaluator;
-    private final ScoringService scoringService;
-    private final RankingService rankingService;
+    private static final Logger log = LoggerFactory.getLogger(RecommendationService.class);
+    private static final int TOP_N = 5;
 
-    public RecommendationService(
-            ProductRepository productRepository,
-            RuleEvaluator ruleEvaluator,
-            ScoringService scoringService,
-            RankingService rankingService) {
+    private final ProductRepository productRepository;
+    private final RecommendationEngine recommendationEngine;
+
+    public RecommendationService(ProductRepository productRepository,
+                                  RecommendationEngine recommendationEngine) {
         this.productRepository = productRepository;
-        this.ruleEvaluator = ruleEvaluator;
-        this.scoringService = scoringService;
-        this.rankingService = rankingService;
+        this.recommendationEngine = recommendationEngine;
     }
 
+    /**
+     * Generate ranked product recommendations based on user's category selection and answers.
+     */
     public List<RecommendationResponseDTO> generateRecommendations(RecommendationRequestDTO requestDTO) {
-        // 1. Map request DTO to InputProfile
-        InputProfile inputProfile = mapToInputProfile(requestDTO);
+        String category = requestDTO.getCategory();
+        Map<String, String> answers = requestDTO.getAnswers();
 
-        // 2. Load candidate active products
-        List<Product> products = productRepository.findByIsActiveTrue();
+        log.info("Generating recommendations for category='{}' with {} answers", category, answers.size());
 
-        // 3. Call RuleEvaluator
-        EvaluationResult evaluationResult = ruleEvaluator.evaluateRules(inputProfile, products);
+        // 1. Build UserAnswers
+        UserAnswers userAnswers = new UserAnswers(category, answers);
 
-        // 4. Call ScoringService
-        scoringService.score(evaluationResult);
+        // 2. Load candidate products (by category, or all if category not found)
+        List<Product> candidates = loadCandidates(category);
+        log.info("Found {} candidate products for category '{}'", candidates.size(), category);
 
-        // 5. Call RankingService
-        List<ProductEvaluationResult> rankedResults = rankingService.rank(evaluationResult.getProductResults());
+        if (candidates.isEmpty()) {
+            return List.of();
+        }
 
-        // 6. Map to DTOs
-        return rankedResults.stream()
+        // 3. Run the recommendation engine (scores every product, never filters out)
+        List<ProductScore> scoredProducts = recommendationEngine.recommend(candidates, userAnswers, TOP_N);
+
+        // 4. Convert to response DTOs
+        return scoredProducts.stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
     }
 
-    private InputProfile mapToInputProfile(RecommendationRequestDTO requestDTO) {
-        InputProfile profile = new InputProfile();
-        profile.setBudget(requestDTO.getBudget());
-        profile.setClimate(requestDTO.getClimate());
-        profile.setStyle(requestDTO.getStyle());
-        profile.setDurabilityPreference(requestDTO.getDurabilityPreference());
-        profile.setMaintenancePreference(requestDTO.getMaintenancePreference());
-        profile.setHouseType(requestDTO.getHouseType());
-        return profile;
+    // ── Private helpers ──────────────────────────────────────────────────────
+
+    private List<Product> loadCandidates(String category) {
+        // Try loading by category name
+        List<Product> products = productRepository.findByCategoryNameAndIsActiveTrue(category);
+        if (!products.isEmpty()) {
+            return products;
+        }
+
+        // Fallback: try partial match by removing "Solution" suffix
+        String simpleName = category.replace(" Solution", "").trim();
+        products = productRepository.findByCategoryNameContainingAndIsActiveTrue(simpleName);
+        if (!products.isEmpty()) {
+            return products;
+        }
+
+        // Last resort: return all active products
+        log.warn("No products found for category '{}', returning all active products", category);
+        return productRepository.findByIsActiveTrue();
     }
 
-    private RecommendationResponseDTO mapToResponseDTO(ProductEvaluationResult result) {
+    private RecommendationResponseDTO mapToResponseDTO(ProductScore scored) {
         RecommendationResponseDTO dto = new RecommendationResponseDTO();
-        Product product = result.getProduct();
-        
+        Product product = scored.getProduct();
+
         dto.setProductId(product.getId());
         dto.setProductName(product.getName());
         dto.setBrandName(product.getBrand() != null ? product.getBrand().getName() : null);
         dto.setCategoryName(product.getCategory() != null ? product.getCategory().getName() : null);
         dto.setBasePrice(product.getBasePrice());
         dto.setImageUrl(product.getImageUrl());
-        
-        dto.setScore(result.getProvisionalScore());
-        dto.setExcluded(result.isExcluded());
-        
-        List<String> matchedRuleNames = result.getMatchedRules().stream()
-                .map(RuleMatchResult::getRuleName)
-                .collect(Collectors.toList());
-        dto.setMatchedRuleNames(matchedRuleNames);
-        
-        if (result.isExcluded()) {
-            dto.setExplanation("Excluded due to hard constraints.");
-        } else if (matchedRuleNames.isEmpty()) {
-            dto.setExplanation("Basic match. No soft preferences triggered.");
-        } else {
-            dto.setExplanation("Matched " + matchedRuleNames.size() + " preferences.");
-        }
+
+        dto.setTotalScore(scored.getTotalScore());
+        dto.setStrategyScores(scored.getStrategyScores());
+        dto.setTradeOffs(scored.getTradeOffs());
+        dto.setExcluded(false);
+
+        // Build human-readable explanation
+        dto.setExplanation(buildExplanation(scored));
+
+        // Identify top-scoring strategies for matchedRuleNames (backward compat)
+        List<String> topStrategies = new ArrayList<>();
+        scored.getStrategyScores().forEach((strategy, score) -> {
+            if (score >= 8.0) {
+                topStrategies.add(strategy + " match");
+            }
+        });
+        dto.setMatchedRuleNames(topStrategies);
 
         return dto;
+    }
+
+    private String buildExplanation(ProductScore scored) {
+        Map<String, Double> scores = scored.getStrategyScores();
+        List<String> strengths = new ArrayList<>();
+        List<String> weaknesses = new ArrayList<>();
+
+        scores.forEach((strategy, score) -> {
+            if (score >= 8.0) {
+                strengths.add(strategy.toLowerCase());
+            } else if (score <= 3.0) {
+                weaknesses.add(strategy.toLowerCase());
+            }
+        });
+
+        StringBuilder sb = new StringBuilder();
+        if (!strengths.isEmpty()) {
+            sb.append("Strong match for: ").append(String.join(", ", strengths)).append(". ");
+        }
+
+        if (!scored.getTradeOffs().isEmpty()) {
+            sb.append("⚠️ Trade-off: ").append(String.join("; ", scored.getTradeOffs())).append(".");
+        } else if (weaknesses.isEmpty() && !strengths.isEmpty()) {
+            sb.append("Well-rounded recommendation.");
+        } else if (strengths.isEmpty()) {
+            sb.append("Moderate match across all criteria.");
+        }
+
+        return sb.toString().trim();
     }
 }

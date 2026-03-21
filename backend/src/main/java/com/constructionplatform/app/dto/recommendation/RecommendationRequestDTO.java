@@ -1,74 +1,37 @@
 package com.constructionplatform.app.dto.recommendation;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Request DTO for the recommendation engine.
+ * Contains the selected category and a dynamic map of questionnaire answers.
+ */
 public class RecommendationRequestDTO {
 
-    @NotBlank(message = "Budget is required")
-    private String budget;
+    @NotBlank(message = "Category is required")
+    private String category;
 
-    @NotBlank(message = "Climate is required")
-    private String climate;
-
-    private String style;
-
-    @NotBlank(message = "Durability preference is required")
-    private String durabilityPreference;
-
-    @NotBlank(message = "Maintenance preference is required")
-    private String maintenancePreference;
-
-    private String houseType;
+    private Map<String, String> answers = new HashMap<>();
 
     public RecommendationRequestDTO() {
     }
 
-    public String getBudget() {
-        return budget;
+    public String getCategory() {
+        return category;
     }
 
-    public void setBudget(String budget) {
-        this.budget = budget;
+    public void setCategory(String category) {
+        this.category = category;
     }
 
-    public String getClimate() {
-        return climate;
+    public Map<String, String> getAnswers() {
+        return answers;
     }
 
-    public void setClimate(String climate) {
-        this.climate = climate;
-    }
-
-    public String getStyle() {
-        return style;
-    }
-
-    public void setStyle(String style) {
-        this.style = style;
-    }
-
-    public String getDurabilityPreference() {
-        return durabilityPreference;
-    }
-
-    public void setDurabilityPreference(String durabilityPreference) {
-        this.durabilityPreference = durabilityPreference;
-    }
-
-    public String getMaintenancePreference() {
-        return maintenancePreference;
-    }
-
-    public void setMaintenancePreference(String maintenancePreference) {
-        this.maintenancePreference = maintenancePreference;
-    }
-
-    public String getHouseType() {
-        return houseType;
-    }
-
-    public void setHouseType(String houseType) {
-        this.houseType = houseType;
+    public void setAnswers(Map<String, String> answers) {
+        this.answers = answers != null ? answers : new HashMap<>();
     }
 }

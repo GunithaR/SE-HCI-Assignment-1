@@ -55,7 +55,7 @@ public class ConditionEvaluator {
     }
 
     private String resolveValue(RuleCondition condition, InputProfile profile, Product product) {
-        if (condition.getOperandSource() == OperandSource.INPUT) {
+        if (condition.getOperandSource() == OperandSource.USER_INPUT) {
             return resolveFromInput(condition.getAttributeName(), profile);
         } else if (condition.getOperandSource() == OperandSource.PRODUCT) {
             return resolveFromProduct(condition.getAttributeName(), product);

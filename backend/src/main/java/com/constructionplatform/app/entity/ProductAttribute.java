@@ -41,8 +41,35 @@ public class ProductAttribute {
     @Column(name = "material", length = 30)
     private Material material;
 
+    // ── New resistance / performance attributes ──────────────────────────────
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "water_resistance", length = 10)
+    private ResistanceLevel waterResistance;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "corrosion_resistance", length = 10)
+    private ResistanceLevel corrosionResistance;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "heat_resistance", length = 10)
+    private ResistanceLevel heatResistance;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "slip_resistance", length = 10)
+    private ResistanceLevel slipResistance;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "noise_reduction", length = 10)
+    private ResistanceLevel noiseReduction;
+
+    @Column(name = "usage_area", length = 100)
+    private String usageArea;
+
     public ProductAttribute() {
     }
+
+    // ── Getters ──────────────────────────────────────────────────────────────
 
     public Long getProductId() {
         return productId;
@@ -80,6 +107,32 @@ public class ProductAttribute {
         return material;
     }
 
+    public ResistanceLevel getWaterResistance() {
+        return waterResistance;
+    }
+
+    public ResistanceLevel getCorrosionResistance() {
+        return corrosionResistance;
+    }
+
+    public ResistanceLevel getHeatResistance() {
+        return heatResistance;
+    }
+
+    public ResistanceLevel getSlipResistance() {
+        return slipResistance;
+    }
+
+    public ResistanceLevel getNoiseReduction() {
+        return noiseReduction;
+    }
+
+    public String getUsageArea() {
+        return usageArea;
+    }
+
+    // ── Setters ──────────────────────────────────────────────────────────────
+
     public void setProductId(Long id) {
         this.productId = id;
     }
@@ -116,6 +169,32 @@ public class ProductAttribute {
         this.material = material;
     }
 
+    public void setWaterResistance(ResistanceLevel waterResistance) {
+        this.waterResistance = waterResistance;
+    }
+
+    public void setCorrosionResistance(ResistanceLevel corrosionResistance) {
+        this.corrosionResistance = corrosionResistance;
+    }
+
+    public void setHeatResistance(ResistanceLevel heatResistance) {
+        this.heatResistance = heatResistance;
+    }
+
+    public void setSlipResistance(ResistanceLevel slipResistance) {
+        this.slipResistance = slipResistance;
+    }
+
+    public void setNoiseReduction(ResistanceLevel noiseReduction) {
+        this.noiseReduction = noiseReduction;
+    }
+
+    public void setUsageArea(String usageArea) {
+        this.usageArea = usageArea;
+    }
+
+    // ── Builder ──────────────────────────────────────────────────────────────
+
     public static Builder builder() {
         return new Builder();
     }
@@ -130,6 +209,12 @@ public class ProductAttribute {
         private String style;
         private ProductSize size;
         private Material material;
+        private ResistanceLevel waterResistance;
+        private ResistanceLevel corrosionResistance;
+        private ResistanceLevel heatResistance;
+        private ResistanceLevel slipResistance;
+        private ResistanceLevel noiseReduction;
+        private String usageArea;
 
         public Builder productId(Long id) {
             this.productId = id;
@@ -176,6 +261,36 @@ public class ProductAttribute {
             return this;
         }
 
+        public Builder waterResistance(ResistanceLevel r) {
+            this.waterResistance = r;
+            return this;
+        }
+
+        public Builder corrosionResistance(ResistanceLevel r) {
+            this.corrosionResistance = r;
+            return this;
+        }
+
+        public Builder heatResistance(ResistanceLevel r) {
+            this.heatResistance = r;
+            return this;
+        }
+
+        public Builder slipResistance(ResistanceLevel r) {
+            this.slipResistance = r;
+            return this;
+        }
+
+        public Builder noiseReduction(ResistanceLevel r) {
+            this.noiseReduction = r;
+            return this;
+        }
+
+        public Builder usageArea(String u) {
+            this.usageArea = u;
+            return this;
+        }
+
         public ProductAttribute build() {
             ProductAttribute a = new ProductAttribute();
             a.productId = productId;
@@ -187,9 +302,17 @@ public class ProductAttribute {
             a.style = style;
             a.size = size;
             a.material = material;
+            a.waterResistance = waterResistance;
+            a.corrosionResistance = corrosionResistance;
+            a.heatResistance = heatResistance;
+            a.slipResistance = slipResistance;
+            a.noiseReduction = noiseReduction;
+            a.usageArea = usageArea;
             return a;
         }
     }
+
+    // ── Enums ────────────────────────────────────────────────────────────────
 
     public enum BudgetLevel {
         LOW, MEDIUM, HIGH
@@ -209,5 +332,10 @@ public class ProductAttribute {
 
     public enum Material {
         STEEL, WOOD, CONCRETE, BRICK, GLASS, ALUMINUM, PVC, CERAMIC, OTHER
+    }
+
+    /** Resistance / performance level used for water, corrosion, heat, slip, and noise attributes. */
+    public enum ResistanceLevel {
+        LOW, MEDIUM, HIGH
     }
 }

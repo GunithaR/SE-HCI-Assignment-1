@@ -40,6 +40,8 @@ public class RuleService {
         rule.setWeight(request.getWeight());
         rule.setTargetCategoryName(request.getTargetCategoryName());
         rule.setDynamicAttribute(request.getDynamicAttribute());
+        rule.setEffectType(request.getEffectType());
+        rule.setEffectValue(request.getEffectValue());
 
         if (request.getConditions() != null) {
             for (RuleConditionDTO conditionDTO : request.getConditions()) {
@@ -86,6 +88,8 @@ public class RuleService {
         rule.setWeight(request.getWeight());
         rule.setTargetCategoryName(request.getTargetCategoryName());
         rule.setDynamicAttribute(request.getDynamicAttribute());
+        rule.setEffectType(request.getEffectType());
+        rule.setEffectValue(request.getEffectValue());
 
         // Clear existing conditions and add new ones
         rule.getConditions().clear();
@@ -133,6 +137,8 @@ public class RuleService {
         response.setWeight(rule.getWeight());
         response.setTargetCategoryName(rule.getTargetCategoryName());
         response.setDynamicAttribute(rule.getDynamicAttribute());
+        response.setEffectType(rule.getEffectType());
+        response.setEffectValue(rule.getEffectValue());
 
         if (rule.getConditions() != null) {
             List<RuleConditionDTO> conditionDTOs = rule.getConditions().stream().map(c -> {

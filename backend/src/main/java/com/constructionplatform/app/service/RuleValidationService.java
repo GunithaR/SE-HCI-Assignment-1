@@ -2,26 +2,32 @@ package com.constructionplatform.app.service;
 
 import com.constructionplatform.app.dto.rule.RuleConditionDTO;
 import com.constructionplatform.app.dto.rule.RuleCreateRequestDTO;
+import com.constructionplatform.app.enums.CombinationType;
+import com.constructionplatform.app.enums.EffectType;
 import com.constructionplatform.app.enums.OperandSource;
 import com.constructionplatform.app.enums.RuleType;
 import com.constructionplatform.app.enums.TargetScope;
 import com.constructionplatform.app.exception.InvalidRuleException;
 import org.springframework.stereotype.Service;
 
-import com.constructionplatform.app.enums.CombinationType;
 import java.util.List;
 import java.util.Set;
 
 @Service
 public class RuleValidationService {
 
-    // Supported attributes based on the wizard and product data model
     private static final Set<String> SUPPORTED_INPUT_ATTRIBUTES = Set.of(
-            "budget", "climate", "style", "durabilityPreference", "maintenancePreference"
+            "budget", "climate", "style", "durabilityPreference", "maintenancePreference",
+            "location", "concern", "maintenance", "flooring_usage", "traffic", "priority",
+            "slip_resistance", "wall_usage", "environment", "goal", "room_type",
+            "accessory_type", "usage_duration", "usage_environment"
     );
 
     private static final Set<String> SUPPORTED_PRODUCT_ATTRIBUTES = Set.of(
-            "budgetLevel", "climateSuitability", "style", "durabilityRating", "maintenanceLevel", "categoryName"
+            "budgetLevel", "climateSuitability", "style", "durabilityRating",
+            "maintenanceLevel", "categoryName", "material",
+            "waterResistance", "corrosionResistance", "heatResistance",
+            "slipResistance", "noiseReduction", "usageArea"
     );
 
     public void validate(RuleCreateRequestDTO dto) {
@@ -29,7 +35,6 @@ public class RuleValidationService {
             throw new InvalidRuleException("Rule request cannot be null");
         }
 
-        // Validate basic mandatory fields
         if (dto.getName() == null || dto.getName().trim().isEmpty()) {
             throw new InvalidRuleException("Rule name is mandatory");
         }
@@ -49,19 +54,17 @@ public class RuleValidationService {
             throw new InvalidRuleException("Priority is mandatory");
         }
 
-        // Validate weight depending on the rule type
+        // ── Weight validation ────────────────────────────────────────────────
         if (dto.getRuleType() == RuleType.SOFT_PREFERENCE) {
             if (dto.getWeight() == null || dto.getWeight() <= 0) {
                 throw new InvalidRuleException("Soft preference rules must have a valid positive weight");
             }
-        } else if (dto.getRuleType() == RuleType.HARD_CONSTRAINT) {
-            // Hard constraints technically do not use weight for scoring, so expecting null or 0 is fine
-            if (dto.getWeight() != null && dto.getWeight() != 0) {
-                // In a strict design, we could enforce weight = 0 or null here
-            }
         }
 
-        // Validate target scope consistency
+        // ── Effect validation ────────────────────────────────────────────────
+        validateEffect(dto);
+
+        // ── Scope validation ─────────────────────────────────────────────────
         if (dto.getTargetScope() == TargetScope.CATEGORY) {
             if (dto.getTargetCategoryName() == null || dto.getTargetCategoryName().trim().isEmpty()) {
                 throw new InvalidRuleException("Target category name must be provided when target scope is CATEGORY");
@@ -72,7 +75,7 @@ public class RuleValidationService {
             }
         }
 
-        // Validate conditions or dynamic attributes
+        // ── Conditions / Dynamic attribute validation ────────────────────────
         if (dto.getCombinationType() == CombinationType.NONE) {
             if (dto.getDynamicAttribute() == null || dto.getDynamicAttribute().trim().isEmpty()) {
                 throw new InvalidRuleException("Dynamic attribute must be provided when combination type is NONE");
@@ -85,9 +88,38 @@ public class RuleValidationService {
             if (conditions == null || conditions.isEmpty()) {
                 throw new InvalidRuleException("Rule must have at least one condition when combination type is not NONE");
             }
-
             for (RuleConditionDTO condition : conditions) {
                 validateCondition(condition);
+            }
+        }
+    }
+
+    private void validateEffect(RuleCreateRequestDTO dto) {
+        EffectType effectType = dto.getEffectType();
+
+        if (dto.getRuleType() == RuleType.HARD_CONSTRAINT) {
+            // Hard constraints MUST use FILTER_OUT
+            if (effectType != null && effectType != EffectType.FILTER_OUT) {
+                throw new InvalidRuleException("HARD_CONSTRAINT rules must use FILTER_OUT effect type");
+            }
+            // Auto-set to FILTER_OUT if not provided
+            if (effectType == null) {
+                dto.setEffectType(EffectType.FILTER_OUT);
+            }
+            // Effect value is not applicable for FILTER_OUT
+            dto.setEffectValue(null);
+        } else if (dto.getRuleType() == RuleType.SOFT_PREFERENCE) {
+            // Soft prefs must use ADD_SCORE or DEDUCT_SCORE
+            if (effectType == null) {
+                dto.setEffectType(EffectType.ADD_SCORE); // default
+            } else if (effectType == EffectType.FILTER_OUT) {
+                throw new InvalidRuleException("SOFT_PREFERENCE rules cannot use FILTER_OUT effect type");
+            }
+            // Effect value must be positive
+            if (effectType != null && effectType != EffectType.FILTER_OUT) {
+                if (dto.getEffectValue() == null || dto.getEffectValue() <= 0) {
+                    throw new InvalidRuleException("Effect value must be a positive number for ADD_SCORE / DEDUCT_SCORE");
+                }
             }
         }
     }
@@ -107,9 +139,9 @@ public class RuleValidationService {
         }
 
         String attr = condition.getAttributeName().trim();
-        if (condition.getOperandSource() == OperandSource.INPUT) {
+        if (condition.getOperandSource() == OperandSource.USER_INPUT) {
             if (!SUPPORTED_INPUT_ATTRIBUTES.contains(attr)) {
-                throw new InvalidRuleException("Unsupported input attribute: " + attr);
+                throw new InvalidRuleException("Unsupported user input attribute: " + attr);
             }
         } else if (condition.getOperandSource() == OperandSource.PRODUCT) {
             if (!SUPPORTED_PRODUCT_ATTRIBUTES.contains(attr)) {
