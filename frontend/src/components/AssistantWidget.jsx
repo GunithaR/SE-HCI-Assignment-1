@@ -8,11 +8,6 @@ const SUGGESTIONS = [
     { q: 'How do I contact support?', a: 'Please email support@buildwise.com or use the live chat during business hours.' },
 ];
 
-/**
- * Floating Assistant Widget.
- * A minimalist chatbot bubble that answers common questions using a
- * keyword-match approach — no backend required for Sprint 1.
- */
 export default function AssistantWidget() {
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState([
@@ -22,7 +17,6 @@ export default function AssistantWidget() {
     const [typing, setTyping] = useState(false);
     const bottomRef = useRef(null);
 
-    // Auto-scroll to latest message
     useEffect(() => {
         if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, open]);
@@ -30,80 +24,73 @@ export default function AssistantWidget() {
     const findAnswer = (query) => {
         const lower = query.toLowerCase();
         const match = SUGGESTIONS.find(
-            (s) =>
-                s.q.toLowerCase().split(' ').some((word) => lower.includes(word)) ||
+            (s) => s.q.toLowerCase().split(' ').some((word) => lower.includes(word)) ||
                 lower.includes(s.q.toLowerCase().slice(0, 12))
         );
-        return match
-            ? match.a
-            : "I'm not sure about that yet! Try asking about budget levels, climates, or how recommendations work.";
+        return match ? match.a : "I'm not sure about that yet! Try asking about budget levels, climates, or how recommendations work.";
     };
 
     const send = () => {
         const trimmed = input.trim();
         if (!trimmed) return;
-
         setMessages((prev) => [...prev, { from: 'user', text: trimmed }]);
         setInput('');
         setTyping(true);
-
         setTimeout(() => {
             setMessages((prev) => [...prev, { from: 'bot', text: findAnswer(trimmed) }]);
             setTyping(false);
         }, 700);
     };
 
-    const handleKey = (e) => {
-        if (e.key === 'Enter') send();
-    };
-
     return (
         <>
-            {/* Chat panel */}
             {open && (
-                <div
-                    id="assistant-panel"
-                    className="light-theme fixed bottom-24 right-6 z-50 w-80 glass shadow-2xl flex flex-col overflow-hidden fade-in-up"
-                    style={{ maxHeight: '420px', background: 'var(--color-surface)', border: '2px solid #a78bfa', boxShadow: '0 10px 40px rgba(139,92,246,0.15)', color: 'var(--color-text)' }}
-                >
+                <div id="assistant-panel" style={{
+                    position: 'fixed', bottom: 96, right: 24, zIndex: 50,
+                    width: 340, maxHeight: 440,
+                    background: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-xl)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
+                    display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                    animation: 'fadeInUp 0.25s ease',
+                }}>
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
-                        <div className="flex items-center gap-2">
-                            <span className="text-lg">🤖</span>
-                            <span className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>L+ SIVILIMA Assistant</span>
-                            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                    <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '14px 16px', borderBottom: '1px solid var(--color-border)',
+                        background: 'var(--color-primary)', color: '#fff',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: '1.1rem' }}>🤖</span>
+                            <span style={{ fontWeight: 600, fontSize: '0.88rem' }}>L+ SIVILIMA Assistant</span>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} />
                         </div>
-                        <button
-                            id="assistant-close-btn"
-                            onClick={() => setOpen(false)}
-                            className="text-slate-400 hover:text-white transition-colors text-lg leading-none"
-                        >
-                            ×
-                        </button>
+                        <button id="assistant-close-btn" onClick={() => setOpen(false)} style={{
+                            background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: '1.3rem', cursor: 'pointer', lineHeight: 1,
+                        }}>×</button>
                     </div>
 
                     {/* Messages */}
-                    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" style={{ maxHeight: '280px' }}>
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 280 }}>
                         {messages.map((msg, idx) => (
-                            <div
-                                key={idx}
-                                className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}
-                            >
-                                <div
-                                    className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${msg.from === 'user'
-                                        ? 'bg-violet-600 text-white rounded-br-sm'
-                                        : 'rounded-bl-sm'
-                                        }`}
-                                    style={msg.from !== 'user' ? { background: 'var(--color-surface-alt)', color: '#3b0764', border: '1px solid #c4b5fd', fontWeight: 500 } : {}}
-                                >
+                            <div key={idx} style={{ display: 'flex', justifyContent: msg.from === 'user' ? 'flex-end' : 'flex-start' }}>
+                                <div style={{
+                                    maxWidth: '85%', padding: '8px 14px',
+                                    borderRadius: msg.from === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                                    fontSize: '0.85rem', lineHeight: 1.5,
+                                    background: msg.from === 'user' ? 'var(--color-primary)' : 'var(--color-surface-alt)',
+                                    color: msg.from === 'user' ? '#fff' : 'var(--color-text)',
+                                    border: msg.from === 'user' ? 'none' : '1px solid var(--color-border)',
+                                }}>
                                     {msg.text}
                                 </div>
                             </div>
                         ))}
                         {typing && (
-                            <div className="flex justify-start">
-                                <div className="px-4 py-2 rounded-2xl text-sm" style={{ background: 'var(--color-surface-alt)', color: 'var(--color-muted)', border: '1px solid var(--color-border)' }}>
-                                    <span className="animate-pulse">● ● ●</span>
+                            <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                                <div style={{ padding: '8px 14px', borderRadius: 14, fontSize: '0.85rem', background: 'var(--color-surface-alt)', color: 'var(--color-muted)', border: '1px solid var(--color-border)' }}>
+                                    ● ● ●
                                 </div>
                             </div>
                         )}
@@ -111,49 +98,54 @@ export default function AssistantWidget() {
                     </div>
 
                     {/* Quick suggestions */}
-                    <div className="px-4 pb-2 flex gap-2 overflow-x-auto">
+                    <div style={{ padding: '0 16px 8px', display: 'flex', gap: 6, overflowX: 'auto' }}>
                         {['Budget levels', 'Climates', 'How it works'].map((hint) => (
-                            <button
-                                key={hint}
-                                onClick={() => { setInput(hint); }}
-                                className="text-xs whitespace-nowrap px-2 py-1 rounded-full border transition-colors"
-                                style={{ borderColor: 'var(--color-border)', color: 'var(--color-muted)' }}
-                                onMouseEnter={(e) => { e.target.style.borderColor = '#8b5cf6'; e.target.style.color = '#8b5cf6'; }}
+                            <button key={hint} onClick={() => setInput(hint)} style={{
+                                whiteSpace: 'nowrap', padding: '4px 10px', borderRadius: 'var(--radius-full)',
+                                border: '1px solid var(--color-border)', background: 'transparent',
+                                color: 'var(--color-muted)', fontSize: '0.72rem', cursor: 'pointer',
+                                transition: 'all var(--transition-fast)',
+                            }}
+                                onMouseEnter={(e) => { e.target.style.borderColor = 'var(--color-primary)'; e.target.style.color = 'var(--color-primary)'; }}
                                 onMouseLeave={(e) => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.color = 'var(--color-muted)'; }}
-                            >
-                                {hint}
-                            </button>
+                            >{hint}</button>
                         ))}
                     </div>
 
                     {/* Input */}
-                    <div className="px-4 py-3 border-t flex gap-2" style={{ borderColor: 'var(--color-border)' }}>
+                    <div style={{ padding: '10px 16px', borderTop: '1px solid var(--color-border)', display: 'flex', gap: 8 }}>
                         <input
                             id="assistant-input"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={handleKey}
+                            onKeyDown={(e) => e.key === 'Enter' && send()}
                             placeholder="Ask a question…"
-                            className="input-field text-sm py-2"
-                            style={{ border: '2px solid #c4b5fd', color: '#3b0764', fontWeight: 500 }}
+                            className="input-field"
+                            style={{ fontSize: '0.85rem', padding: '8px 12px' }}
                         />
-                        <button
-                            id="assistant-send-btn"
-                            onClick={send}
-                            className="btn-primary py-2 px-4 text-sm shrink-0"
-                        >
+                        <button id="assistant-send-btn" onClick={send} className="btn-primary" style={{ padding: '8px 14px', flexShrink: 0 }}>
                             ➤
                         </button>
                     </div>
                 </div>
             )}
 
-            {/* FAB toggle button */}
+            {/* FAB */}
             <button
                 id="assistant-fab"
                 onClick={() => setOpen((o) => !o)}
-                className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full btn-primary flex items-center justify-center text-2xl shadow-2xl"
                 aria-label="Toggle Assistant"
+                style={{
+                    position: 'fixed', bottom: 24, right: 24, zIndex: 50,
+                    width: 56, height: 56, borderRadius: '50%',
+                    background: 'var(--color-primary)', color: '#fff',
+                    border: 'none', cursor: 'pointer', fontSize: '1.5rem',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 8px 24px rgba(107,29,42,0.3)',
+                    transition: 'all var(--transition-base)',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
             >
                 {open ? '✕' : '💬'}
             </button>

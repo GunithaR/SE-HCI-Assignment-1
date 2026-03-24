@@ -1,82 +1,129 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useState } from 'react';
 
 export default function Navbar() {
     const { isAuthenticated, isAdmin, user, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    const [menuOpen, setMenuOpen] = useState(false);
 
     const handleLogout = () => {
         logout();
         navigate('/');
+        setMenuOpen(false);
     };
 
-    return (
-        <nav className="light-theme fixed left-0 w-full z-50 glass-pill backdrop-blur-md shadow-lg     ring-1 ring-indigo-300 transition-all duration-300">
-            <div className="px-6 h-16 flex items-center justify-between">
+    const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
-                {/* ── Logo / Brand ─────────────────────────────────────────── */}
-                <Link to="/" className="flex items-center gap-3 relative left-3" style={{ textDecoration: 'none' }}>
-                    <img src="/anton.png" alt="Anton" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
-                    <img src="/gfloor.png" alt="G-Floor" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
-                    <img src="/PE+.jpg" alt="PE+" style={{ height: 32, width: 'auto', objectFit: 'contain', mixBlendMode: 'multiply' }} />
-                    <img src="/sivilima.png" alt="Sivilima" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
-                    <img src="/s-lon.png" alt="S-Lon" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
-                    
-                    {/*}
-                    <span
-                        style={{
-                            fontFamily: 'Outfit, sans-serif',
-                            fontWeight: 900,
-                            fontSize: '1.2rem',
-                            background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            letterSpacing: '-0.02em',
-                            lineHeight: 1,
-                        }}
-                    >
-                        L<span style={{ color: 'var(--color-primary)', WebkitTextFillColor: 'var(--color-primary)' }}>+</span>
-                        {' '}
-                        <span style={{ fontWeight: 400, fontSize: '0.85rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                            SIVILIMA
-                        </span> 
-                    </span>
-                    */}
-                    
+    const closeMenu = () => setMenuOpen(false);
+
+    const navLinks = (
+        <>
+            <Link
+                to="/catalog"
+                className={`nav-link${isActive('/catalog') ? ' active' : ''}`}
+                onClick={closeMenu}
+            >
+                Catalog
+            </Link>
+            <Link
+                to="/wizard"
+                className={`nav-link${isActive('/wizard') ? ' active' : ''}`}
+                onClick={closeMenu}
+            >
+                Recommendations
+            </Link>
+            {isAdmin && (
+                <Link
+                    to="/admin"
+                    className={`nav-link${isActive('/admin') ? ' active' : ''}`}
+                    onClick={closeMenu}
+                >
+                    Admin
                 </Link>
+            )}
+        </>
+    );
 
-                {/* ── Nav links ────────────────────────────────────────────── */}
-                <div className="hidden md:flex flex-1 justify-center items-center gap-8 text-[0.95rem]">
-                    <Link to="/catalog" className="nav-link">Catalog</Link>
-                    <Link to="/wizard" className="nav-link">Get Recommendations</Link>
-                    {isAdmin && (
-                        <Link to="/admin" className="nav-link !font-bold !text-violet-600">
-                            Admin
-                        </Link>
-                    )}
-                </div>
+    return (
+        <>
+            <nav className="navbar">
+                <div className="navbar-inner">
+                    {/* ── Left: Brand Logos ─────────────────────────── */}
+                    <Link to="/" className="navbar-logos" style={{ textDecoration: 'none' }}>
+                        <img src="/anton.png" alt="Anton" className="navbar-logo-img" />
+                        <img src="/gfloor.png" alt="G-Floor" className="navbar-logo-img" />
+                        <img src="/PE+.jpg" alt="PE+" className="navbar-logo-img" style={{ mixBlendMode: 'multiply' }} />
+                        <img src="/sivilima.png" alt="Sivilima" className="navbar-logo-img" />
+                        <img src="/s-lon.png" alt="S-Lon" className="navbar-logo-img" />
+                    </Link>
 
-                {/* ── Auth actions ─────────────────────────────────────────── */}
-                <div className="flex items-center gap-3 relative right-3">
-                    {isAuthenticated ? (
-                        <>
-                            <span className="text-xs hidden sm:block font-medium px-3 py-1 rounded-full border" style={{ color: 'var(--color-muted)', borderColor: 'var(--color-border)', background: 'var(--color-surface-alt)' }}>{user?.email}</span>
-                            <button id="nav-logout-btn" onClick={handleLogout} className="btn-secondary !rounded-full text-sm py-2 px-5 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors">
-                                Logout
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <Link to="/login">
-                                <button id="nav-login-btn" className="btn-secondary !rounded-full text-sm py-2 px-5">Login</button>
-                            </Link>
-                            <Link to="/register">
-                                <button id="nav-register-btn" className="btn-primary !rounded-full text-sm py-2 px-5 shadow-lg shadow-indigo-500/30">Sign Up</button>
-                            </Link>
-                        </>
-                    )}
+                    {/* ── Center: Navigation ────────────────────────── */}
+                    <div className="navbar-links">
+                        {navLinks}
+                    </div>
+
+                    {/* ── Right: Auth Section ───────────────────────── */}
+                    <div className="navbar-auth">
+                        {isAuthenticated ? (
+                            <>
+                                <span className="navbar-email">{user?.email}</span>
+                                <button
+                                    id="nav-logout-btn"
+                                    onClick={handleLogout}
+                                    className="btn-logout"
+                                >
+                                    Logout
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <Link to="/login">
+                                    <button id="nav-login-btn" className="btn-ghost" style={{ borderRadius: 'var(--radius-full)', fontSize: '0.85rem', padding: '7px 18px' }}>
+                                        Login
+                                    </button>
+                                </Link>
+                                <Link to="/register">
+                                    <button id="nav-register-btn" className="btn-primary" style={{ borderRadius: 'var(--radius-full)', fontSize: '0.85rem', padding: '7px 18px' }}>
+                                        Sign Up
+                                    </button>
+                                </Link>
+                            </>
+                        )}
+
+                        {/* ── Hamburger (mobile) ─────────────────────── */}
+                        <button
+                            className="navbar-hamburger"
+                            onClick={() => setMenuOpen((o) => !o)}
+                            aria-label="Toggle menu"
+                        >
+                            {menuOpen ? (
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            ) : (
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            )}
+                        </button>
+                    </div>
                 </div>
+            </nav>
+
+            {/* ── Mobile Menu ─────────────────────────────────── */}
+            <div className={`mobile-menu${menuOpen ? ' open' : ''}`}>
+                {navLinks}
+                {isAuthenticated && (
+                    <div style={{ paddingTop: 'var(--space-sm)', borderTop: '1px solid var(--color-border)', marginTop: 'var(--space-sm)' }}>
+                        <span style={{ display: 'block', fontSize: '0.82rem', color: 'var(--color-muted)', marginBottom: '8px' }}>{user?.email}</span>
+                        <button onClick={handleLogout} className="btn-logout" style={{ width: '100%', justifyContent: 'center' }}>
+                            Logout
+                        </button>
+                    </div>
+                )}
             </div>
-        </nav>
+        </>
     );
 }

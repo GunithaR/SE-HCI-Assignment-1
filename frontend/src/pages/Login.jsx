@@ -27,33 +27,55 @@ export default function Login() {
     };
 
     return (
-        <div className="light-theme min-h-screen flex items-center justify-center px-4 hero-bg fade-in-up relative pt-24">
-            {/* Top Purple Accent Line */}
-
-
-            <div className="w-full max-w-md glass p-8" style={{ border: '2px solid #a78bfa', boxShadow: '0 4px 12px rgba(139,92,246,0.1)' }}>
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-violet-100/80 text-violet-600 mb-4 shadow-sm border border-violet-200">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+        <div className="page-with-navbar" style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            background: 'var(--color-bg)',
+        }}>
+            <div className="card fade-in-up" style={{ width: '100%', maxWidth: 420, padding: '40px' }}>
+                <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                    <div style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: '50%',
+                        background: 'var(--color-primary-muted)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '16px',
+                    }}>
+                        <svg style={{ width: 24, height: 24, color: 'var(--color-primary)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
                     </div>
-                    <h1
-                        className="text-2xl font-bold mt-1 text-slate-800"
-                        style={{ fontFamily: 'Outfit, sans-serif' }}
-                    >
+                    <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text)' }}>
                         Welcome Back
                     </h1>
-                    <p className="text-slate-500 text-sm mt-1">Sign in to your L+ SIVILIMA account</p>
+                    <p style={{ color: 'var(--color-muted)', fontSize: '0.88rem', marginTop: 4 }}>
+                        Sign in to your L+ SIVILIMA account
+                    </p>
                 </div>
 
                 {error && (
-                    <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+                    <div style={{
+                        marginBottom: '16px',
+                        padding: '12px 16px',
+                        borderRadius: 'var(--radius-md)',
+                        background: 'var(--color-error-bg)',
+                        color: 'var(--color-error)',
+                        fontSize: '0.85rem',
+                        border: '1px solid rgba(220,38,38,0.15)',
+                    }}>
                         {error}
                     </div>
                 )}
 
-                <form id="login-form" onSubmit={handleSubmit} className="space-y-5">
+                <form id="login-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <div>
-                        <label className="block text-xs font-semibold text-indigo-950 mb-1.5 uppercase tracking-wide">Email</label>
+                        <label className="input-label">Email</label>
                         <input
                             id="login-email"
                             name="email"
@@ -62,13 +84,12 @@ export default function Login() {
                             value={form.email}
                             onChange={handleChange}
                             placeholder="you@example.com"
-                            className="input-field shadow-sm bg-white"
-                            style={{ border: '2px solid #c4b5fd', color: '#3b0764', fontWeight: 500 }}
+                            className="input-field"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-semibold text-indigo-950 mb-1.5 uppercase tracking-wide">Password</label>
+                        <label className="input-label">Password</label>
                         <input
                             id="login-password"
                             name="password"
@@ -77,8 +98,7 @@ export default function Login() {
                             value={form.password}
                             onChange={handleChange}
                             placeholder="••••••••"
-                            className="input-field shadow-sm bg-white"
-                            style={{ border: '2px solid #c4b5fd', color: '#3b0764', fontWeight: 500 }}
+                            className="input-field"
                         />
                     </div>
 
@@ -86,15 +106,16 @@ export default function Login() {
                         id="login-submit-btn"
                         type="submit"
                         disabled={loading}
-                        className="btn-primary w-full py-3 justify-center"
+                        className="btn-primary"
+                        style={{ width: '100%', padding: '12px', justifyContent: 'center' }}
                     >
-                        {loading ? <span className="spinner scale-75" /> : 'Sign In'}
+                        {loading ? <span className="spinner-sm" /> : 'Sign In'}
                     </button>
                 </form>
 
-                <p className="text-center text-slate-500 text-sm mt-6">
+                <p style={{ textAlign: 'center', color: 'var(--color-muted)', fontSize: '0.88rem', marginTop: '24px' }}>
                     Don&apos;t have an account?{' '}
-                    <a href="/register" className="text-violet-600 font-semibold hover:text-violet-700 hover:underline transition-colors">
+                    <a href="/register" style={{ color: 'var(--color-primary)', fontWeight: 600, textDecoration: 'none' }}>
                         Sign up
                     </a>
                 </p>
