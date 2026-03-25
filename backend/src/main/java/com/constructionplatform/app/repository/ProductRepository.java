@@ -18,6 +18,11 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
   List<Product> findByIsActiveTrue();
 
+  List<Product> findByCategoryNameAndIsActiveTrue(String categoryName);
+
+  List<Product> findByCategoryNameContainingAndIsActiveTrue(String categoryName);
+
+
   /** Paginated listing of active products belonging to a specific category. */
   Page<Product> findByCategoryIdAndIsActiveTrueOrderByNameAsc(Long categoryId, Pageable pageable);
 

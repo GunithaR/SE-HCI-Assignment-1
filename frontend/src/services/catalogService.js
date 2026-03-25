@@ -27,13 +27,28 @@ const catalogService = {
         apiClient.get('/public/products', { params: { page, size, ...filters } }).then((r) => r.data),
 
     /**
-     * Recommendation endpoint used by the two-step wizard.
-     * GET /api/public/recommendations?budgetLevel=&climate=
+     * Recommendation endpoint used by the wizard.
+     * POST /api/public/recommendations
      */
-    getRecommendations: (budgetLevel, climate) =>
+    getRecommendations: (payload) =>
         apiClient
-            .get('/public/recommendations', { params: { budgetLevel, climate } })
+            .post('/public/recommendations', payload)
             .then((r) => r.data),
+
+    /**
+     * GET /api/public/questions/categories — available recommendation categories
+     */
+    getQuestionCategories: () =>
+        apiClient.get('/public/questions/categories').then((r) => r.data),
+
+    /**
+     * GET /api/public/questions/{category} — category-specific questions
+     */
+    getQuestions: (category) =>
+        apiClient
+            .get(`/public/questions/${encodeURIComponent(category)}`)
+            .then((r) => r.data),
+
 
     // ── Admin endpoints (ADMIN role required) ────────────────────────────────
 

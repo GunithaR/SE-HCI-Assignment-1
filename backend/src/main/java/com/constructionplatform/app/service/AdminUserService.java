@@ -2,7 +2,7 @@ package com.constructionplatform.app.service;
 
 import com.constructionplatform.app.dto.AdminUserCreateRequestDTO;
 import com.constructionplatform.app.dto.AuthResponse;
-import com.constructionplatform.app.entity.Role;
+import com.constructionplatform.app.enums.Role;
 import com.constructionplatform.app.entity.User;
 import com.constructionplatform.app.repository.UserRepository;
 import com.constructionplatform.app.security.JwtUtil;

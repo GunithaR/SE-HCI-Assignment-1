@@ -1,5 +1,6 @@
 package com.constructionplatform.app.entity;
 
+import com.constructionplatform.app.enums.Role;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
