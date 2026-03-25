@@ -11,18 +11,18 @@ export default function Navbar() {
     };
 
     return (
-        <nav className="light-theme fixed top-5 left-1/2 -translate-x-1/2 w-[98%] max-w-[1400px] z-50 glass-pill backdrop-blur-md shadow-2xl ring-1 ring-indigo-300 transition-all duration-300">
-            <div className="px-6 h-15 flex items-center justify-between">
+        <nav className="light-theme fixed left-0 w-full z-50 glass-pill backdrop-blur-md shadow-lg     ring-1 ring-indigo-300 transition-all duration-300">
+            <div className="px-6 h-16 flex items-center justify-between">
 
                 {/* ── Logo / Brand ─────────────────────────────────────────── */}
                 <Link to="/" className="flex items-center gap-3 relative left-3" style={{ textDecoration: 'none' }}>
-                    <img
-                        src="/logo.png"
-                        alt="L+ SIVILIMA"
-                        style={{ height: 36, width: 'auto', objectFit: 'contain' }}
-                    />
-                    {/* Fallback text logo if image fails */}
+                    <img src="/anton.png" alt="Anton" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
+                    <img src="/gfloor.png" alt="G-Floor" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
+                    <img src="/PE+.jpg" alt="PE+" style={{ height: 32, width: 'auto', objectFit: 'contain', mixBlendMode: 'multiply' }} />
+                    <img src="/sivilima.png" alt="Sivilima" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
+                    <img src="/s-lon.png" alt="S-Lon" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
                     
+                    {/*}
                     <span
                         style={{
                             fontFamily: 'Outfit, sans-serif',
@@ -38,9 +38,10 @@ export default function Navbar() {
                         L<span style={{ color: 'var(--color-primary)', WebkitTextFillColor: 'var(--color-primary)' }}>+</span>
                         {' '}
                         <span style={{ fontWeight: 400, fontSize: '0.85rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                            SIVILIMA 
-                        </span>
-                    </span> 
+                            SIVILIMA
+                        </span> 
+                    </span>
+                    */}
                     
                 </Link>
 

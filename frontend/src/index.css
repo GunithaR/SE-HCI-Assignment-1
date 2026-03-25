@@ -81,12 +81,12 @@ body {
 .glass-pill {
   background: linear-gradient(
       135deg,
-      rgba(108, 99, 255, 0.25),
-      rgba(245, 158, 11, 0.15)
+      rgba(108, 99, 255, 0.45),
+      rgba(245, 158, 11, 0.35)
   );
   backdrop-filter: blur(24px);
-  border: 1px solid rgba(108, 99, 255, 0.25);
-  border-radius: 9999px;
+  
+  border: 1px solid rgba(108, 99, 255, 0.15);
   box-shadow: 0 10px 40px rgba(108, 99, 255, 0.18);
 }
 
@@ -101,7 +101,7 @@ body {
   position: relative;
   text-decoration: none;
   font-weight: 500;
-  color: var(--color-muted);
+  color: var(--color-text);
   /* Softer default text color */
   padding: 0.25rem 0.1rem;
   transition: color 0.3s ease;
@@ -158,20 +158,21 @@ body {
   align-items: center;
   gap: 0.5rem;
   padding: 0.65rem 1.5rem;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  background: linear-gradient(135deg, #7c3aed, #6366f1);
   color: #fff;
   border: none;
   border-radius: var(--radius-lg);
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 15px rgba(108, 99, 255, 0.35);
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.35);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(108, 99, 255, 0.5);
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  box-shadow: 0 8px 25px rgba(124, 58, 237, 0.45);
 }
 
 .btn-primary:active {
@@ -183,18 +184,19 @@ body {
   align-items: center;
   gap: 0.5rem;
   padding: 0.65rem 1.5rem;
-  background: transparent;
-  color: var(--color-primary);
-  border: 1px solid var(--color-primary);
+  background: rgba(124, 58, 237, 0.08);
+  color: #7c3aed;
+  border: 1px solid rgba(124, 58, 237, 0.35);
   border-radius: var(--radius-lg);
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
 }
 
 .btn-secondary:hover {
-  background: rgba(108, 99, 255, 0.1);
+  background: rgba(124, 58, 237, 0.15);
+  border-color: #7c3aed;
   transform: translateY(-1px);
 }
 

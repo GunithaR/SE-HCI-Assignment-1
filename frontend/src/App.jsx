@@ -12,6 +12,7 @@ import Catalog from './pages/Catalog';
 import Wizard from './pages/Wizard';
 import Results from './pages/Results';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminRules from './pages/AdminRules';
 
 export default function App() {
   return (
@@ -34,6 +35,14 @@ export default function App() {
             element={
               <AdminRoute>
                 <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/rules"
+            element={
+              <AdminRoute>
+                <AdminRules />
               </AdminRoute>
             }
           />

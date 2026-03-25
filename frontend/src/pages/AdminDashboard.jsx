@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -550,6 +551,10 @@ export default function AdminDashboard() {
                         <button id="admin-add-product-btn" onClick={openCreate}
                             style={{ padding: '10px 22px', borderRadius: 10, background: 'linear-gradient(135deg, #6c63ff, #a855f7)', border: 'none', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
                             + Add Product
+                        </button>
+                        <button onClick={() => navigate('/admin/rules')}
+                            style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.35)', color: '#0ea5e9', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
+                            ⚙️ Manage Rules
                         </button>
                         {isFullAdmin && (
                             <button onClick={() => setShowSubAdminModal(true)}
