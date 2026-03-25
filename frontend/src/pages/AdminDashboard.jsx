@@ -649,7 +649,7 @@ export default function AdminDashboard() {
                                                     color: BUDGET_COLORS[p.budgetLevel]?.fg || '#94a3b8',
                                                 }}>{p.budgetLevel ?? '—'}</span>
                                             </td>
-                                            <td style={{ padding: '12px 16px', color: '#a78bfa', fontWeight: 700 }}>${Number(p.basePrice).toFixed(2)}</td>
+                                            <td style={{ padding: '12px 16px', color: '#a78bfa', fontWeight: 700 }}>Rs. {Number(p.basePrice).toFixed(2)}</td>
                                             {/* Stock toggle */}
                                             <td style={{ padding: '12px 16px' }}>
                                                 <button

@@ -83,7 +83,7 @@ function ProductCard({ product }) {
                 {/* Footer: price + durability */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: '#a78bfa', fontWeight: 700, fontSize: '1.1rem' }}>
-                        ${Number(product.basePrice).toFixed(2)}
+                        Rs. {Number(product.basePrice).toFixed(2)}
                     </span>
                     {product.durabilityRating && (
                         <span style={{ color: '#64748b', fontSize: '0.72rem' }}>

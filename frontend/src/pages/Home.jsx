@@ -99,7 +99,7 @@ function ProductCard({ product }) {
                 {/* Price */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: 10 }}>
                     <span style={{ color: '#8b5cf6', fontWeight: 700, fontSize: '1.15rem' }}>
-                        ${Number(product.basePrice).toFixed(2)}
+                        Rs. {Number(product.basePrice).toFixed(2)}
                     </span>
                     <span style={{
                         padding: '3px 10px', borderRadius: 9999, fontSize: '0.68rem', fontWeight: 600,
