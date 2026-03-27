@@ -1,6 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import catalogService from '../services/catalogService';
+import {
+  buildInputProfile,
+  buildQuestionFlow,
+  hasRequiredAnswer,
+  pruneInactiveAnswers,
+} from '../utils/questionFlow';
 
 /* ───────────────── Category icons ──────────────────────────────────────── */
 const CATEGORY_ICONS = {
@@ -18,7 +24,7 @@ export default function Wizard() {
   /* State */
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [questions, setQuestions] = useState([]);
+  const [baseQuestions, setBaseQuestions] = useState([]);
   const [currentStep, setCurrentStep] = useState(0); // 0 = category select
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
@@ -46,7 +52,7 @@ export default function Wizard() {
     setError(null);
     try {
       const data = await catalogService.getQuestions(cat);
-      setQuestions(data.questions || []);
+      setBaseQuestions(data.questions || []);
       setCurrentStep(1);
       setAnswers({});
     } catch {
@@ -72,7 +78,7 @@ export default function Wizard() {
       // Back to category selection
       setSelectedCategory(null);
       setCurrentStep(0);
-      setQuestions([]);
+      setBaseQuestions([]);
       setAnswers({});
     }
   };
@@ -82,9 +88,16 @@ export default function Wizard() {
     setSubmitting(true);
     setError(null);
     try {
-      const payload = { category: selectedCategory, answers };
+      const inputProfile = buildInputProfile(questions, answers);
+      const payload = { category: selectedCategory, answers: inputProfile };
       const results = await catalogService.getRecommendations(payload);
-      navigate('/results', { state: { products: results, answers, category: selectedCategory } });
+      navigate('/results', {
+        state: {
+          products: results,
+          answers: inputProfile,
+          category: selectedCategory,
+        },
+      });
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to get recommendations.');
       setSubmitting(false);
@@ -92,10 +105,37 @@ export default function Wizard() {
   };
 
   /* ── Derived ─────────────────────────────────────────────────── */
+  const questions = useMemo(
+    () => buildQuestionFlow(selectedCategory, baseQuestions, answers),
+    [selectedCategory, baseQuestions, answers]
+  );
+
+  useEffect(() => {
+    if (currentStep === 0) return;
+
+    setAnswers((prev) => {
+      const next = pruneInactiveAnswers(prev, questions);
+      const prevKeys = Object.keys(prev);
+      const nextKeys = Object.keys(next);
+      const changed =
+        prevKeys.length !== nextKeys.length || prevKeys.some((key) => prev[key] !== next[key]);
+
+      return changed ? next : prev;
+    });
+
+    setCurrentStep((prevStep) => {
+      if (questions.length === 0) return 0;
+      if (prevStep > questions.length) return questions.length;
+      if (prevStep < 1) return 1;
+      return prevStep;
+    });
+  }, [questions, currentStep]);
+
   const totalSteps = questions.length;
   const currentQ = currentStep >= 1 && currentStep <= totalSteps ? questions[currentStep - 1] : null;
   const isLastStep = currentStep === totalSteps;
   const currentAnswer = currentQ ? answers[currentQ.id] : null;
+  const currentStepIsValid = hasRequiredAnswer(currentQ, answers);
   const progress = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0;
 
   /* ── Loading / Error ─────────────────────────────────────────── */
@@ -159,6 +199,7 @@ export default function Wizard() {
           <div className="wizard-step animate-in" key={currentQ.id}>
             <h2 className="wizard-question">{currentQ.question}</h2>
             {currentQ.subtext && <p className="wizard-subtext">{currentQ.subtext}</p>}
+            {currentQ.reason && <p className="wizard-reason">{currentQ.reason}</p>}
             <div className="wizard-options">
               {currentQ.options.map((opt) => (
                 <button
@@ -185,7 +226,7 @@ export default function Wizard() {
               <button
                 className="wizard-btn primary"
                 onClick={handleSubmit}
-                disabled={submitting || !currentAnswer}
+                disabled={submitting || !currentStepIsValid}
               >
                 {submitting ? (
                   <>
@@ -196,7 +237,7 @@ export default function Wizard() {
                 )}
               </button>
             ) : (
-              <button className="wizard-btn primary" onClick={goNext} disabled={!currentAnswer}>
+              <button className="wizard-btn primary" onClick={goNext} disabled={!currentStepIsValid}>
                 Next →
               </button>
             )}
@@ -264,6 +305,15 @@ export default function Wizard() {
           color: rgba(255,255,255,.5);
           font-size: .85rem;
           margin: 0 0 1.5rem;
+        }
+        .wizard-reason {
+          color: #93c5fd;
+          background: rgba(59, 130, 246, 0.12);
+          border: 1px solid rgba(59, 130, 246, 0.25);
+          border-radius: 10px;
+          padding: 0.55rem 0.75rem;
+          font-size: 0.82rem;
+          margin: 0 0 1rem;
         }
         .wizard-options {
           display: grid;
