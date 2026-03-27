@@ -1,0 +1,28 @@
+# =============================================
+# BACKEND .gitignore – Spring Boot / Maven
+# =============================================
+
+# Maven build output – never commit compiled files
+target/
+*.class
+
+# Packaged JARs / WARs
+*.jar
+*.war
+*.ear
+
+# !! IMPORTANT: application.yml is committed so collaborators can clone & run !!
+# If you add sensitive production configs, gitignore them here:
+# src/main/resources/application-prod.yml
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+.vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,71 @@
+﻿
+> construction-platform-ui@0.0.0 lint
+> eslint .
+
+
+D:\SLIIT\Y2S2\SE\Project\SE + HCI project\SE-HCI-Assignment\frontend\src\context\AuthContext.jsx
+  59:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+D:\SLIIT\Y2S2\SE\Project\SE + HCI project\SE-HCI-Assignment\frontend\src\pages\AdminDashboard.jsx
+  444:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  442 |     useEffect(() => {
+  443 |         if (viewAll) {
+> 444 |             setLoadingProds(true);
+      |             ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  445 |             catalogService.getAdminAllProducts()
+  446 |                 .then((page) => { setProducts(page.content ?? []); setTotalProducts(page.totalElements ?? 0); })
+  447 |                 .catch(() => showToast('Could not load all products.', true))  react-hooks/set-state-in-effect
+
+D:\SLIIT\Y2S2\SE\Project\SE + HCI project\SE-HCI-Assignment\frontend\src\pages\AdminRules.jsx
+  258:13  error  'user' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u         no-unused-vars
+  258:19  error  'isFullAdmin' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+D:\SLIIT\Y2S2\SE\Project\SE + HCI project\SE-HCI-Assignment\frontend\src\pages\Catalog.jsx
+  149:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  147 |     useEffect(() => {
+  148 |         if (!activeCategoryId) return;
+> 149 |         setLoadingProds(true);
+      |         ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  150 |         setError('');
+  151 |         setInfo('');
+  152 |  react-hooks/set-state-in-effect
+
+D:\SLIIT\Y2S2\SE\Project\SE + HCI project\SE-HCI-Assignment\frontend\src\pages\Home.jsx
+  153:27  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  151 |     // Load all products initially (after categories loaded)
+  152 |     useEffect(() => {
+> 153 |         if (!loadingCats) loadProducts(activeCatId);
+      |                           ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  154 |     }, [activeCatId, loadingCats, loadProducts]);
+  155 |
+  156 |     const handleCatClick = (catId) => {  react-hooks/set-state-in-effect
+
+D:\SLIIT\Y2S2\SE\Project\SE + HCI project\SE-HCI-Assignment\frontend\src\pages\Results.jsx
+  260:11  warning  The 'allProducts' logical expression could make the dependencies of useMemo Hook (at line 282) change on every render. To fix this, wrap the initialization of 'allProducts' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+D:\SLIIT\Y2S2\SE\Project\SE + HCI project\SE-HCI-Assignment\frontend\src\pages\Wizard.jsx
+  5:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+Γ£û 8 problems (7 errors, 1 warning)
+
