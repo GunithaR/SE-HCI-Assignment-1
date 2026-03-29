@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import catalogService from '../services/catalogService';
+import ReviewScreen from '../components/ReviewScreen';
 
 /* ───────────────── Category icons ──────────────────────────────────────── */
 const CATEGORY_ICONS = {
@@ -58,15 +59,38 @@ export default function Wizard() {
 
   /* Select an option for the current question */
   const selectOption = (questionId, value) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    setAnswers((prev) => {
+      if (prev[questionId] === value) return prev;
+      
+      const next = { ...prev, [questionId]: value };
+      
+      // If we change an answer, clear all subsequent answers
+      const qIndex = questions.findIndex((q) => q.id === questionId);
+      if (qIndex !== -1) {
+        for (let i = qIndex + 1; i < questions.length; i++) {
+          delete next[questions[i].id];
+        }
+      }
+      return next;
+    });
   };
 
   /* Navigation */
   const goNext = () => {
-    if (currentStep < questions.length) setCurrentStep((s) => s + 1);
+    if (currentStep <= questions.length) {
+      // If all questions have answers, jump straight to the review screen
+      const allAnswered = questions.every((q) => answers[q.id] !== undefined);
+      if (allAnswered) {
+        setCurrentStep(questions.length + 1);
+      } else {
+        setCurrentStep((s) => s + 1);
+      }
+    }
   };
   const goBack = () => {
-    if (currentStep > 1) {
+    if (currentStep === questions.length + 1) {
+      setCurrentStep(questions.length);
+    } else if (currentStep > 1) {
       setCurrentStep((s) => s - 1);
     } else {
       // Back to category selection
@@ -93,10 +117,10 @@ export default function Wizard() {
 
   /* ── Derived ─────────────────────────────────────────────────── */
   const totalSteps = questions.length;
+  const isReviewStep = currentStep === totalSteps + 1 && totalSteps > 0;
   const currentQ = currentStep >= 1 && currentStep <= totalSteps ? questions[currentStep - 1] : null;
-  const isLastStep = currentStep === totalSteps;
   const currentAnswer = currentQ ? answers[currentQ.id] : null;
-  const progress = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0;
+  const progress = totalSteps > 0 ? (currentStep / (totalSteps + 1)) * 100 : 0;
 
   /* ── Loading / Error ─────────────────────────────────────────── */
   if (loading && categories.length === 0) {
@@ -155,7 +179,7 @@ export default function Wizard() {
         )}
 
         {/* ── Question Steps ──────────────────────────── */}
-        {currentQ && (
+        {currentQ && !isReviewStep && (
           <div className="wizard-step animate-in" key={currentQ.id}>
             <h2 className="wizard-question">{currentQ.question}</h2>
             {currentQ.subtext && <p className="wizard-subtext">{currentQ.subtext}</p>}
@@ -174,6 +198,17 @@ export default function Wizard() {
           </div>
         )}
 
+        {/* ── Review Step ─────────────────────────────── */}
+        {isReviewStep && (
+          <ReviewScreen 
+            questions={questions} 
+            answers={answers} 
+            onEdit={(stepIdx) => setCurrentStep(stepIdx)} 
+            onSubmit={handleSubmit}
+            submitting={submitting}
+          />
+        )}
+
         {/* ── Footer ──────────────────────────────────── */}
         {currentStep > 0 && (
           <div className="wizard-footer">
@@ -181,11 +216,11 @@ export default function Wizard() {
               ← Back
             </button>
 
-            {isLastStep ? (
+            {isReviewStep ? (
               <button
                 className="wizard-btn primary"
                 onClick={handleSubmit}
-                disabled={submitting || !currentAnswer}
+                disabled={submitting}
               >
                 {submitting ? (
                   <>
@@ -197,7 +232,7 @@ export default function Wizard() {
               </button>
             ) : (
               <button className="wizard-btn primary" onClick={goNext} disabled={!currentAnswer}>
-                Next →
+                {questions.every((q) => answers[q.id] !== undefined) ? 'Review Answers →' : 'Next →'}
               </button>
             )}
           </div>
