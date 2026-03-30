@@ -1,4 +1,6 @@
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import catalogService from '../services/catalogService';
 
 /* ───────────────── Strategy display names & colors ─────────────────────── */
 const STRATEGY_META = {
@@ -96,8 +98,43 @@ function ProductCard({ product, rank }) {
     totalScore,
     strategyScores,
     tradeOffs,
-    explanation,
+    matchedRuleNames,
+    productId,
   } = product;
+
+  const [aiExplanation, setAiExplanation] = useState(null);
+  const [loadingExplanation, setLoadingExplanation] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchExplanation = async () => {
+      try {
+        const payload = {
+          productId,
+          productName,
+          score: totalScore,
+          matchedRules: matchedRuleNames || [],
+          constraintsSatisfied: tradeOffs || [],
+          preferenceContributions: strategyScores || {}
+        };
+        const response = await catalogService.getExplanation(payload);
+        if (isMounted) {
+          setAiExplanation(response.explanation);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setAiExplanation(product.explanation || "This product is recommended based on your preferences.");
+        }
+      } finally {
+        if (isMounted) setLoadingExplanation(false);
+      }
+    };
+    
+    fetchExplanation();
+    
+    return () => { isMounted = false; };
+  }, [product, productId, productName, totalScore, matchedRuleNames, tradeOffs, strategyScores]);
 
   const maxScore = 10;
 
@@ -163,7 +200,16 @@ function ProductCard({ product, rank }) {
       )}
 
       {/* Explanation */}
-      {explanation && <p className="card-explanation">{explanation}</p>}
+      <div className="card-explanation-box">
+        {loadingExplanation ? (
+           <p className="loading-text">
+             <span className="spinner-sm" style={{ display: 'inline-block', borderColor: 'rgba(255,255,255,0.2)', borderTopColor: '#6366f1', borderWidth: '2px', marginRight: '6px', verticalAlign: 'middle', width: '12px', height: '12px', borderRadius: '50%', animation: 'spin .6s linear infinite' }} /> 
+             Generating narrative...
+           </p>
+        ) : (
+           <p className="card-explanation">✨ {aiExplanation}</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -318,11 +364,22 @@ function ResultsStyles() {
         margin: .2rem 0;
       }
 
+      .card-explanation-box {
+        margin-top: 1rem;
+        padding-top: .75rem;
+        border-top: 1px solid rgba(255,255,255,.08);
+      }
       .card-explanation {
+        color: rgba(255,255,255,.8);
+        font-size: .85rem;
+        margin: 0;
+        font-style: italic;
+        line-height: 1.4;
+      }
+      .loading-text {
         color: rgba(255,255,255,.5);
         font-size: .85rem;
-        margin: .75rem 0 0;
-        font-style: italic;
+        margin: 0;
       }
 
       /* ── Answer Summary ────────────────────────── */

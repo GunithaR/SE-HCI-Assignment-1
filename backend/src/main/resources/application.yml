@@ -8,8 +8,8 @@ spring:
   datasource:
     # ↓ Change 'root' username and 'root' password to your MySQL credentials
     url: jdbc:mysql://localhost:3306/construction_platform?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
-    username: cp_user          # ← XAMPP default username
-    password: 1234
+    username: root          # ← XAMPP default username
+    password: Sanjula@12
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   # ── JPA / Hibernate ─────────────────────────────────────────────────────────

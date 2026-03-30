@@ -36,6 +36,15 @@ const catalogService = {
             .then((r) => r.data),
 
     /**
+     * Generates a narrative explanation for a specific recommendation
+     * POST /api/public/explanations
+     */
+    getExplanation: (payload) =>
+        apiClient
+            .post('/public/explanations', payload)
+            .then((r) => r.data),
+
+    /**
      * GET /api/public/questions/categories — available recommendation categories
      */
     getQuestionCategories: () =>
