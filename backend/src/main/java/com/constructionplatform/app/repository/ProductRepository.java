@@ -57,4 +57,14 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
   List<Product> findByRuleFilter(
       @Param("budgetLevel") BudgetLevel budgetLevel,
       @Param("climate") ClimateSuitability climate);
+
+  /**
+   * Fetch multiple products by IDs that are active.
+   * Used for comparison feature to hydrate detailed product info.
+   */
+  @Query("""
+      SELECT p FROM Product p
+      WHERE p.id IN :ids AND p.isActive = true
+      """)
+  List<Product> findByIdInAndIsActiveTrue(@Param("ids") List<Long> ids);
 }

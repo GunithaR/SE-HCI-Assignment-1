@@ -1,5 +1,7 @@
 package com.constructionplatform.app.controller;
 
+import com.constructionplatform.app.dto.comparison.ComparisonRequestDTO;
+import com.constructionplatform.app.dto.comparison.ComparisonResponseDTO;
 import com.constructionplatform.app.dto.recommendation.RecommendationRequestDTO;
 import com.constructionplatform.app.dto.recommendation.RecommendationResponseDTO;
 import com.constructionplatform.app.service.RecommendationService;
@@ -27,5 +29,12 @@ public class RecommendationController {
             @Valid @RequestBody RecommendationRequestDTO request) {
         List<RecommendationResponseDTO> recommendations = recommendationService.generateRecommendations(request);
         return ResponseEntity.ok(recommendations);
+    }
+
+    @PostMapping("/compare")
+    public ResponseEntity<ComparisonResponseDTO> compareRecommendations(
+            @Valid @RequestBody ComparisonRequestDTO request) {
+        ComparisonResponseDTO comparison = recommendationService.compareRecommendations(request);
+        return ResponseEntity.ok(comparison);
     }
 }

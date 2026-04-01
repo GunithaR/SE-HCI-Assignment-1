@@ -1,5 +1,6 @@
 package com.constructionplatform.app.dto.recommendation;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -11,6 +12,7 @@ import java.util.Map;
  * Includes the product details, total weighted score, per-strategy score breakdown,
  * and any trade-off warnings.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class RecommendationResponseDTO {
 
     private Long productId;
@@ -141,5 +143,10 @@ public class RecommendationResponseDTO {
     // Keep backward-compatible integer score getter
     public Integer getScore() {
         return (int) Math.round(totalScore);
+    }
+
+    // No-op setter for score field (for deserialization compatibility)
+    public void setScore(Integer score) {
+        // Ignore incoming score field; totalScore is the single source of truth
     }
 }

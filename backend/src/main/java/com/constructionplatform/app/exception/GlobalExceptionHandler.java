@@ -5,12 +5,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.Map;
@@ -44,10 +46,29 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
     }
 
-    /** 409 — Duplicate email / name or any other business rule violation. */
+    /** 400 — Malformed JSON or invalid message format. */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        String message = "Invalid request payload. ";
+        if (ex.getCause() != null) {
+            message += ex.getCause().getMessage();
+        } else {
+            message += ex.getMessage();
+        }
+        return buildError(HttpStatus.BAD_REQUEST, message);
+    }
+
+    /** Preserve status code from ResponseStatusException. */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiErrorResponse> handleResponseStatusException(ResponseStatusException ex) {
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+        return buildError(status, ex.getReason() != null ? ex.getReason() : "Request error");
+    }
+
+    /** 400 — User input validation errors (not database constraints). */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
-        return buildError(HttpStatus.CONFLICT, ex.getMessage());
+        return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     /** 403 — Caller lacks the required role. */
