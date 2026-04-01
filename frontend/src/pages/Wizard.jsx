@@ -119,25 +119,26 @@ export default function Wizard() {
   const isLastStep = currentIndex === totalSteps - 1;
   const currentAnswer = currentQ ? answers[currentQ.id] : null;
   const progress = totalSteps > 0 ? ((currentIndex + 1) / totalSteps) * 100 : 0;
+  const isReviewStep = totalSteps > 0 && visibleQuestions.every((q) => answers[q.id] !== undefined) && currentQuestionId === null;
 
   /* Navigation */
   const goNext = () => {
-    if (currentStep <= questions.length) {
-      // If all questions have answers, jump straight to the review screen
-      const allAnswered = questions.every((q) => answers[q.id] !== undefined);
-      if (allAnswered) {
-        setCurrentStep(questions.length + 1);
-      } else {
-        setCurrentStep((s) => s + 1);
-      }
+    if (currentIndex === -1) return;
+    // If all visible questions are answered, go to review
+    const allAnswered = visibleQuestions.every((q) => answers[q.id] !== undefined);
+    if (allAnswered) {
+      setCurrentQuestionId(null); // null signals review screen
+    } else if (currentIndex < totalSteps - 1) {
+      setCurrentQuestionId(visibleQuestions[currentIndex + 1].id);
     }
   };
 
   const goBack = () => {
-    if (currentStep === questions.length + 1) {
-      setCurrentStep(questions.length);
-    } else if (currentStep > 1) {
-      setCurrentStep((s) => s - 1);
+    if (isReviewStep) {
+      // Go back from review to the last visible question
+      setCurrentQuestionId(visibleQuestions[visibleQuestions.length - 1].id);
+    } else if (currentIndex > 0) {
+      setCurrentQuestionId(visibleQuestions[currentIndex - 1].id);
     } else {
       // Back to category selection
       setSelectedCategory(null);
@@ -167,12 +168,7 @@ export default function Wizard() {
     }
   };
 
-  /* ── Derived ─────────────────────────────────────────────────── */
-  const totalSteps = questions.length;
-  const isReviewStep = currentStep === totalSteps + 1 && totalSteps > 0;
-  const currentQ = currentStep >= 1 && currentStep <= totalSteps ? questions[currentStep - 1] : null;
-  const currentAnswer = currentQ ? answers[currentQ.id] : null;
-  const progress = totalSteps > 0 ? (currentStep / (totalSteps + 1)) * 100 : 0;
+
 
   /* ── Loading / Error ─────────────────────────────────────────── */
   if (loading && categories.length === 0) {
@@ -255,7 +251,7 @@ export default function Wizard() {
           <ReviewScreen 
             questions={questions} 
             answers={answers} 
-            onEdit={(stepIdx) => setCurrentStep(stepIdx)} 
+            onEdit={(questionId) => setCurrentQuestionId(questionId)} 
             onSubmit={handleSubmit}
             submitting={submitting}
           />
@@ -284,7 +280,7 @@ export default function Wizard() {
               </button>
             ) : (
               <button className="wizard-btn primary" onClick={goNext} disabled={!currentAnswer}>
-                {questions.every((q) => answers[q.id] !== undefined) ? 'Review Answers →' : 'Next →'}
+                {visibleQuestions.every((q) => answers[q.id] !== undefined) ? 'Review Answers →' : 'Next →'}
               </button>
             )}
           </div>
