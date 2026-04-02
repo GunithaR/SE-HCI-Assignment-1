@@ -68,7 +68,7 @@ public class ProductService {
                         throw new ResourceNotFoundException("Category", categoryId);
                 }
                 Page<Product> page = productRepository
-                                .findByCategoryIdAndIsActiveTrueOrderByNameAsc(categoryId, pageable);
+                                .findByCategoryIdAndIsActiveTrueAndIsDeletedFalseOrderByNameAsc(categoryId, pageable);
                 return page.map(ProductResponseDTO::from);
         }
 
@@ -80,7 +80,7 @@ public class ProductService {
          * @throws ResourceNotFoundException if productId does not exist
          */
         public ProductResponseDTO findById(Long productId) {
-                Product product = productRepository.findById(productId)
+                Product product = productRepository.findByIdAndIsDeletedFalse(productId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
                 return ProductResponseDTO.from(product);
         }
@@ -163,7 +163,7 @@ public class ProductService {
          * @return page of {@link ProductResponseDTO}
          */
         public Page<ProductResponseDTO> findAll(Pageable pageable) {
-                return productRepository.findAllByOrderByNameAsc(pageable).map(ProductResponseDTO::from);
+                return productRepository.findAllByIsDeletedFalseOrderByNameAsc(pageable).map(ProductResponseDTO::from);
         }
 
         /**
@@ -183,7 +183,7 @@ public class ProductService {
         @Transactional
         public ProductResponseDTO createProduct(ProductCreateRequestDTO request, MultipartFile image) {
                 // Guard: duplicate name check
-                if (productRepository.existsByName(request.getName())) {
+                if (productRepository.existsByNameAndIsDeletedFalse(request.getName())) {
                         throw new IllegalArgumentException(
                                         "A product with name '" + request.getName() + "' already exists.");
                 }
@@ -241,13 +241,17 @@ public class ProductService {
          */
         @Transactional
         public void deleteProduct(Long productId) {
-                Product product = productRepository.findById(productId)
+                Product product = productRepository.findByIdAndIsDeletedFalse(productId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
 
                 ensureNoCriticalDependencies(product);
 
-                productRepository.delete(product);
-                log.info("ProductService: Deleted product id=[{}] name=[{}]", productId, product.getName());
+                product.setIsDeleted(true);
+                // Append timestamp to name to avoid uniqueness constraint issues for future products
+                product.setName(product.getName() + "_deleted_" + System.currentTimeMillis());
+                productRepository.save(product);
+                
+                log.info("ProductService: Soft-deleted product id=[{}] name=[{}]", productId, product.getName());
         }
 
         /**
@@ -258,10 +262,10 @@ public class ProductService {
          */
         @Transactional
         public ProductResponseDTO updateProduct(Long productId, ProductUpdateRequestDTO request, MultipartFile image) {
-                Product product = productRepository.findById(productId)
+                Product product = productRepository.findByIdAndIsDeletedFalse(productId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
 
-                if (productRepository.existsByNameAndIdNot(request.getName(), productId)) {
+                if (productRepository.existsByNameAndIdNotAndIsDeletedFalse(request.getName(), productId)) {
                         throw new IllegalArgumentException(
                                         "Another product with name '" + request.getName() + "' already exists.");
                 }
@@ -310,7 +314,7 @@ public class ProductService {
          */
         @Transactional
         public ProductResponseDTO toggleStatus(Long productId, boolean inStock) {
-                Product product = productRepository.findById(productId)
+                Product product = productRepository.findByIdAndIsDeletedFalse(productId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
                 product.setIsActive(inStock);
                 Product saved = productRepository.save(product);

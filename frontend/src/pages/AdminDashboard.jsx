@@ -166,6 +166,11 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (isEdit && !window.confirm("Are you sure you want to save these changes?")) {
+            return;
+        }
+
         setErrors({});
         setSubmitting(true);
         const payload = {
@@ -299,7 +304,17 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                         </div>
                         <div>
                             <label style={lbl}>Durability Rating * (1–10)</label>
-                            <input type="number" min="1" max="10" value={form.durabilityRating} onChange={set('durabilityRating')} style={inp('durabilityRating')} placeholder="8" required />
+                            <input
+                                type="number"
+                                min="1"
+                                max="10"
+                                value={form.durabilityRating}
+                                onChange={set('durabilityRating')}
+                                onWheel={(e) => e.target.blur()}
+                                style={inp('durabilityRating')}
+                                placeholder="8"
+                                required
+                            />
                             {errors.durabilityRating && <p style={err}>{errors.durabilityRating}</p>}
                         </div>
                     </div>

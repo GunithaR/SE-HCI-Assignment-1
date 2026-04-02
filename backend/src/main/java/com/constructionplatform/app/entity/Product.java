@@ -40,6 +40,9 @@ public class Product {
         @Column(name = "image_url", length = 500)
         private String imageUrl;
 
+        @Column(name = "is_deleted", nullable = false)
+        private Boolean isDeleted = false;
+
         @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
         private ProductAttribute attribute;
 
@@ -82,6 +85,10 @@ public class Product {
                 return imageUrl;
         }
 
+        public Boolean getIsDeleted() {
+                return isDeleted;
+        }
+
         public void setId(Long id) {
                 this.id = id;
         }
@@ -118,6 +125,10 @@ public class Product {
                 this.imageUrl = imageUrl;
         }
 
+        public void setIsDeleted(Boolean deleted) {
+                this.isDeleted = deleted;
+        }
+
         public static Builder builder() {
                 return new Builder();
         }
@@ -132,6 +143,7 @@ public class Product {
                 private Boolean isActive = true;
                 private ProductAttribute attribute;
                 private String imageUrl;
+                private Boolean isDeleted = false;
 
                 public Builder id(Long id) {
                         this.id = id;
@@ -178,6 +190,11 @@ public class Product {
                         return this;
                 }
 
+                public Builder isDeleted(Boolean d) {
+                        this.isDeleted = d;
+                        return this;
+                }
+
                 public Product build() {
                         Product p = new Product();
                         p.id = id;
@@ -189,6 +206,7 @@ public class Product {
                         p.isActive = isActive;
                         p.attribute = attribute;
                         p.imageUrl = imageUrl;
+                        p.isDeleted = isDeleted;
                         return p;
                 }
         }

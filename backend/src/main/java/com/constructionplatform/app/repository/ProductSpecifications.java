@@ -37,6 +37,12 @@ public final class ProductSpecifications {
 
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.isTrue(root.get("isActive")));
+            predicates.add(
+                cb.or(
+                    cb.isFalse(root.get("isDeleted")),
+                    cb.isNull(root.get("isDeleted"))
+                )
+            );
 
             if (categoryId != null) {
                 predicates.add(cb.equal(root.get("category").get("id"), categoryId));

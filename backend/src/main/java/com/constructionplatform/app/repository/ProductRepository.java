@@ -16,28 +16,29 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
 
-  List<Product> findByIsActiveTrue();
+  @Query("SELECT p FROM Product p WHERE p.id = :id AND (p.isDeleted = false OR p.isDeleted IS NULL)")
+  java.util.Optional<Product> findByIdAndIsDeletedFalse(@Param("id") Long id);
 
-  List<Product> findByCategoryNameAndIsActiveTrue(String categoryName);
+  @Query("SELECT p FROM Product p WHERE p.isActive = true AND (p.isDeleted = false OR p.isDeleted IS NULL)")
+  List<Product> findByIsActiveTrueAndIsDeletedFalse();
 
-  List<Product> findByCategoryNameContainingAndIsActiveTrue(String categoryName);
+  @Query("SELECT p FROM Product p WHERE p.category.name = :categoryName AND p.isActive = true AND (p.isDeleted = false OR p.isDeleted IS NULL)")
+  List<Product> findByCategoryNameAndIsActiveTrueAndIsDeletedFalse(@Param("categoryName") String categoryName);
 
+  @Query("SELECT p FROM Product p WHERE p.category.name LIKE %:categoryName% AND p.isActive = true AND (p.isDeleted = false OR p.isDeleted IS NULL)")
+  List<Product> findByCategoryNameContainingAndIsActiveTrueAndIsDeletedFalse(@Param("categoryName") String categoryName);
 
-  /** Paginated listing of active products belonging to a specific category. */
-  Page<Product> findByCategoryIdAndIsActiveTrueOrderByNameAsc(Long categoryId, Pageable pageable);
+  @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.isActive = true AND (p.isDeleted = false OR p.isDeleted IS NULL) ORDER BY p.name ASC")
+  Page<Product> findByCategoryIdAndIsActiveTrueAndIsDeletedFalseOrderByNameAsc(@Param("categoryId") Long categoryId, Pageable pageable);
 
-  boolean existsByName(String name);
+  @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM Product p WHERE p.name = :name AND (p.isDeleted = false OR p.isDeleted IS NULL)")
+  boolean existsByNameAndIsDeletedFalse(@Param("name") String name);
 
-  /**
-   * Used during product update to check name uniqueness while excluding the
-   * product being edited.
-   */
-  boolean existsByNameAndIdNot(String name, Long id);
+  @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM Product p WHERE p.name = :name AND p.id <> :id AND (p.isDeleted = false OR p.isDeleted IS NULL)")
+  boolean existsByNameAndIdNotAndIsDeletedFalse(@Param("name") String name, @Param("id") Long id);
 
-  /**
-   * All products across every category — used by the admin dashboard overview.
-   */
-  Page<Product> findAllByOrderByNameAsc(Pageable pageable);
+  @Query("SELECT p FROM Product p WHERE (p.isDeleted = false OR p.isDeleted IS NULL) ORDER BY p.name ASC")
+  Page<Product> findAllByIsDeletedFalseOrderByNameAsc(Pageable pageable);
 
   /**
    * Rule-based filtering query used by the recommendation engine.
@@ -50,6 +51,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
       JOIN FETCH p.brand b
       JOIN FETCH p.category c
       WHERE p.isActive = true
+        AND p.isDeleted = false
         AND a.budgetLevel = :budgetLevel
         AND (a.climateSuitability = :climate OR a.climateSuitability = 'ALL')
       ORDER BY a.durabilityRating DESC

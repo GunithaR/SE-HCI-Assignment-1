@@ -6,7 +6,6 @@ import com.constructionplatform.app.engine.RecommendationEngine;
 import com.constructionplatform.app.engine.RecommendationEngine.ProductScore;
 import com.constructionplatform.app.engine.UserAnswers;
 import com.constructionplatform.app.entity.Product;
-import com.constructionplatform.app.entity.ProductAttribute;
 import com.constructionplatform.app.repository.ProductRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,21 +71,21 @@ public class RecommendationService {
 
     private List<Product> loadCandidates(String category) {
         // Try loading by category name
-        List<Product> products = productRepository.findByCategoryNameAndIsActiveTrue(category);
+        List<Product> products = productRepository.findByCategoryNameAndIsActiveTrueAndIsDeletedFalse(category);
         if (!products.isEmpty()) {
             return products;
         }
 
         // Fallback: try partial match by removing "Solution" suffix
         String simpleName = category.replace(" Solution", "").trim();
-        products = productRepository.findByCategoryNameContainingAndIsActiveTrue(simpleName);
+        products = productRepository.findByCategoryNameContainingAndIsActiveTrueAndIsDeletedFalse(simpleName);
         if (!products.isEmpty()) {
             return products;
         }
 
         // Last resort: return all active products
         log.warn("No products found for category '{}', returning all active products", category);
-        return productRepository.findByIsActiveTrue();
+        return productRepository.findByIsActiveTrueAndIsDeletedFalse();
     }
 
     private RecommendationResponseDTO mapToResponseDTO(ProductScore scored) {
