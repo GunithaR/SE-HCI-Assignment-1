@@ -6,10 +6,10 @@ server:
 spring:
   # ── DataSource ──────────────────────────────────────────────────────────────
   datasource:
-    # ↓ Change 'root' username and 'root' password to your MySQL credentials
-    url: jdbc:mysql://localhost:3306/construction_platform?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
-    username: root          # ← XAMPP default username
-    password: root
+    # Database URL with fallback to localhost:3306
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/construction_platform?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
+    username: ${DB_USERNAME:root}       # Environment variable DB_USERNAME, defaults to 'root'
+    password: ${DB_PASSWORD:root}       # Environment variable DB_PASSWORD, defaults to 'root'
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   # ── JPA / Hibernate ─────────────────────────────────────────────────────────
@@ -47,6 +47,14 @@ jwt:
   # 256-bit Base64-encoded secret key – CHANGE THIS in production!
   secret: "YnVpbGQtbXVsdGktYnJhbmQtY29uc3RydWN0aW9uLXBsYXRmb3JtLXNlY3JldC1rZXk="
   expiration-ms: 86400000   # 24 hours
+
+ai:
+  service:
+    api-key: UNCONFIGURED
+    url: https://api.openai.com/v1/chat/completions
+  hybrid:
+    api-key: ${AI_HYBRID_API_KEY:${ai.service.api-key}}
+    url: ${AI_HYBRID_URL:${ai.service.url}}
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 logging:

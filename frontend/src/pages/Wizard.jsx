@@ -107,8 +107,16 @@ export default function Wizard() {
     setError(null);
     try {
       const payload = { category: selectedCategory, answers };
-      const results = await catalogService.getRecommendations(payload);
-      navigate('/results', { state: { products: results, answers, category: selectedCategory } });
+      const hybrid = await catalogService.getHybridRecommendations(payload);
+      navigate('/results', {
+        state: {
+          products: hybrid?.recommendations || [],
+          additionalInsights: hybrid?.additionalInsights || [],
+          augmentationFallbackUsed: Boolean(hybrid?.fallbackUsed),
+          answers,
+          category: selectedCategory,
+        },
+      });
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to get recommendations.');
       setSubmitting(false);

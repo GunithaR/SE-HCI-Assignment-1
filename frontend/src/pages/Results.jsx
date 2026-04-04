@@ -45,6 +45,8 @@ export default function Results() {
   }
 
   const { products, category, answers } = state;
+  const additionalInsights = state?.additionalInsights || [];
+  const augmentationFallbackUsed = Boolean(state?.augmentationFallbackUsed);
 
   const toggleProductSelection = (productId) => {
     const updated = new Set(selectedProductIds);
@@ -98,9 +100,29 @@ export default function Results() {
         <div className="results-header">
           <h1>🏆 Your Top Recommendations</h1>
           <p className="results-subtitle">
-            {category} — {products.length} products ranked by our AI scoring engine
+            {category} — {products.length} products ranked by our rule engine
           </p>
         </div>
+
+        {/* ── Additional Insights (separate from rankings) ─────────────── */}
+        {additionalInsights.length > 0 && (
+          <div className="additional-insights-box">
+            <div className="additional-insights-header">
+              <h3>Additional Insights</h3>
+              {augmentationFallbackUsed && (
+                <span className="fallback-badge">Rule-based fallback</span>
+              )}
+            </div>
+            <div className="additional-insights-list">
+              {additionalInsights.map((insight, idx) => (
+                <div key={`${insight.productId || 'global'}-${idx}`} className="insight-item">
+                  <p className="insight-title">{insight.title || 'Additional insight'}</p>
+                  <p className="insight-detail">{insight.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Comparison Info Banner ──────────────────── */}
         {selectedProductIds.size === 0 && !showComparison && (
@@ -477,6 +499,45 @@ function ResultsStyles() {
       .results-subtitle {
         color: rgba(255,255,255,.5);
         font-size: 1rem;
+      }
+      .additional-insights-box {
+        background: rgba(16,185,129,.12);
+        border: 1px solid rgba(16,185,129,.35);
+        border-radius: 14px;
+        padding: 1rem 1.1rem;
+        margin-bottom: 1.5rem;
+      }
+      .additional-insights-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        margin-bottom: .65rem;
+      }
+      .additional-insights-header h3 {
+        margin: 0;
+        color: #d1fae5;
+        font-size: 1rem;
+      }
+      .additional-insights-list {
+        display: grid;
+        gap: .65rem;
+      }
+      .insight-item {
+        background: rgba(0,0,0,.18);
+        border: 1px solid rgba(255,255,255,.08);
+        border-radius: 10px;
+        padding: .65rem .75rem;
+      }
+      .insight-title {
+        margin: 0 0 .3rem;
+        color: #ecfdf5;
+        font-weight: 700;
+      }
+      .insight-detail {
+        margin: 0;
+        color: rgba(255,255,255,.82);
+        line-height: 1.4;
       }
       .results-empty {
         text-align: center;
