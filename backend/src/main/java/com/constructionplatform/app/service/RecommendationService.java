@@ -5,6 +5,7 @@ import com.constructionplatform.app.dto.recommendation.ComparisonAttributeDTO;
 import com.constructionplatform.app.dto.recommendation.ComparisonProductDTO;
 import com.constructionplatform.app.dto.recommendation.ComparisonRequestDTO;
 import com.constructionplatform.app.dto.recommendation.ComparisonResponseDTO;
+import com.constructionplatform.app.dto.recommendation.HybridRecommendationResponseDTO;
 import com.constructionplatform.app.dto.recommendation.RecommendationRequestDTO;
 import com.constructionplatform.app.dto.recommendation.RecommendationResponseDTO;
 import com.constructionplatform.app.engine.RecommendationEngine;
@@ -39,19 +40,47 @@ public class RecommendationService {
     private final ProductRepository productRepository;
     private final RecommendationEngine recommendationEngine;
     private final ExplanationAIService explanationAIService;
+    private final RecommendationAugmentationService recommendationAugmentationService;
 
     public RecommendationService(ProductRepository productRepository,
                                   RecommendationEngine recommendationEngine,
-                                  ExplanationAIService explanationAIService) {
+                                  ExplanationAIService explanationAIService,
+                                  RecommendationAugmentationService recommendationAugmentationService) {
         this.productRepository = productRepository;
         this.recommendationEngine = recommendationEngine;
         this.explanationAIService = explanationAIService;
+        this.recommendationAugmentationService = recommendationAugmentationService;
     }
 
     /**
      * Generate ranked product recommendations based on user's category selection and answers.
      */
     public List<RecommendationResponseDTO> generateRecommendations(RecommendationRequestDTO requestDTO) {
+        return generateRankedRecommendations(requestDTO);
+        }
+
+        /**
+         * Generate ranked recommendations and augment them with contextual AI insights.
+         * The ranked list remains authoritative and immutable.
+         */
+        public HybridRecommendationResponseDTO generateHybridRecommendations(RecommendationRequestDTO requestDTO) {
+        List<RecommendationResponseDTO> rankedRecommendations = generateRankedRecommendations(requestDTO);
+
+        RecommendationAugmentationService.AugmentationResult augmentation =
+            recommendationAugmentationService.generateInsights(
+                requestDTO.getCategory(),
+                requestDTO.getAnswers(),
+                rankedRecommendations
+            );
+
+        return new HybridRecommendationResponseDTO(
+            rankedRecommendations,
+            augmentation.insights(),
+            augmentation.fallbackUsed()
+        );
+        }
+
+        private List<RecommendationResponseDTO> generateRankedRecommendations(RecommendationRequestDTO requestDTO) {
         String category = requestDTO.getCategory();
         Map<String, String> answers = requestDTO.getAnswers();
 
