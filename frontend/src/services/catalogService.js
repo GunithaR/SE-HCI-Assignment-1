@@ -45,6 +45,15 @@ const catalogService = {
             .then((r) => r.data),
 
     /**
+     * Compare two or more recommended products side-by-side.
+     * POST /api/public/recommendations/compare
+     */
+    compareRecommendations: (payload) =>
+        apiClient
+            .post('/public/recommendations/compare', payload)
+            .then((r) => r.data),
+
+    /**
      * GET /api/public/questions/categories — available recommendation categories
      */
     getQuestionCategories: () =>
