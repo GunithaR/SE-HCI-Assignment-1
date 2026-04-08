@@ -48,6 +48,14 @@ jwt:
   secret: "YnVpbGQtbXVsdGktYnJhbmQtY29uc3RydWN0aW9uLXBsYXRmb3JtLXNlY3JldC1rZXk="
   expiration-ms: 86400000   # 24 hours
 
+ai:
+  service:
+    api-key: UNCONFIGURED
+    url: https://api.openai.com/v1/chat/completions
+  hybrid:
+    api-key: ${AI_HYBRID_API_KEY:${ai.service.api-key}}
+    url: ${AI_HYBRID_URL:${ai.service.url}}
+
 # ── Logging ──────────────────────────────────────────────────────────────────
 logging:
   level:
