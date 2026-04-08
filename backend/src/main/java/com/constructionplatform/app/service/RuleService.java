@@ -124,6 +124,13 @@ public class RuleService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public void deleteRule(Long id) {
+        Rule rule = ruleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Rule not found with id: " + id));
+        ruleRepository.delete(rule);
+    }
+
     private RuleResponseDTO mapToResponseDTO(Rule rule) {
         RuleResponseDTO response = new RuleResponseDTO();
         response.setId(rule.getId());

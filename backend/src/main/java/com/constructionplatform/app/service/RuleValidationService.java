@@ -103,9 +103,7 @@ public class RuleValidationService {
                 throw new InvalidRuleException("HARD_CONSTRAINT rules must use FILTER_OUT effect type");
             }
             // Auto-set to FILTER_OUT if not provided
-            if (effectType == null) {
-                dto.setEffectType(EffectType.FILTER_OUT);
-            }
+            dto.setEffectType(EffectType.FILTER_OUT);
             // Effect value is not applicable for FILTER_OUT
             dto.setEffectValue(null);
         } else if (dto.getRuleType() == RuleType.SOFT_PREFERENCE) {
@@ -115,8 +113,10 @@ public class RuleValidationService {
             } else if (effectType == EffectType.FILTER_OUT) {
                 throw new InvalidRuleException("SOFT_PREFERENCE rules cannot use FILTER_OUT effect type");
             }
-            // Effect value must be positive
-            if (effectType != null && effectType != EffectType.FILTER_OUT) {
+            // Re-read effectType after potential auto-set to avoid stale local variable
+            EffectType resolvedEffectType = dto.getEffectType();
+            // Effect value must be positive for scoring effects
+            if (resolvedEffectType != EffectType.FILTER_OUT) {
                 if (dto.getEffectValue() == null || dto.getEffectValue() <= 0) {
                     throw new InvalidRuleException("Effect value must be a positive number for ADD_SCORE / DEDUCT_SCORE");
                 }
