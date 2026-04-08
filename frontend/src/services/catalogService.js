@@ -36,6 +36,15 @@ const catalogService = {
             .then((r) => r.data),
 
     /**
+     * Hybrid recommendation endpoint used by the wizard.
+     * POST /api/public/recommendations/hybrid
+     */
+    getHybridRecommendations: (payload) =>
+        apiClient
+            .post('/public/recommendations/hybrid', payload)
+            .then((r) => r.data),
+
+    /**
      * Generates a narrative explanation for a specific recommendation
      * POST /api/public/explanations
      */

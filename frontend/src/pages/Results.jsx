@@ -44,7 +44,7 @@ export default function Results() {
     );
   }
 
-  const { products, category, answers } = state;
+  const { products, category, answers, additionalInsights = [], augmentationFallbackUsed = false } = state;
 
   const toggleProductSelection = (productId) => {
     const updated = new Set(selectedProductIds);
@@ -165,6 +165,26 @@ export default function Results() {
             />
           ))}
         </div>
+
+        {/* ── Hybrid Additional Insights ─────────────── */}
+        {additionalInsights.length > 0 && !showComparison && (
+          <div className="additional-insights-box">
+            <div className="insights-header">
+              <h3>Additional Insights</h3>
+              {augmentationFallbackUsed && (
+                <span className="fallback-badge">Rule-based fallback</span>
+              )}
+            </div>
+            <div className="insights-list">
+              {additionalInsights.map((insight, index) => (
+                <div className="insight-item" key={`${insight.title}-${index}`}>
+                  <p className="insight-title">{insight.title}</p>
+                  <p className="insight-detail">{insight.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Answer Summary ──────────────────────────── */}
         {answers && Object.keys(answers).length > 0 && !showComparison && (
@@ -484,6 +504,47 @@ function ResultsStyles() {
         padding: 4rem 2rem;
       }
       .results-empty p { color: rgba(255,255,255,.5); margin: 1rem 0 2rem; }
+
+      .additional-insights-box {
+        margin-top: 1.5rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        border-radius: 14px;
+        border: 1px solid rgba(16, 185, 129, 0.45);
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.06));
+      }
+      .insights-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: .75rem;
+        margin-bottom: .75rem;
+      }
+      .insights-header h3 {
+        margin: 0;
+        color: #6ee7b7;
+        font-size: 1rem;
+      }
+      .insights-list {
+        display: grid;
+        gap: .65rem;
+      }
+      .insight-item {
+        border: 1px solid rgba(255,255,255,.08);
+        border-radius: 10px;
+        padding: .7rem .8rem;
+        background: rgba(255,255,255,.04);
+      }
+      .insight-title {
+        margin: 0 0 .35rem;
+        color: #ecfdf5;
+        font-weight: 600;
+      }
+      .insight-detail {
+        margin: 0;
+        color: rgba(255,255,255,.82);
+        line-height: 1.5;
+      }
 
       /* ── Comparison Info Banner ──────────────────────── */
       .comparison-info-banner {
