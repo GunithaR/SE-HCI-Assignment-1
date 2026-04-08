@@ -160,8 +160,16 @@ export default function Wizard() {
     setError(null);
     try {
       const payload = { category: selectedCategory, answers: cleanAnswers };
-      const results = await catalogService.getRecommendations(payload);
-      navigate('/results', { state: { products: results, answers: cleanAnswers, category: selectedCategory } });
+      const hybrid = await catalogService.getHybridRecommendations(payload);
+      navigate('/results', {
+        state: {
+          products: hybrid.recommendations || [],
+          additionalInsights: hybrid.additionalInsights || [],
+          augmentationFallbackUsed: !!hybrid.fallbackUsed,
+          answers: cleanAnswers,
+          category: selectedCategory,
+        },
+      });
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to get recommendations.');
       setSubmitting(false);
