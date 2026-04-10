@@ -10,7 +10,8 @@ const ruleService = {
     createRule: (data) => apiClient.post('/admin/rules', data).then((r) => r.data),
     updateRule: (id, data) => apiClient.put(`/admin/rules/${id}`, data).then((r) => r.data),
     toggleRuleStatus: (id, status) =>
-        apiClient.patch(`/admin/rules/${id}/status`, null, { params: { status } }).then((r) => r.data)
+        apiClient.patch(`/admin/rules/${id}/status`, null, { params: { status } }).then((r) => r.data),
+    deleteRule: (id) => apiClient.delete(`/admin/rules/${id}`).then((r) => r.data),
 };
 
 export default ruleService;
