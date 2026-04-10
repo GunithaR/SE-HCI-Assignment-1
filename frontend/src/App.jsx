@@ -24,7 +24,7 @@ export default function App() {
           {/* ── Public ──────────────────────────────────────────────────── */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          {/* <Route path="/register" element={<Register />} /> */}
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/wizard" element={<Wizard />} />
           <Route path="/results" element={<Results />} />

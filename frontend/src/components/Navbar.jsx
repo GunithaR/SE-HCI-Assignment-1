@@ -21,7 +21,7 @@ export default function Navbar() {
                     <img src="/PE+.jpg" alt="PE+" style={{ height: 32, width: 'auto', objectFit: 'contain', mixBlendMode: 'multiply' }} />
                     <img src="/sivilima.png" alt="Sivilima" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
                     <img src="/s-lon.png" alt="S-Lon" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
-                    
+
                     {/*}
                     <span
                         style={{
@@ -42,38 +42,46 @@ export default function Navbar() {
                         </span> 
                     </span>
                     */}
-                    
+
                 </Link>
 
                 {/* ── Nav links ────────────────────────────────────────────── */}
-                <div className="hidden md:flex flex-1 justify-center items-center gap-8 text-[0.95rem]">
-                    <Link to="/catalog" className="nav-link">Catalog</Link>
-                    <Link to="/wizard" className="nav-link">Get Recommendations</Link>
+                <div className="hidden md:flex flex-1 justify-center items-center gap-10 text-[0.92rem] font-semibold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                    <Link to="/catalog" className="nav-link tracking-wide opacity-80 hover:opacity-100 transition-opacity">Catalog</Link>
+                    <Link to="/wizard" className="nav-link tracking-wide opacity-80 hover:opacity-100 transition-opacity">Get Recommendations</Link>
                     {isAdmin && (
-                        <Link to="/admin" className="nav-link !font-bold !text-violet-600">
-                            Admin
+                        <Link to="/admin" className="nav-link !text-violet-600 font-bold">
+                            Admin Dashboard
                         </Link>
                     )}
                 </div>
 
                 {/* ── Auth actions ─────────────────────────────────────────── */}
-                <div className="flex items-center gap-3 relative right-3">
+                <div className="flex items-center gap-4 relative right-3">
                     {isAuthenticated ? (
                         <>
-                            <span className="text-xs hidden sm:block font-medium px-3 py-1 rounded-full border" style={{ color: 'var(--color-muted)', borderColor: 'var(--color-border)', background: 'var(--color-surface-alt)' }}>{user?.email}</span>
-                            <button id="nav-logout-btn" onClick={handleLogout} className="btn-secondary !rounded-full text-sm py-2 px-5 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors">
-                                Logout
+                            <span className="text-[0.7rem] hidden sm:block font-bold px-4 py-1.5 rounded-full border border-indigo-200/50 text-indigo-900/60 bg-indigo-50/30 uppercase tracking-widest" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                                {user?.email}
+                            </span>
+                            <button
+                                id="nav-logout-btn"
+                                onClick={handleLogout}
+                                className="text-[0.85rem] font-bold text-red-500 hover:text-red-700 transition-colors uppercase tracking-widest px-2"
+                                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                            >
+                                Sign Out
                             </button>
                         </>
                     ) : (
-                        <>
-                            <Link to="/login">
-                                <button id="nav-login-btn" className="btn-secondary !rounded-full text-sm py-2 px-5">Login</button>
-                            </Link>
-                            <Link to="/register">
-                                <button id="nav-register-btn" className="btn-primary !rounded-full text-sm py-2 px-5 shadow-lg shadow-indigo-500/30">Sign Up</button>
-                            </Link>
-                        </>
+                        <Link to="/login">
+                            <button
+                                id="nav-login-btn"
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[0.85rem] py-2.5 px-8 rounded-full shadow-lg shadow-indigo-600/20 active:scale-95 transition-all uppercase tracking-widest"
+                                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                            >
+                                Sign In
+                            </button>
+                        </Link>
                     )}
                 </div>
             </div>
