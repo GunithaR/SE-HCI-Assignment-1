@@ -126,7 +126,7 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
         }
         return {
             ...EMPTY_RULE_FORM,
-            conditions: [{ operandSource: 'PRODUCT', attributeName: '', operator: 'EQUALS', expectedValue: '' }]
+            conditions: [{ operandSource: 'PRODUCT', attributeName: PRODUCT_ATTRIBUTES[0], operator: 'EQUALS', expectedValue: '' }]
         };
     };
 
@@ -178,7 +178,7 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
     const addCondition = () => {
         setForm(f => ({
             ...f,
-            conditions: [...f.conditions, { operandSource: 'PRODUCT', attributeName: '', operator: 'EQUALS', expectedValue: '' }]
+            conditions: [...f.conditions, { operandSource: 'PRODUCT', attributeName: PRODUCT_ATTRIBUTES[0], operator: 'EQUALS', expectedValue: '' }]
         }));
     };
 
@@ -212,8 +212,27 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
         if (form.combinationType !== 'NONE' && form.conditions.length === 0) {
             setErrors({ _general: 'At least one condition is required.' }); return;
         }
+        // Validate each condition's fields
+        if (form.combinationType !== 'NONE') {
+            for (let i = 0; i < form.conditions.length; i++) {
+                const c = form.conditions[i];
+                if (!c.attributeName || !c.attributeName.trim()) {
+                    setErrors({ _general: `Condition ${i + 1}: please select an attribute.` }); return;
+                }
+                if (!c.expectedValue || !c.expectedValue.trim()) {
+                    setErrors({ _general: `Condition ${i + 1}: expected value is required.` }); return;
+                }
+            }
+        }
         if (!isHardConstraint && !isFilterOut && (!form.effectValue || Number(form.effectValue) <= 0)) {
             setErrors({ effectValue: 'Effect value must be a positive number.' }); return;
+        }
+        // Weight must be positive for soft preference rules
+        if (!isHardConstraint) {
+            const w = Number(form.weight);
+            if (!w || w <= 0) {
+                setErrors({ _general: 'Weight must be a positive number for soft preference rules.' }); return;
+            }
         }
 
         setSubmitting(true);
@@ -265,9 +284,21 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
             onSuccess(`Rule "${result.name}" ${isEdit ? 'updated' : 'created'} successfully! ✅`, result, isEdit, editingRule?.id);
             onClose();
         } catch (err) {
-            const msg = err?.response?.data?.message
-                || (typeof err?.response?.data === 'string' ? err.response.data : null)
-                || `Failed to ${isEdit ? 'update' : 'create'} rule.`;
+            // Backend may return ApiErrorResponse {message} OR Map<field, message> from @Valid
+            const data = err?.response?.data;
+            let msg;
+            if (data?.message) {
+                msg = data.message;
+            } else if (data && typeof data === 'object') {
+                // Field-level validation errors: join them all
+                msg = Object.entries(data)
+                    .map(([field, value]) => `${field}: ${value}`)
+                    .join(' | ');
+            } else if (typeof data === 'string') {
+                msg = data;
+            } else {
+                msg = `Failed to ${isEdit ? 'update' : 'create'} rule.`;
+            }
             setErrors({ _general: msg });
         } finally {
             setSubmitting(false);
