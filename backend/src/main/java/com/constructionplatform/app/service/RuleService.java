@@ -117,6 +117,13 @@ public class RuleService {
         return mapToResponseDTO(updatedRule);
     }
 
+    @Transactional
+    public void deleteRule(Long id) {
+        Rule rule = ruleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Rule not found with id: " + id));
+        ruleRepository.delete(rule);
+    }
+
     @Transactional(readOnly = true)
     public List<RuleResponseDTO> getActiveRules() {
         return ruleRepository.findByRuleStatusOrderByPriorityDesc(RuleStatus.ACTIVE).stream()

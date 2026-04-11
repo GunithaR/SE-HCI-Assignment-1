@@ -113,10 +113,17 @@ public class RuleValidationService {
             } else if (effectType == EffectType.FILTER_OUT) {
                 throw new InvalidRuleException("SOFT_PREFERENCE rules cannot use FILTER_OUT effect type");
             }
+<<<<<<< HEAD
             // Re-read effectType after potential auto-set to avoid stale local variable
             EffectType resolvedEffectType = dto.getEffectType();
             // Effect value must be positive for scoring effects
             if (resolvedEffectType != EffectType.FILTER_OUT) {
+=======
+            // Re-read effective type after potential default assignment
+            EffectType resolvedEffectType = dto.getEffectType();
+            // Effect value must be positive for scoring effects
+            if (resolvedEffectType != null && resolvedEffectType != EffectType.FILTER_OUT) {
+>>>>>>> origin/SCRUM-43-Delete-Rule
                 if (dto.getEffectValue() == null || dto.getEffectValue() <= 0) {
                     throw new InvalidRuleException("Effect value must be a positive number for ADD_SCORE / DEDUCT_SCORE");
                 }

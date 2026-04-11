@@ -356,7 +356,7 @@ body {
 }
 
 .zoom-image {
-  animation: slowZoom 20s ease-in-out infinite alternate;
+  animation: slowZoom 12s ease-in-out infinite alternate;
 }
 
 /* ── Micro-interactions ───────────────────────────────────────────────────── */
@@ -425,7 +425,7 @@ body {
 }
 
 .zoom-image {
-  animation: slowZoom 15s ease-in-out infinite alternate;
+  animation: slowZoom 10s ease-in-out infinite alternate;
 }
 
 /* ── Micro-interactions ───────────────────────────────────────────────────── */
