@@ -53,6 +53,12 @@ public class RuleController {
         return ResponseEntity.ok(updatedRule);
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteRule(@PathVariable Long id) {
+        ruleService.deleteRule(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/active")
     public ResponseEntity<List<RuleResponseDTO>> getActiveRules() {
         return ResponseEntity.ok(ruleService.getActiveRules());
