@@ -9,7 +9,7 @@ import axios from 'axios';
 const apiClient = axios.create({
     baseURL: '/api',
     headers: { 'Content-Type': 'application/json' },
-    timeout: 10000,
+    timeout: 60000,
 });
 
 // ── Request interceptor: attach Bearer token ──────────────────────────────
