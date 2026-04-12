@@ -50,10 +50,11 @@ public class MaintenanceStrategy implements RecommendationStrategy {
     }
 
     private String normalizeMaintenance(String answer) {
-        return switch (answer.toLowerCase()) {
-            case "very low", "low", "minimal" -> "LOW";
-            case "medium", "moderate", "occasional" -> "MEDIUM";
-            case "high", "regular" -> "HIGH";
+        // Answers are pre-normalised by AnswerNormalizationService;
+        // this is a safety net for edge cases.
+        String upper = answer.toUpperCase().trim();
+        return switch (upper) {
+            case "LOW", "MEDIUM", "HIGH" -> upper;
             default -> "MEDIUM";
         };
     }

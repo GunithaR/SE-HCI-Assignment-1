@@ -1,6 +1,8 @@
 package com.constructionplatform.app.service;
 
 import com.constructionplatform.app.dto.explanation.ExplanationRequestDTO;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,24 +11,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Service to handle generation of natural-language explanations from structured rule outputs.
- * Incorporates a modular AI integration layer with a robust fallback mechanism.
+ * Uses Google Gemini (free tier) with a robust fallback mechanism.
  */
 @Service
 public class ExplanationAIService {
 
     private static final Logger log = LoggerFactory.getLogger(ExplanationAIService.class);
 
-    // In a real scenario, this would be an OpenAI key or similar injected via env vars
-    @Value("${ai.service.api-key:UNCONFIGURED}")
+    @Value("${ai.gemini.api-key:UNCONFIGURED}")
     private String apiKey;
 
-    @Value("${ai.service.url:https://api.openai.com/v1/chat/completions}")
+    @Value("${ai.gemini.url:https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent}")
     private String apiUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * Tries to generate an AI explanation. Falls back to deterministic rule-based generator if failed.
@@ -38,8 +41,8 @@ public class ExplanationAIService {
             // 1. Build the AI prompt template
             String prompt = buildPromptTemplate(request);
 
-            // 2. Call AI Service natively
-            return callExternalAIService(prompt);
+            // 2. Call Gemini AI Service
+            return callGemini(prompt);
 
         } catch (Exception e) {
             log.warn("AI Service unavailable or failed. Executing fallback. Reason: {}", e.getMessage());
@@ -62,32 +65,50 @@ public class ExplanationAIService {
             prompt.append("Constraints Satisfied: ").append(String.join(", ", request.getConstraintsSatisfied())).append("\n");
         }
 
+        prompt.append("Respond with ONLY the explanation text, no markdown or formatting.");
         return prompt.toString();
     }
 
-    private String callExternalAIService(String prompt) {
+    private String callGemini(String prompt) throws Exception {
         if ("UNCONFIGURED".equals(apiKey)) {
-            // Fail fast organically to trigger the required fallback gracefully
-            throw new IllegalStateException("AI API key is missing from configuration.");
+            throw new IllegalStateException("Gemini API key is missing from configuration.");
         }
+
+        Map<String, Object> body = Map.of(
+                "contents", List.of(
+                        Map.of("parts", List.of(Map.of("text", prompt)))
+                ),
+                "generationConfig", Map.of(
+                        "temperature", 0.7,
+                        "maxOutputTokens", 150
+                )
+        );
+
+        String urlWithKey = apiUrl + "?key=" + apiKey;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(apiKey);
 
-        // Hypothetical generic payload structure for an LLM
-        String requestBody = String.format("{ \"model\": \"gpt-3.5-turbo\", \"messages\": [{\"role\": \"user\", \"content\": \"%s\"}] }", 
-                prompt.replace("\"", "\\\"").replace("\n", "\\n"));
+        HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(body), headers);
+        ResponseEntity<String> response = restTemplate.postForEntity(urlWithKey, entity, String.class);
 
-        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, entity, String.class);
-        
-        if (response.getStatusCode().is2xxSuccessful()) {
-             // Mock JSON parsing
-             return "Our AI confirms that this product represents the ideal synergy of your requirements.";
-        } else {
-             throw new RuntimeException("External API returned " + response.getStatusCode());
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new RuntimeException("Gemini API returned " + response.getStatusCode());
         }
+
+        JsonNode root = objectMapper.readTree(response.getBody());
+        JsonNode candidates = root.path("candidates");
+        if (!candidates.isArray() || candidates.isEmpty()) {
+            throw new RuntimeException("Gemini response has no candidates.");
+        }
+
+        return candidates.get(0)
+                .path("content")
+                .path("parts")
+                .get(0)
+                .path("text")
+                .asText()
+                .trim();
     }
 
     /**
