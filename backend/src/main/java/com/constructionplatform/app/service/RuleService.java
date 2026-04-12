@@ -130,13 +130,7 @@ public class RuleService {
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
     }
-
-    @Transactional
-    public void deleteRule(Long id) {
-        Rule rule = ruleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Rule not found with id: " + id));
-        ruleRepository.delete(rule);
-    }
+    
 
     private RuleResponseDTO mapToResponseDTO(Rule rule) {
         RuleResponseDTO response = new RuleResponseDTO();
