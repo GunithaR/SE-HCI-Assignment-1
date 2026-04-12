@@ -7,12 +7,12 @@ import AssistantWidget from './components/AssistantWidget';
 
 import Home from './pages/Home';
 import Login from './pages/Login';
-import Register from './pages/Register';
-import Catalog from './pages/Catalog';
-import Wizard from './pages/Wizard';
-import Results from './pages/Results';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminRules from './pages/AdminRules';
+// import Register from './pages/Register';
+// import Catalog from './pages/Catalog';
+// import Wizard from './pages/Wizard';
+// import Results from './pages/Results';
+// import AdminDashboard from './pages/AdminDashboard';
+// import AdminRules from './pages/AdminRules';
 
 export default function App() {
   return (
@@ -25,11 +25,12 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           {/* <Route path="/register" element={<Register />} /> */}
-          <Route path="/catalog" element={<Catalog />} />
-          <Route path="/wizard" element={<Wizard />} />
-          <Route path="/results" element={<Results />} />
+          {/* <Route path="/catalog" element={<Catalog />} /> */}
+          {/* <Route path="/wizard" element={<Wizard />} /> */}
+          {/* <Route path="/results" element={<Results />} /> */}
 
           {/* ── Admin (ADMIN role required) ──────────────────────────────── */}
+          {/* 
           <Route
             path="/admin"
             element={
@@ -54,9 +55,10 @@ export default function App() {
               </AdminRoute>
             }
           />
+          */}
 
           {/* ── Catch-all ────────────────────────────────────────────────── */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
 
         {/* Floating assistant — available on all pages */}

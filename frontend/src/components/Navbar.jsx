@@ -1,90 +1,64 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
-    const { isAuthenticated, isAdmin, user, logout } = useAuth();
-    const navigate = useNavigate();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-    const handleLogout = () => {
-        logout();
-        navigate('/');
-    };
+  // Hide Navbar completely on the Login page
+  if (location.pathname === '/login') return null;
 
-    return (
-        <nav className="light-theme fixed left-0 w-full z-50 glass-pill backdrop-blur-md shadow-lg     ring-1 ring-indigo-300 transition-all duration-300">
-            <div className="px-6 h-16 flex items-center justify-between">
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
-                {/* ── Logo / Brand ─────────────────────────────────────────── */}
-                <Link to="/" className="flex items-center gap-3 relative left-3" style={{ textDecoration: 'none' }}>
-                    <img src="/anton.png" alt="Anton" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
-                    <img src="/gfloor.png" alt="G-Floor" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
-                    <img src="/PE+.jpg" alt="PE+" style={{ height: 32, width: 'auto', objectFit: 'contain', mixBlendMode: 'multiply' }} />
-                    <img src="/sivilima.png" alt="Sivilima" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
-                    <img src="/s-lon.png" alt="S-Lon" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
+  return (
+    <nav className="fixed top-0 left-0 right-0 bg-[rgba(240,240,240,0.78)] backdrop-blur-xl z-50 h-[80px] px-[30px] flex items-center justify-between">
+      <div className="flex items-center gap-[75px]">
+        <Link to="/" className="font-['Manrope:Bold',sans-serif] font-bold text-[#4c1d95] text-[26px] tracking-[-1.2px] leading-[32px] whitespace-nowrap">
+          L + SIVILIMA
+        </Link>
+        
+        <div className="hidden md:flex items-center gap-[37px]">
+          <Link to="/catalog" className="font-['Inter:Medium',sans-serif] font-medium text-[#475569] text-[18px] tracking-[-0.35px] hover:text-[#4c1d95] transition-colors whitespace-nowrap">Catalog</Link>
+          <Link to="/wizard" className="font-['Inter:Medium',sans-serif] font-medium text-[#475569] text-[18px] tracking-[-0.35px] hover:text-[#4c1d95] transition-colors whitespace-nowrap">Recommendations</Link>
+          {isAdmin && (
+            <Link to="/admin" className="font-['Inter:Medium',sans-serif] font-medium text-[#475569] text-[18px] tracking-[-0.35px] hover:text-[#4c1d95] transition-colors whitespace-nowrap">Admin Dashboard</Link>
+          )}
+        </div>
+      </div>
 
-                    {/*}
-                    <span
-                        style={{
-                            fontFamily: 'Outfit, sans-serif',
-                            fontWeight: 900,
-                            fontSize: '1.2rem',
-                            background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            letterSpacing: '-0.02em',
-                            lineHeight: 1,
-                        }}
-                    >
-                        L<span style={{ color: 'var(--color-primary)', WebkitTextFillColor: 'var(--color-primary)' }}>+</span>
-                        {' '}
-                        <span style={{ fontWeight: 400, fontSize: '0.85rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                            SIVILIMA
-                        </span> 
-                    </span>
-                    */}
-
-                </Link>
-
-                {/* ── Nav links ────────────────────────────────────────────── */}
-                <div className="hidden md:flex flex-1 justify-center items-center gap-10 text-[0.92rem] font-semibold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                    <Link to="/catalog" className="nav-link tracking-wide opacity-80 hover:opacity-100 transition-opacity">Catalog</Link>
-                    <Link to="/wizard" className="nav-link tracking-wide opacity-80 hover:opacity-100 transition-opacity">Get Recommendations</Link>
-                    {isAdmin && (
-                        <Link to="/admin" className="nav-link !text-violet-600 font-bold">
-                            Admin Dashboard
-                        </Link>
-                    )}
-                </div>
-
-                {/* ── Auth actions ─────────────────────────────────────────── */}
-                <div className="flex items-center gap-4 relative right-3">
-                    {isAuthenticated ? (
-                        <>
-                            <span className="text-[0.7rem] hidden sm:block font-bold px-4 py-1.5 rounded-full border border-indigo-200/50 text-indigo-900/60 bg-indigo-50/30 uppercase tracking-widest" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                                {user?.email}
-                            </span>
-                            <button
-                                id="nav-logout-btn"
-                                onClick={handleLogout}
-                                className="text-[0.85rem] font-bold text-red-500 hover:text-red-700 transition-colors uppercase tracking-widest px-2"
-                                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                            >
-                                Sign Out
-                            </button>
-                        </>
-                    ) : (
-                        <Link to="/login">
-                            <button
-                                id="nav-login-btn"
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[0.85rem] py-2.5 px-8 rounded-full shadow-lg shadow-indigo-600/20 active:scale-95 transition-all uppercase tracking-widest"
-                                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                            >
-                                Sign In
-                            </button>
-                        </Link>
-                    )}
-                </div>
-            </div>
-        </nav>
-    );
+      <div className="flex items-center gap-[46px]">
+        {isAuthenticated ? (
+          <div className="flex items-center gap-6">
+            <span className="font-['Inter:Medium',sans-serif] text-[16px] font-medium text-[#475569] hidden sm:block truncate max-w-[150px]">{user?.email}</span>
+            <button 
+              onClick={handleLogout}
+              className="text-[16px] font-['Manrope:Bold',sans-serif] font-bold text-[#630ed4] hover:text-[#4c1d95] transition-colors uppercase tracking-widest whitespace-nowrap shrink-0"
+            >
+              Sign Out
+            </button>
+          </div>
+        ) : (
+          <Link to="/login" className="relative shrink-0 flex items-center justify-center size-[40px] rounded-full hover:bg-black/5 transition-colors group">
+            <img 
+              alt="Login Profile" 
+              className="block size-[19px] group-hover:scale-110 transition-transform" 
+              src="http://localhost:3845/assets/d642d5cda49192a34f75054038ce92679524e034.svg" 
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextElementSibling.style.display = 'block';
+              }}
+            />
+            {/* Fallback SVG profile icon */}
+            <svg className="hidden size-[19px] text-[#475569] group-hover:text-[#4c1d95] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+          </Link>
+        )}
+      </div>
+    </nav>
+  );
 }

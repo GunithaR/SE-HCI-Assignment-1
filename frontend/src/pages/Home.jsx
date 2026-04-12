@@ -1,340 +1,192 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useEffect, useState, useCallback } from 'react';
-import catalogService from '../services/catalogService';
+import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import catalogService from "../services/catalogService";
+import ProductSection from "../components/ProductSection";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Category metadata — icons + accent colours for the 5 blocks
-// ─────────────────────────────────────────────────────────────────────────────
-const CATEGORY_META = {
-    'Roofing Solution': { img: '/Roofing_Solution.jpg', color: '#6c63ff', desc: 'Durable roofing for every climate' },
-    'Flooring Solution': { img: '/Flooring_Solution.jpg', color: '#f59e0b', desc: 'Tiles, wood & beyond' },
-    'Ceiling Solution': { img: '/Ceiling_Solution.jpg', color: '#10b981', desc: 'Finish every room with style' },
-    'Wall Solution': { img: '/Wall_Solution.jpg', color: '#3b82f6', desc: 'Insulation, cladding & renders' },
-    'Accessories': { img: '/Accessories.jpg', color: '#a855f7', desc: 'Fittings, fixings & more' },
-};
+const imgHomePageImage = "http://localhost:3845/assets/f8c3ef8a3714caedee33afd06854e0f9ed0f03bf.png";
+const imgHomePageImage1 = "http://localhost:3845/assets/ed5de73e56ab249da8ce0afa0afbd5cbf1d2fa72.svg";
+const imgIcon = "http://localhost:3845/assets/b542828e96d84929e5e375f4855b44520a1f4058.svg";
 
-const BUDGET_COLORS = {
-    LOW: { bg: 'rgba(34,197,94,0.12)', fg: '#4ade80' },
-    MEDIUM: { bg: 'rgba(245,158,11,0.12)', fg: '#fbbf24' },
-    HIGH: { bg: 'rgba(239,68,68,0.12)', fg: '#f87171' },
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Product Card
-// ─────────────────────────────────────────────────────────────────────────────
-function ProductCard({ product }) {
-    const bc = BUDGET_COLORS[product.budgetLevel] || { bg: 'rgba(148,163,184,0.1)', fg: '#94a3b8' };
-    return (
-        <div style={{
-            background: 'var(--color-surface)',
-            border: '2px solid #a78bfa',
-            boxShadow: '0 4px 12px rgba(139,92,246,0.1)',
-            borderRadius: 16,
-            overflow: 'hidden',
-            padding: 0,
-            display: 'flex', flexDirection: 'column', gap: 0,
-            transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s',
-            cursor: 'default',
-        }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.4)'; e.currentTarget.style.boxShadow = 'var(--shadow-glow)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.boxShadow = 'none'; }}
-        >
-            {/* Product Image */}
-            {product.imageUrl && (
-                <div style={{ width: '100%', height: 180, overflow: 'hidden', background: 'var(--color-surface-alt)' }}>
-                    <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                        onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
-                    />
-                </div>
-            )}
-
-            {/* Card body */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '1.25rem', flex: 1 }}>
-                {/* Top row */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                    <div style={{ flex: 1 }}>
-                        <h3 style={{ color: 'var(--color-text)', fontWeight: 600, fontSize: '0.95rem', marginBottom: 2 }}>
-                            {product.name}
-                        </h3>
-                        <p style={{ color: 'var(--color-muted)', fontSize: '0.75rem' }}>
-                            {product.brandName && <span>{product.brandName}</span>}
-                            {product.brandName && product.categoryName && <span> · </span>}
-                            {product.categoryName && <span style={{ color: '#a78bfa' }}>{product.categoryName}</span>}
-                        </p>
-                    </div>
-                    {product.budgetLevel && (
-                        <span style={{ background: bc.bg, color: bc.fg, border: `1px solid ${bc.fg}44`, borderRadius: 9999, padding: '2px 10px', fontSize: '0.7rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                            {product.budgetLevel}
-                        </span>
-                    )}
-                </div>
-
-                {/* Description */}
-                <p style={{ color: 'var(--color-muted)', fontSize: '0.78rem', lineHeight: 1.65, flex: 1 }}>
-                    {product.description || 'Premium construction material.'}
-                </p>
-
-                {/* Attribute badges */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                    {product.climateSuitability && (
-                        <span style={{ background: 'rgba(139,92,246,0.12)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.25)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem' }}>
-                            ☁ {product.climateSuitability}
-                        </span>
-                    )}
-                    {product.maintenanceLevel && (
-                        <span style={{ background: 'rgba(20,184,166,0.12)', color: '#14b8a6', border: '1px solid rgba(20,184,166,0.25)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem' }}>
-                            🔧 {product.maintenanceLevel}
-                        </span>
-                    )}
-                    {product.durabilityRating && (
-                        <span style={{ background: 'var(--color-surface-alt)', color: 'var(--color-muted)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem', border: '1px solid var(--color-border)' }}>
-                            ★ {product.durabilityRating}/10
-                        </span>
-                    )}
-                </div>
-
-                {/* Price */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: 10 }}>
-                    <span style={{ color: '#8b5cf6', fontWeight: 700, fontSize: '1.15rem' }}>
-                        Rs. {Number(product.basePrice).toFixed(2)}
-                    </span>
-                    <span style={{
-                        padding: '3px 10px', borderRadius: 9999, fontSize: '0.68rem', fontWeight: 600,
-                        background: product.isActive ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-                        color: product.isActive ? '#16a34a' : '#dc2626',
-                    }}>
-                        {product.isActive ? 'In Stock' : 'Out of Stock'}
-                    </span>
-                </div>
-            </div>{/* end card body */}
-        </div>
-    );
+function HeadButtonSecondary({ className, property1 = "Default" }) {
+  return (
+    <div className={className || "backdrop-blur-[6px] bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.4)] border-solid flex flex-col items-center justify-center p-0 relative rounded-[48px] w-[240px] h-[56px]"}>
+      <div className="absolute bg-[rgba(255,255,255,0)] inset-[-1px] rounded-[48px] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]" />
+      <div className="flex flex-col font-['Manrope:Bold',sans-serif] font-bold h-full items-center justify-center leading-[0] relative shrink-0 text-[18px] text-center text-white w-full">
+        <Link to="/wizard" className="leading-[28px] w-full h-full flex items-center justify-center">Get Recommendations</Link>
+      </div>
+    </div>
+  );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Home Page
-// ─────────────────────────────────────────────────────────────────────────────
-export default function Home() {
-    const [categories, setCategories] = useState([]);
-    const [activeCatId, setActiveCatId] = useState(null); // null = show all
-    const [products, setProducts] = useState([]);
-    const [loadingCats, setLoadingCats] = useState(true);
-    const [loadingProds, setLoadingProds] = useState(false);
-    const [search, setSearch] = useState('');
-
-    // Load categories on mount
-    useEffect(() => {
-        catalogService.getCategories()
-            .then((cats) => setCategories(cats))
-            .catch(() => { })
-            .finally(() => setLoadingCats(false));
-    }, []);
-
-    // Load products whenever active category changes
-    const loadProducts = useCallback((catId) => {
-        setLoadingProds(true);
-        const fetcher = catId
-            ? catalogService.getProductsByCategory(catId, 0, 24)
-            : catalogService.getAllProducts(0, 24);
-
-        fetcher
-            .then((data) => {
-                // getAllProducts returns a Page, getProductsByCategory too
-                setProducts(data.content ?? []);
-            })
-            .catch(() => setProducts([]))
-            .finally(() => setLoadingProds(false));
-    }, []);
-
-    // Load all products initially (after categories loaded)
-    useEffect(() => {
-        if (!loadingCats) loadProducts(activeCatId);
-    }, [activeCatId, loadingCats, loadProducts]);
-
-    const handleCatClick = (catId) => {
-        // clicking the active category deselects it → show all
-        setActiveCatId((prev) => (prev === catId ? null : catId));
-        setSearch('');
-    };
-
-    const filtered = search
-        ? products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
-        : products;
-
-    const activeCat = categories.find((c) => c.id === activeCatId);
-
-    return (
-        <div className="light-theme" style={{ minHeight: '100vh', background: 'var(--bg-color)', position: 'relative', paddingTop: '5rem' }}>
-
-
-            {/* ── HERO ──────────────────────────────────────────────────────────── */}
-            <section style={{
-                textAlign: 'center',
-                padding: '9rem 1.5rem 4rem',
-                position: 'relative',
-                overflow: 'hidden',
-                backgroundImage: 'url("/store-bg.jpg")',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat'
-            }}>
-                {/* White/gray overlay layer */}
-                <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(255, 255, 255, 0.70)', zIndex: 0 }} />
-
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                    {/* Glow blobs */}
-                    <div style={{ position: 'absolute', top: '20%', left: '15%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%)', pointerEvents: 'none', zIndex: -1 }} />
-                    <div style={{ position: 'absolute', top: '10%', right: '10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%)', pointerEvents: 'none', zIndex: -1 }} />
-
-                    <p style={{ color: '#8b5cf6', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '1.2rem' }}>
-                        CONSTRUCTION PLATFORM
-                    </p>
-
-                    <h1 style={{
-                        fontFamily: 'Outfit, sans-serif',
-                        fontSize: 'clamp(3.5rem, 10vw, 8rem)',
-                        fontWeight: 900,
-                        letterSpacing: '-0.03em',
-                        lineHeight: 1.1,
-                        color: '#8b5cf6',
-                        marginBottom: '1.5rem',
-                    }}>
-                        L+<br /><span style={{ display: 'block', marginTop: '0.2em' }}>සිවිලිම</span>
-                    </h1>
-
-                    <p style={{ color: '#475569', fontSize: '1.05rem', maxWidth: 520, margin: '0 auto 2.5rem', lineHeight: 1.7, fontWeight: 500 }}>
-                        Browse premium construction materials from top brands. Filter by category, compare by budget and climate — all in one place.
-                    </p>
-                </div>
-            </section>
-
-            {/* ── 5 CATEGORY BLOCKS ─────────────────────────────────────────────── */}
-            <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1.5rem 4rem' }}>
-                <h2 style={{ textAlign: 'center', fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '1.6rem', color: 'var(--color-text)', marginBottom: '0.5rem' }}>
-                    Browse by Category
-                </h2>
-                <p style={{ textAlign: 'center', color: 'var(--color-muted)', fontSize: '0.85rem', marginBottom: '2rem' }}>
-                    Click any category to filter products below
-                </p>
-
-                {loadingCats ? (
-                    <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-                        <div className="spinner" />
-                    </div>
-                ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-                        {categories.map((cat) => {
-                            const meta = CATEGORY_META[cat.name] || { icon: '📦', color: '#6c63ff', desc: '' };
-                            const isActive = activeCatId === cat.id;
-                            return (
-                                <button
-                                    key={cat.id}
-                                    onClick={() => handleCatClick(cat.id)}
-                                    style={{
-                                        background: isActive
-                                            ? `linear-gradient(135deg, ${meta.color}33, ${meta.color}11)`
-                                            : 'var(--color-surface)',
-                                        border: isActive
-                                            ? `2px solid ${meta.color}`
-                                            : '2px solid #c4b5fd',
-                                        borderRadius: 20,
-                                        padding: '1.75rem 1rem',
-                                        cursor: 'pointer',
-                                        textAlign: 'center',
-                                        transition: 'all 0.25s',
-                                        transform: isActive ? 'translateY(-6px)' : 'translateY(0)',
-                                        boxShadow: isActive ? `0 12px 40px ${meta.color}33` : '0 4px 6px rgba(0,0,0,0.02)',
-                                    }}
-                                    onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.background = `${meta.color}15`; e.currentTarget.style.borderColor = `${meta.color}55`; e.currentTarget.style.transform = 'translateY(-3px)'; } }}
-                                    onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.background = 'var(--color-surface)'; e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.transform = 'translateY(0)'; } }}
-                                >
-                                    <div style={{ height: '64px', marginBottom: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', mixBlendMode: 'multiply' }}>
-                                        {meta.img ? (
-                                            <img src={meta.img} alt={cat.name} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', borderRadius: 8 }} />
-                                        ) : (
-                                            <span style={{ fontSize: '2.8rem' }}>📦</span>
-                                        )}
-                                    </div>
-                                    <div style={{ color: isActive ? 'var(--color-text)' : 'var(--color-text)', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.35rem' }}>
-                                        {cat.name}
-                                    </div>
-                                    <div style={{ color: isActive ? `${meta.color}dd` : 'var(--color-muted)', fontSize: '0.72rem', lineHeight: 1.4 }}>
-                                        {meta.desc}
-                                    </div>
-                                    {isActive && (
-                                        <div style={{ marginTop: '0.75rem', width: 32, height: 3, borderRadius: 9999, background: meta.color, margin: '0.75rem auto 0' }} />
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                )}
-            </section>
-
-            {/* ── PRODUCTS GRID ─────────────────────────────────────────────────── */}
-            <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1.5rem 5rem' }}>
-                {/* Section header */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: '1.5rem' }}>
-                    <div>
-                        <h2 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '1.4rem', color: 'var(--color-text)', marginBottom: 2 }}>
-                            {activeCat ? activeCat.name : 'All Products'}
-                        </h2>
-                        {activeCatId && (
-                            <button onClick={() => setActiveCatId(null)} style={{ background: 'none', border: 'none', color: '#6c63ff', fontSize: '0.78rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
-                                ← Show all categories
-                            </button>
-                        )}
-                    </div>
-
-                    <input
-                        placeholder="Search products…"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        style={{
-                            padding: '8px 16px', borderRadius: 10, fontSize: '0.85rem',
-                            background: 'var(--color-surface)',
-                            border: '2px solid #c4b5fd',
-                            color: '#3b0764', outline: 'none', width: 220,
-                            boxShadow: '0 2px 4px rgba(139,92,246,0.1)',
-                            fontWeight: 500
-                        }}
-                    />
-                </div>
-
-                {/* Divider */}
-                <div style={{ height: 1, background: 'var(--color-border)', marginBottom: '2rem' }} />
-
-                {loadingProds ? (
-                    <div style={{ display: 'flex', justifyContent: 'center', padding: '6rem' }}>
-                        <div className="spinner" />
-                    </div>
-                ) : filtered.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '5rem', color: '#64748b' }}>
-                        <p style={{ fontSize: '3rem', marginBottom: 12 }}>📭</p>
-                        <p style={{ color: 'var(--color-muted)', marginBottom: 8 }}>
-                            {search ? `No products match "${search}"` : 'No products in this category yet.'}
-                        </p>
-                        {search && (
-                            <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: '#8b5cf6', cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline' }}>
-                                Clear search
-                            </button>
-                        )}
-                    </div>
-                ) : (
-                    <>
-                        <p style={{ color: 'var(--color-muted)', fontSize: '0.78rem', marginBottom: '1.25rem' }}>
-                            {filtered.length} product{filtered.length !== 1 ? 's' : ''}
-                            {activeCat ? ` in ${activeCat.name}` : ' across all categories'}
-                        </p>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: '1.25rem' }}>
-                            {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
-                        </div>
-                    </>
-                )}
-            </section>
+function Footer({ className }) {
+  return (
+    <div className={className || "bg-[#f8fafc] border-[rgba(204,195,216,0.1)] border-solid border-t content-stretch flex flex-col sm:flex-row min-h-[243px] items-center justify-between pb-[64px] pt-[65px] px-[48px] relative w-full"}>
+      <div className="relative shrink-0 flex flex-col gap-[16px] items-start mb-8 sm:mb-0">
+        <div className="flex flex-col font-['Inter:Bold',sans-serif] font-bold h-[28px] justify-center leading-[0] not-italic relative shrink-0 text-[#4c1d95] text-[18px] w-[183.2px]">
+          <p className="leading-[28px]">L+ SIVILIMA</p>
         </div>
-    );
+        <div className="content-stretch flex flex-col items-start max-w-[320px] relative shrink-0">
+          <div className="flex flex-col font-['Inter:Regular',sans-serif] font-normal justify-center leading-[0] not-italic relative shrink-0 text-[#64748b] text-[14px]">
+            <p className="leading-[20px] mb-0">{`Precision in Luxury. Curating the world's finest`}</p>
+            <p className="leading-[20px]">architectural materials for visionary builders.</p>
+          </div>
+        </div>
+        <div className="content-stretch flex flex-col items-start pt-[16px] relative shrink-0">
+          <div className="flex flex-col font-['Inter:Regular',sans-serif] font-normal h-[20px] justify-center leading-[0] not-italic opacity-90 relative shrink-0 text-[#64748b] text-[14px] w-[329.94px]">
+            <p className="leading-[20px]">© 2026 L+ SIVILIMA. Precision in Luxury.</p>
+          </div>
+        </div>
+      </div>
+      <div className="relative shrink-0 flex gap-[48px] items-start justify-center">
+        <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0">
+          <div className="flex flex-col font-['Manrope:Bold',sans-serif] font-bold h-[16px] justify-center leading-[0] relative shrink-0 text-[#6d28d9] text-[12px] tracking-[1.2px] uppercase">
+            <p className="leading-[16px]">Discover</p>
+          </div>
+          <div className="flex flex-col font-['Inter:Regular',sans-serif] font-normal h-[20px] justify-center leading-[0] not-italic relative shrink-0 text-[#64748b] text-[14px]">
+            <p className="leading-[20px]">Materials</p>
+          </div>
+          <div className="flex flex-col font-['Inter:Regular',sans-serif] font-normal h-[20px] justify-center leading-[0] not-italic relative shrink-0 text-[#64748b] text-[14px]">
+            <p className="leading-[20px]">Sustainability</p>
+          </div>
+        </div>
+        <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0">
+          <div className="flex flex-col font-['Manrope:Bold',sans-serif] font-bold h-[16px] justify-center leading-[0] relative shrink-0 text-[#6d28d9] text-[12px] tracking-[1.2px] uppercase">
+            <p className="leading-[16px]">Company</p>
+          </div>
+          <div className="flex flex-col font-['Inter:Regular',sans-serif] font-normal h-[20px] justify-center leading-[0] not-italic relative shrink-0 text-[#64748b] text-[14px]">
+            <p className="leading-[20px]">Our Process</p>
+          </div>
+          <div className="flex flex-col font-['Inter:Regular',sans-serif] font-normal h-[20px] justify-center leading-[0] not-italic relative shrink-0 text-[#64748b] text-[14px]">
+            <p className="leading-[20px]">Contact</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Home() {
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [activeCategory, setActiveCategory] = useState("All");
+
+  useEffect(() => {
+    // Dynamic fetching of backend contents
+    catalogService.getAllProducts(0, 50).then((data) => {
+      setProducts(data.content || []);
+    }).catch(console.error);
+
+    catalogService.getCategories().then((data) => {
+      setCategories(data || []);
+    }).catch(console.error);
+  }, []);
+
+  const categoryProducts = activeCategory === 'All' 
+    ? products 
+    : products.filter(p => p.category?.name === activeCategory);
+  
+  const popularProducts = categoryProducts.slice(0, 4);
+  const budgetPicks = categoryProducts.filter(p => p.attribute?.budgetLevel === 'LOW' || p.basePrice < 1500).slice(0, 4);
+  const topRated = categoryProducts.filter(p => (p.attribute?.durabilityRating || 0) >= 4).slice(0, 4);
+  const climateProducts = categoryProducts.filter(p => p.attribute?.climateSuitability === 'ALL' || p.attribute?.climateSuitability === 'TROPICAL').slice(0, 4);
+
+  // Default filler if arrays are empty, just so the demo renders sections
+  const displayBudget = budgetPicks.length > 0 ? budgetPicks : categoryProducts.slice(1, 5);
+  const displayTopRated = topRated.length > 0 ? topRated : categoryProducts.slice(2, 6);
+  const displayClimate = climateProducts.length > 0 ? climateProducts : categoryProducts.slice(0, 4);
+
+  return (
+    <div className="bg-[#fbf8ff] relative w-full min-h-screen flex flex-col font-sans">
+      
+      {/* Hero Section Container */}
+      <div className="relative w-full h-[923px] shrink-0 mb-12">
+        <div className="absolute inset-0 overflow-clip rounded-bl-[70px] rounded-br-[70px] shadow-lg">
+          <img alt="Hero BG" className="absolute inset-0 object-cover size-full" src={imgHomePageImage} />
+          <img alt="Hero Overlay" className="absolute block inset-0 size-full" src={imgHomePageImage1} />
+        </div>
+
+        {/* Hero Text Content */}
+        <div className="absolute top-[20%] left-0 right-0 flex flex-col items-center justify-center pointer-events-none px-4">
+          <div className="flex flex-col gap-[20px] items-center justify-center text-center">
+            <h2 className="font-['Manrope:Bold',sans-serif] font-bold text-[#cda8ff] text-xl sm:text-[20px] tracking-[1.4px] uppercase whitespace-nowrap drop-shadow-md">
+              Built on Quality Choices
+            </h2>
+            <h1 className="font-['Inter:Extra_Bold',sans-serif] font-extrabold text-[#bcc3ff] text-5xl sm:text-[100px] tracking-[-3.6px] leading-[1.1] drop-shadow-lg">
+              L+ SIVILIMA
+            </h1>
+          </div>
+          
+          <div className="mt-6 mb-12 max-w-2xl text-center shadow-[0px_4px_3px_0px_rgba(0,0,0,0.1)] px-4">
+            <p className="font-['Inter:Medium',sans-serif] font-medium text-[#d2bbff] text-2xl sm:text-[30px] leading-snug drop-shadow-md">
+              Source premium materials for your next masterpiece
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center gap-6 w-full max-w-2xl pointer-events-auto">
+            <div className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[8px] flex items-center justify-between w-full h-[72px] p-[8px] rounded-[9999px] shadow-[0px_25px_50px_0px_rgba(0,0,0,0.25)] border border-white/20">
+              <div className="flex gap-[12px] items-center px-[20px] shrink-0">
+                <img alt="Search" className="size-[18px]" src={imgIcon} />
+                <span className="font-['Inter:Medium',sans-serif] font-medium text-[16px] sm:text-[18px] text-[rgba(255,255,255,0.7)] truncate">
+                  Search materials (tiles, roofing...)
+                </span>
+              </div>
+              <button className="bg-[#630ed4] flex flex-col items-center justify-center rounded-[48px] hover:bg-[#4c1d95] transition-colors shadow-lg w-[160px] h-[56px] shrink-0">
+                <span className="font-['Manrope:Bold',sans-serif] font-bold text-[16px] sm:text-[18px] text-white">
+                  Search
+                </span>
+              </button>
+            </div>
+
+            <div className="flex gap-[20px] sm:gap-[42px] mt-2 justify-center w-full">
+              <Link to="/catalog" className="bg-[#630ed4] flex flex-col items-center justify-center rounded-[48px] shadow-lg hover:bg-[#4c1d95] transition-colors w-[240px] h-[56px]">
+                <span className="font-['Manrope:Bold',sans-serif] font-bold text-[16px] sm:text-[18px] text-white">Browse Materials</span>
+              </Link>
+              <HeadButtonSecondary />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center relative z-10 w-full max-w-[1440px] mx-auto px-6 sm:px-12 pt-16 pb-24">
+        {/* Dynamic Category Tabs */}
+        <div className="flex flex-nowrap gap-6 items-center justify-start py-8 mb-12 sm:mb-16 w-full overflow-x-auto no-scrollbar scroll-smooth">
+          <button 
+             onClick={() => setActiveCategory('All')}
+             className={`w-[220px] h-[54px] rounded-[32px] font-bold text-[14px] hover:scale-[1.02] hover:shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1)] transition-all shadow-md active:scale-[0.98] shrink-0 ${activeCategory === 'All' ? 'bg-[#630ed4] text-white' : 'bg-white text-[#25005a]'}`}
+          >
+            All
+          </button>
+          
+          {categories.map(cat => (
+             <button 
+               key={cat.id}
+               onClick={() => setActiveCategory(cat.name)}
+               className={`w-[220px] h-[54px] rounded-[32px] font-bold text-[14px] hover:scale-[1.02] hover:shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1)] transition-all shadow-md active:scale-[0.98] shrink-0 ${activeCategory === cat.name ? 'bg-[#630ed4] text-white' : 'bg-white text-[#25005a]'}`}
+             >
+               {cat.name}
+             </button>
+          ))}
+        </div>
+
+        {/* Product Sections */}
+        {products.length === 0 ? (
+          <div className="text-center text-[#475569] py-20 text-xl font-medium w-full">
+             No products registered yet. Admin needs to add products.
+          </div>
+        ) : (
+          <div className="w-full flex-col gap-12 sm:gap-16 flex justify-center items-center">
+            <ProductSection title="Popular Right Now" products={popularProducts} />
+            <div className="w-full h-px bg-black/5 my-2"></div>
+            <ProductSection title="Budget Friendly Picks" products={displayBudget} />
+            <div className="w-full h-px bg-black/5 my-2"></div>
+            <ProductSection title="Top Rated Materials" products={displayTopRated} />
+            <div className="w-full h-px bg-black/5 my-2"></div>
+            <ProductSection title="Best for your climate" products={displayClimate} />
+          </div>
+        )}
+      </div>
+
+      <Footer />
+    </div>
+  );
 }

@@ -1,16 +1,36 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-/** Redirects unauthenticated users to /login. */
+/**
+ * Ensures the user is logged in. 
+ * If not, redirects them to the login page and preserves their intended location securely.
+ */
 export function ProtectedRoute({ children }) {
-    const { isAuthenticated } = useAuth();
-    return isAuthenticated ? children : <Navigate to="/login" replace />;
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
 }
 
-/** Redirects non-admin users to / . Allows both ADMIN and SUB_ADMIN. */
+/**
+ * Ensures the user is logged in AND has an Admin role (ADMIN or SUB_ADMIN).
+ * Redirects them accordingly if requirements aren't met.
+ */
 export function AdminRoute({ children }) {
-    const { isAuthenticated, isAdmin } = useAuth();
-    if (!isAuthenticated) return <Navigate to="/login" replace />;
-    if (!isAdmin) return <Navigate to="/" replace />;
-    return children;
+  const { isAuthenticated, isAdmin } = useAuth();
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
 }

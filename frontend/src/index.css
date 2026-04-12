@@ -63,6 +63,15 @@ body {
   display: none;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
 /* ── Glassmorphism utility ────────────────────────────────────────────────── */
 .glass {
   background: rgba(30, 30, 46, 0.7);
