@@ -2,14 +2,13 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useState } from 'react';
 import catalogService from '../services/catalogService';
 
-/* ───────────────── Strategy display names & colors ─────────────────────── */
 const STRATEGY_META = {
-  BUDGET: { label: 'Budget', color: '#22c55e', icon: '💰' },
-  ENVIRONMENT: { label: 'Environment', color: '#3b82f6', icon: '🌍' },
-  PERFORMANCE: { label: 'Performance', color: '#f59e0b', icon: '⚡' },
-  STYLE: { label: 'Style', color: '#ec4899', icon: '🎨' },
-  MAINTENANCE: { label: 'Maintenance', color: '#8b5cf6', icon: '🔧' },
-  USAGE: { label: 'Usage', color: '#14b8a6', icon: '🏠' },
+  'Budget Match': { label: 'Budget', color: '#22c55e', icon: '💰' },
+  'Environment Match': { label: 'Environment', color: '#3b82f6', icon: '🌍' },
+  'Performance Match': { label: 'Performance', color: '#f59e0b', icon: '⚡' },
+  'Style Match': { label: 'Style', color: '#ec4899', icon: '🎨' },
+  'Maintenance Match': { label: 'Maintenance', color: '#8b5cf6', icon: '🔧' },
+  'Usage Match': { label: 'Usage', color: '#14b8a6', icon: '🏠' },
 };
 
 const scoreColor = (score) => {

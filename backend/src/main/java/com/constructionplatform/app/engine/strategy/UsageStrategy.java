@@ -97,7 +97,7 @@ public class UsageStrategy implements RecommendationStrategy {
                 double heat = scoreResistance(attr.getHeatResistance());
                 yield (water + heat) / 2.0;
             }
-            case "commercial" -> scoreDurability(attr.getDurabilityRating(), 8);
+            case "commercial" -> scoreResistance(attr.getDurabilityRating());
             case "living/bedroom", "living", "bedroom" -> 7.0; // Most products work
             default -> 5.0;
         };
@@ -127,8 +127,8 @@ public class UsageStrategy implements RecommendationStrategy {
 
     private double evaluateTraffic(String traffic, ProductAttribute attr) {
         return switch (traffic.toLowerCase()) {
-            case "high" -> scoreDurability(attr.getDurabilityRating(), 8);
-            case "medium" -> scoreDurability(attr.getDurabilityRating(), 5);
+            case "high" -> scoreResistance(attr.getDurabilityRating());
+            case "medium" -> scoreResistance(attr.getDurabilityRating());
             case "low" -> 7.0; // Low traffic — most products are fine
             default -> 5.0;
         };
@@ -136,7 +136,7 @@ public class UsageStrategy implements RecommendationStrategy {
 
     private double evaluateAccessoryType(String type, ProductAttribute attr) {
         return switch (type.toLowerCase()) {
-            case "installation" -> scoreDurability(attr.getDurabilityRating(), 6);
+            case "installation" -> scoreResistance(attr.getDurabilityRating());
             case "finishing" -> 7.0;
             case "decorative" -> 6.0;
             default -> 5.0;
@@ -145,7 +145,7 @@ public class UsageStrategy implements RecommendationStrategy {
 
     private double evaluateUsageDuration(String duration, ProductAttribute attr) {
         return switch (duration.toLowerCase()) {
-            case "long-term" -> scoreDurability(attr.getDurabilityRating(), 7);
+            case "long-term" -> scoreResistance(attr.getDurabilityRating());
             case "one-time" -> 7.0; // Any durability is fine
             default -> 5.0;
         };
@@ -158,12 +158,5 @@ public class UsageStrategy implements RecommendationStrategy {
             case MEDIUM -> 6.0;
             case LOW -> 2.0;
         };
-    }
-
-    private double scoreDurability(Integer durabilityRating, int threshold) {
-        if (durabilityRating == null) return 3.0;
-        if (durabilityRating >= threshold) return 10.0;
-        if (durabilityRating >= threshold - 2) return 6.0;
-        return 2.0;
     }
 }

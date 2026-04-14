@@ -91,7 +91,7 @@ function ProductCard({ product }) {
                     )}
                     {product.durabilityRating && (
                         <span style={{ background: 'var(--color-surface-alt)', color: 'var(--color-muted)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem', border: '1px solid var(--color-border)' }}>
-                            ★ {product.durabilityRating}/10
+                            ★ {product.durabilityRating}
                         </span>
                     )}
                 </div>

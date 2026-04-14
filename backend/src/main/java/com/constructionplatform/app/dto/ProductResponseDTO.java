@@ -32,7 +32,7 @@ public class ProductResponseDTO {
 
     // ── Attributes ────────────────────────────────────────────────────────────
     private String budgetLevel;
-    private Integer durabilityRating;
+    private String durabilityRating;
     private String climateSuitability;
     private String maintenanceLevel;
     private String style;
@@ -71,7 +71,7 @@ public class ProductResponseDTO {
         ProductAttribute attr = product.getAttribute();
         if (attr != null) {
             dto.budgetLevel = attr.getBudgetLevel() != null ? attr.getBudgetLevel().name() : null;
-            dto.durabilityRating = attr.getDurabilityRating();
+            dto.durabilityRating = attr.getDurabilityRating() != null ? attr.getDurabilityRating().name() : null;
             dto.climateSuitability = attr.getClimateSuitability() != null ? attr.getClimateSuitability().name() : null;
             dto.maintenanceLevel = attr.getMaintenanceLevel() != null ? attr.getMaintenanceLevel().name() : null;
             dto.style = attr.getStyle();
@@ -126,7 +126,7 @@ public class ProductResponseDTO {
         return budgetLevel;
     }
 
-    public Integer getDurabilityRating() {
+    public String getDurabilityRating() {
         return durabilityRating;
     }
 
@@ -196,7 +196,7 @@ public class ProductResponseDTO {
         this.budgetLevel = budgetLevel;
     }
 
-    public void setDurabilityRating(Integer durabilityRating) {
+    public void setDurabilityRating(String durabilityRating) {
         this.durabilityRating = durabilityRating;
     }
 

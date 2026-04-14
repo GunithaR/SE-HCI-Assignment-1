@@ -87,7 +87,7 @@ function ProductCard({ product }) {
                     </span>
                     {product.durabilityRating && (
                         <span style={{ color: '#64748b', fontSize: '0.72rem' }}>
-                            Durability: <strong style={{ color: '#94a3b8' }}>{product.durabilityRating}/10</strong>
+                    Durability: <strong style={{ color: '#94a3b8' }}>{product.durabilityRating}</strong>
                         </span>
                     )}
                 </div>

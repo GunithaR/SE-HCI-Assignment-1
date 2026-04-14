@@ -173,7 +173,7 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
             categoryId: Number(form.categoryId),
             brandId: Number(form.brandId),
             basePrice: parseFloat(form.basePrice),
-            durabilityRating: parseInt(form.durabilityRating, 10),
+            durabilityRating: form.durabilityRating,
             isActive: form.isActive,
         };
         try {
@@ -298,8 +298,11 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                             {errors.maintenanceLevel && <p style={err}>{errors.maintenanceLevel}</p>}
                         </div>
                         <div>
-                            <label style={lbl}>Durability Rating * (1–10)</label>
-                            <input type="number" min="1" max="10" value={form.durabilityRating} onChange={set('durabilityRating')} style={inp('durabilityRating')} placeholder="8" required />
+                            <label style={lbl}>Durability Rating *</label>
+                            <select value={form.durabilityRating} onChange={set('durabilityRating')} style={inp('durabilityRating')} required>
+                                <option value="">Select…</option>
+                                {['LOW', 'MEDIUM', 'HIGH'].map((v) => <option key={v} value={v}>{v}</option>)}
+                            </select>
                             {errors.durabilityRating && <p style={err}>{errors.durabilityRating}</p>}
                         </div>
                     </div>
