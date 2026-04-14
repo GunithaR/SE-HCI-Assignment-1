@@ -1,10 +1,7 @@
 package com.constructionplatform.app.controller;
 
 import com.constructionplatform.app.engine.AdjustedProductScore;
-import com.constructionplatform.app.engine.RecommendationEngine;
-import com.constructionplatform.app.engine.RecommendationEngine.ProductScore;
-import com.constructionplatform.app.engine.RulePostProcessor;
-import com.constructionplatform.app.engine.UserAnswers;
+import com.constructionplatform.app.engine.DynamicRuleEngine;
 import com.constructionplatform.app.entity.Product;
 import com.constructionplatform.app.repository.ProductRepository;
 import com.constructionplatform.app.service.AnswerNormalizationService;
@@ -12,52 +9,27 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
- * Debug endpoints to inspect how the AI normalizer and rule post-processor
+ * Debug endpoints to inspect how the AI normalizer and dynamic rule engine
  * transform data through the recommendation pipeline.
- *
- * <p>These endpoints are public and intended for development/demo use only.
- * In production, they should be secured or removed.</p>
  */
 @RestController
 @RequestMapping("/api/public/debug")
 public class RecommendationDebugController {
 
     private final AnswerNormalizationService normalizationService;
-    private final RecommendationEngine recommendationEngine;
-    private final RulePostProcessor rulePostProcessor;
+    private final DynamicRuleEngine dynamicRuleEngine;
     private final ProductRepository productRepository;
 
     public RecommendationDebugController(AnswerNormalizationService normalizationService,
-                                          RecommendationEngine recommendationEngine,
-                                          RulePostProcessor rulePostProcessor,
+                                          DynamicRuleEngine dynamicRuleEngine,
                                           ProductRepository productRepository) {
         this.normalizationService = normalizationService;
-        this.recommendationEngine = recommendationEngine;
-        this.rulePostProcessor = rulePostProcessor;
+        this.dynamicRuleEngine = dynamicRuleEngine;
         this.productRepository = productRepository;
     }
 
-    // ── 1. Test AI Normalization ─────────────────────────────────────────────
-
-    /**
-     * POST /api/public/debug/normalize
-     *
-     * Test how the AI normalizer converts raw user answers into system values.
-     *
-     * Request body example:
-     * {
-     *   "category": "Roofing Solution",
-     *   "answers": {
-     *     "budget": "economy",
-     *     "location": "coastal area",
-     *     "maintenance": "very low",
-     *     "style": "modern"
-     *   }
-     * }
-     */
     @PostMapping("/normalize")
     public ResponseEntity<Map<String, Object>> testNormalization(@RequestBody Map<String, Object> request) {
         String category = (String) request.getOrDefault("category", "Unknown");
@@ -65,13 +37,9 @@ public class RecommendationDebugController {
         @SuppressWarnings("unchecked")
         Map<String, String> rawAnswers = (Map<String, String>) request.getOrDefault("answers", Map.of());
 
-        // Run AI normalization
         Map<String, String> aiNormalized = normalizationService.normalize(category, rawAnswers);
-
-        // Also run fallback normalization for comparison
         Map<String, String> fallbackNormalized = normalizationService.fallbackNormalize(category, rawAnswers);
 
-        // Build comparison
         List<Map<String, String>> comparison = new ArrayList<>();
         for (String key : rawAnswers.keySet()) {
             Map<String, String> row = new LinkedHashMap<>();
@@ -93,19 +61,6 @@ public class RecommendationDebugController {
         return ResponseEntity.ok(result);
     }
 
-    // ── 2. Rule Impact Analysis ─────────────────────────────────────────────
-
-    /**
-     * POST /api/public/debug/rule-impact
-     *
-     * Shows how rules affect scores — comparing BEFORE (strategy-only) vs AFTER (with rules).
-     *
-     * Request body: same as /api/public/recommendations
-     * {
-     *   "category": "Roofing Solution",
-     *   "answers": { "budget": "economy", "location": "coastal area" }
-     * }
-     */
     @PostMapping("/rule-impact")
     public ResponseEntity<Map<String, Object>> testRuleImpact(@RequestBody Map<String, Object> request) {
         String category = (String) request.getOrDefault("category", "Unknown");
@@ -113,29 +68,22 @@ public class RecommendationDebugController {
         @SuppressWarnings("unchecked")
         Map<String, String> rawAnswers = (Map<String, String>) request.getOrDefault("answers", Map.of());
 
-        // Step 1: Normalize
         Map<String, String> normalized = normalizationService.normalize(category, rawAnswers);
 
-        // Step 2: Load candidates
         List<Product> candidates = loadCandidates(category);
         if (candidates.isEmpty()) {
             return ResponseEntity.ok(Map.of("message", "No products found for category: " + category));
         }
 
-        // Step 3: Strategy scoring
-        UserAnswers userAnswers = new UserAnswers(category, normalized);
-        List<ProductScore> strategyScores = recommendationEngine.recommend(candidates, userAnswers, 10);
+        // Run dynamic rule engine
+        List<AdjustedProductScore> scoredProducts = dynamicRuleEngine.scoreProducts(candidates, normalized, 10);
 
-        // Step 4: Rule post-processing
-        List<AdjustedProductScore> adjustedScores = rulePostProcessor.applyRules(strategyScores, normalized);
-
-        // Build comparison table: before vs after
         List<Map<String, Object>> products = new ArrayList<>();
-        for (AdjustedProductScore adj : adjustedScores) {
+        for (AdjustedProductScore adj : scoredProducts) {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("productName", adj.getProduct().getName());
             row.put("category", adj.getProduct().getCategory() != null ? adj.getProduct().getCategory().getName() : "—");
-            row.put("strategyScore", round(adj.getStrategyScore()));
+            row.put("baseScore", round(adj.getStrategyScore()));
             row.put("ruleAdjustment", round(adj.getRuleAdjustment()));
             row.put("finalScore", round(adj.getFinalScore()));
             row.put("scoreDelta", adj.getRuleAdjustment() != 0
@@ -144,7 +92,7 @@ public class RecommendationDebugController {
             row.put("excluded", adj.isExcluded());
             row.put("appliedRules", adj.getAppliedRuleNames());
             row.put("excludedByRules", adj.getExcludedByRules());
-            row.put("strategyBreakdown", adj.getStrategyScores());
+            row.put("ruleBreakdown", adj.getStrategyScores());
             row.put("tradeOffs", adj.getTradeOffs());
             products.add(row);
         }
@@ -153,16 +101,11 @@ public class RecommendationDebugController {
         result.put("category", category);
         result.put("normalizedAnswers", normalized);
         result.put("totalProducts", products.size());
-        result.put("excludedCount", adjustedScores.stream().filter(AdjustedProductScore::isExcluded).count());
-        result.put("rulesAppliedCount", adjustedScores.stream()
-                .mapToInt(a -> a.getAppliedRuleNames().size())
-                .sum());
+        result.put("excludedCount", scoredProducts.stream().filter(AdjustedProductScore::isExcluded).count());
         result.put("products", products);
 
         return ResponseEntity.ok(result);
     }
-
-    // ── Helpers ──────────────────────────────────────────────────────────────
 
     private List<Product> loadCandidates(String category) {
         List<Product> products = productRepository.findByCategoryNameAndIsActiveTrue(category);

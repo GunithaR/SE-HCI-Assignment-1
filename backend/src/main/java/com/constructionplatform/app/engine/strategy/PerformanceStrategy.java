@@ -69,7 +69,7 @@ public class PerformanceStrategy implements RecommendationStrategy {
         return switch (concern.toLowerCase()) {
             case "keep cost low", "affordable", "cost" -> 5.0; // Handled by BudgetStrategy
             case "keep house cool", "heat reduction" -> scoreResistance(attr.getHeatResistance());
-            case "long-lasting", "long lasting", "durability" -> scoreDurability(attr.getDurabilityRating());
+            case "long-lasting", "long lasting", "durability" -> scoreResistance(attr.getDurabilityRating());
             case "reduce noise", "noise", "sound insulation" -> scoreResistance(attr.getNoiseReduction());
             default -> 5.0;
         };
@@ -79,7 +79,7 @@ public class PerformanceStrategy implements RecommendationStrategy {
         return switch (priority.toLowerCase()) {
             case "affordable", "cost", "budget" -> 5.0; // Handled by BudgetStrategy
             case "appearance", "decoration" -> 7.0; // Style handles appearance
-            case "long-lasting", "durability" -> scoreDurability(attr.getDurabilityRating());
+            case "long-lasting", "durability" -> scoreResistance(attr.getDurabilityRating());
             case "easy to clean", "easy cleaning", "protection" -> scoreResistance(attr.getWaterResistance());
             case "compatibility" -> 6.0; // Neutral
             default -> 5.0;
@@ -110,12 +110,5 @@ public class PerformanceStrategy implements RecommendationStrategy {
             case MEDIUM -> 6.0;
             case LOW -> 2.0;
         };
-    }
-
-    private double scoreDurability(Integer rating) {
-        if (rating == null) return 3.0;
-        if (rating >= 8) return 10.0;
-        if (rating >= 5) return 6.0;
-        return 2.0;
     }
 }

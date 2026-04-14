@@ -111,6 +111,32 @@ const catalogService = {
 
     /** POST /api/admin/sub-admins */
     createSubAdminUser: (data) => apiClient.post('/admin/sub-admins', data).then((r) => r.data),
+
+    // ── Rule Management (ADMIN role required) ────────────────────────────────
+
+    /** GET /api/admin/rules — all rules */
+    getRules: () => apiClient.get('/admin/rules').then((r) => r.data),
+
+    /** GET /api/admin/rules/active — active rules only */
+    getActiveRules: () => apiClient.get('/admin/rules/active').then((r) => r.data),
+
+    /** GET /api/admin/rules/:id — single rule with details */
+    getRuleById: (id) => apiClient.get(`/admin/rules/${id}`).then((r) => r.data),
+
+    /** POST /api/admin/rules — create a new rule */
+    createRule: (data) => apiClient.post('/admin/rules', data).then((r) => r.data),
+
+    /** PUT /api/admin/rules/:id — update a rule */
+    updateRule: (id, data) => apiClient.put(`/admin/rules/${id}`, data).then((r) => r.data),
+
+    /** PATCH /api/admin/rules/:id/status — toggle active/inactive */
+    toggleRuleStatus: (id) => apiClient.patch(`/admin/rules/${id}/status`).then((r) => r.data),
+
+    /** DELETE /api/admin/rules/:id — delete a rule */
+    deleteRule: (id) => apiClient.delete(`/admin/rules/${id}`),
+
+    /** GET /api/admin/product-attributes/meta — attribute metadata for rule creation */
+    getAttributeMeta: () => apiClient.get('/admin/product-attributes/meta').then((r) => r.data),
 };
 
 export default catalogService;

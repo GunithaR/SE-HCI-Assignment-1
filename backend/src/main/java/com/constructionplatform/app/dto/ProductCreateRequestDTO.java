@@ -5,6 +5,7 @@ import com.constructionplatform.app.entity.ProductAttribute.ClimateSuitability;
 import com.constructionplatform.app.entity.ProductAttribute.MaintenanceLevel;
 import com.constructionplatform.app.entity.ProductAttribute.Material;
 import com.constructionplatform.app.entity.ProductAttribute.ProductSize;
+import com.constructionplatform.app.entity.ProductAttribute.ResistanceLevel;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -42,10 +43,8 @@ public class ProductCreateRequestDTO {
     @NotNull(message = "Budget level is required (LOW, MEDIUM, HIGH)")
     private BudgetLevel budgetLevel;
 
-    @NotNull(message = "Durability rating is required")
-    @Min(value = 1, message = "Durability rating must be at least 1")
-    @Max(value = 10, message = "Durability rating must be at most 10")
-    private Integer durabilityRating;
+    @NotNull(message = "Durability rating is required (LOW, MEDIUM, HIGH)")
+    private ResistanceLevel durabilityRating;
 
     @NotNull(message = "Climate suitability is required (TROPICAL, ARID, TEMPERATE, COLD, ALL)")
     private ClimateSuitability climateSuitability;
@@ -86,7 +85,7 @@ public class ProductCreateRequestDTO {
         return budgetLevel;
     }
 
-    public Integer getDurabilityRating() {
+    public ResistanceLevel getDurabilityRating() {
         return durabilityRating;
     }
 
@@ -136,7 +135,7 @@ public class ProductCreateRequestDTO {
         this.budgetLevel = budgetLevel;
     }
 
-    public void setDurabilityRating(Integer durabilityRating) {
+    public void setDurabilityRating(ResistanceLevel durabilityRating) {
         this.durabilityRating = durabilityRating;
     }
 

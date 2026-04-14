@@ -19,8 +19,9 @@ public class ProductAttribute {
     @Column(name = "budget_level", nullable = false, length = 10)
     private BudgetLevel budgetLevel;
 
-    @Column(name = "durability_rating", nullable = false)
-    private Integer durabilityRating;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "durability_rating", nullable = false, length = 10)
+    private ResistanceLevel durabilityRating;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "climate_suitability", nullable = false, length = 15)
@@ -83,7 +84,7 @@ public class ProductAttribute {
         return budgetLevel;
     }
 
-    public Integer getDurabilityRating() {
+    public ResistanceLevel getDurabilityRating() {
         return durabilityRating;
     }
 
@@ -145,7 +146,7 @@ public class ProductAttribute {
         this.budgetLevel = b;
     }
 
-    public void setDurabilityRating(Integer r) {
+    public void setDurabilityRating(ResistanceLevel r) {
         this.durabilityRating = r;
     }
 
@@ -203,7 +204,7 @@ public class ProductAttribute {
         private Long productId;
         private Product product;
         private BudgetLevel budgetLevel;
-        private Integer durabilityRating;
+        private ResistanceLevel durabilityRating;
         private ClimateSuitability climateSuitability;
         private MaintenanceLevel maintenanceLevel;
         private String style;
@@ -231,7 +232,7 @@ public class ProductAttribute {
             return this;
         }
 
-        public Builder durabilityRating(Integer r) {
+        public Builder durabilityRating(ResistanceLevel r) {
             this.durabilityRating = r;
             return this;
         }

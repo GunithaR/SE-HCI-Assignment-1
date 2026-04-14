@@ -52,7 +52,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
       WHERE p.isActive = true
         AND a.budgetLevel = :budgetLevel
         AND (a.climateSuitability = :climate OR a.climateSuitability = 'ALL')
-      ORDER BY a.durabilityRating DESC
+      ORDER BY p.name ASC
       """)
   List<Product> findByRuleFilter(
       @Param("budgetLevel") BudgetLevel budgetLevel,

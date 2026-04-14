@@ -2,10 +2,12 @@ package com.constructionplatform.app.service;
 
 import com.constructionplatform.app.dto.recommendation.QuestionDTO;
 import com.constructionplatform.app.dto.recommendation.QuestionDTO.OptionDTO;
+import com.constructionplatform.app.dto.recommendation.QuestionKeyDTO;
 import com.constructionplatform.app.dto.recommendation.QuestionSetDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Returns category-specific question sets for the guided recommendation wizard.
@@ -42,6 +44,47 @@ public class QuestionnaireService {
 
     public List<String> getAvailableCategories() {
         return new ArrayList<>(QUESTION_SETS.keySet());
+    }
+
+    /**
+     * Returns all unique question keys across all categories with their answer options.
+     * Used by the admin rule editor to populate answer key dropdowns.
+     */
+    public List<QuestionKeyDTO> getAllQuestionKeys() {
+        // Collect all questions grouped by key
+        Map<String, QuestionKeyDTO> byKey = new LinkedHashMap<>();
+
+        for (Map.Entry<String, QuestionSetDTO> entry : QUESTION_SETS.entrySet()) {
+            String category = entry.getKey();
+            for (QuestionDTO q : entry.getValue().getQuestions()) {
+                String key = q.getId();
+                QuestionKeyDTO existing = byKey.get(key);
+
+                List<QuestionKeyDTO.OptionInfo> options = q.getOptions().stream()
+                        .map(o -> new QuestionKeyDTO.OptionInfo(o.getValue(), o.getLabel()))
+                        .collect(Collectors.toList());
+
+                if (existing == null) {
+                    List<String> cats = new ArrayList<>();
+                    cats.add(category);
+                    byKey.put(key, new QuestionKeyDTO(key, q.getQuestion(), cats, options));
+                } else {
+                    if (!existing.getCategories().contains(category)) {
+                        existing.getCategories().add(category);
+                    }
+                    // Merge unique options
+                    Set<String> existingValues = existing.getOptions().stream()
+                            .map(QuestionKeyDTO.OptionInfo::getValue).collect(Collectors.toSet());
+                    for (QuestionKeyDTO.OptionInfo opt : options) {
+                        if (!existingValues.contains(opt.getValue())) {
+                            existing.getOptions().add(opt);
+                        }
+                    }
+                }
+            }
+        }
+
+        return new ArrayList<>(byKey.values());
     }
 
     // ── Roofing ──────────────────────────────────────────────────────────────

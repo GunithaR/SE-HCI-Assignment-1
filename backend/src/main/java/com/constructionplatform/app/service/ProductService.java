@@ -174,7 +174,7 @@ public class ProductService {
          * <ul>
          * <li>Product name must be unique.</li>
          * <li>Category and Brand must exist.</li>
-         * <li>Durability rating must be 1–10 (also covered by DTO @Min/@Max).</li>
+         * <li>Durability rating must be LOW, MEDIUM, or HIGH.</li>
          * </ul>
          *
          * @param request validated DTO from the controller

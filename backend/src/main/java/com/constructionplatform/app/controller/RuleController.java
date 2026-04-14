@@ -1,7 +1,9 @@
 package com.constructionplatform.app.controller;
 
+import com.constructionplatform.app.dto.recommendation.QuestionKeyDTO;
 import com.constructionplatform.app.dto.rule.RuleCreateRequestDTO;
 import com.constructionplatform.app.dto.rule.RuleResponseDTO;
+import com.constructionplatform.app.service.QuestionnaireService;
 import com.constructionplatform.app.service.RuleService;
 import jakarta.validation.Valid;
 import com.constructionplatform.app.enums.RuleStatus;
@@ -16,9 +18,11 @@ import java.util.List;
 public class RuleController {
 
     private final RuleService ruleService;
+    private final QuestionnaireService questionnaireService;
 
-    public RuleController(RuleService ruleService) {
+    public RuleController(RuleService ruleService, QuestionnaireService questionnaireService) {
         this.ruleService = ruleService;
+        this.questionnaireService = questionnaireService;
     }
 
     @PostMapping
@@ -46,10 +50,8 @@ public class RuleController {
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<RuleResponseDTO> toggleRuleStatus(
-            @PathVariable Long id,
-            @RequestParam RuleStatus status) {
-        RuleResponseDTO updatedRule = ruleService.toggleRuleStatus(id, status);
+    public ResponseEntity<RuleResponseDTO> toggleRuleStatus(@PathVariable Long id) {
+        RuleResponseDTO updatedRule = ruleService.toggleRuleStatus(id);
         return ResponseEntity.ok(updatedRule);
     }
 
@@ -62,5 +64,11 @@ public class RuleController {
     @GetMapping("/active")
     public ResponseEntity<List<RuleResponseDTO>> getActiveRules() {
         return ResponseEntity.ok(ruleService.getActiveRules());
+    }
+
+    /** Returns all available question keys with their options for the rule mapping editor. */
+    @GetMapping("/question-keys")
+    public ResponseEntity<List<QuestionKeyDTO>> getQuestionKeys() {
+        return ResponseEntity.ok(questionnaireService.getAllQuestionKeys());
     }
 }
