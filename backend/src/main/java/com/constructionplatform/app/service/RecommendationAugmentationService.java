@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Sends structured ranked-output payload to the AI service and returns
+ * Sends structured ranked-output payload to Google Gemini and returns
  * validated insights while preserving deterministic ranking.
  */
 @Service
@@ -29,10 +29,10 @@ public class RecommendationAugmentationService {
 
     private static final Logger log = LoggerFactory.getLogger(RecommendationAugmentationService.class);
 
-    @Value("${ai.hybrid.api-key:${ai.service.api-key:UNCONFIGURED}}")
+    @Value("${ai.gemini.api-key:UNCONFIGURED}")
     private String apiKey;
 
-    @Value("${ai.hybrid.url:${ai.service.url:https://api.openai.com/v1/chat/completions}}")
+    @Value("${ai.gemini.url:https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent}")
     private String apiUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -53,7 +53,7 @@ public class RecommendationAugmentationService {
         try {
             Map<String, Object> structuredPayload = buildStructuredPayload(category, answers, rankedResults);
             String prompt = buildPrompt(structuredPayload);
-            List<RecommendationInsightDTO> rawInsights = callExternalAI(prompt);
+            List<RecommendationInsightDTO> rawInsights = callGemini(prompt);
 
             RecommendationInsightValidator.ValidationOutcome outcome =
                     validator.validateOrFallback(rawInsights, rankedResults);
@@ -92,37 +92,64 @@ public class RecommendationAugmentationService {
 
     private String buildPrompt(Map<String, Object> structuredPayload) throws Exception {
         String payloadJson = objectMapper.writeValueAsString(structuredPayload);
-        return "You are a recommendation augmentation assistant. Use ONLY the payload below. " +
-                "Generate concise contextual insights as strict JSON object: {\"insights\":[{\"insightType\":\"CONTEXT|TRADE_OFF|TIP\",\"title\":\"...\",\"detail\":\"...\",\"productId\":123}]} . " +
-                "Do not reorder products, do not remove products, and do not add new products. " +
-                "Never reference product IDs not present in rankedProducts. " +
+        return "You are a construction materials recommendation expert. Analyze the ranked products below and generate EXACTLY 3 unique insights. " +
+                "Each insight MUST have a DIFFERENT title and cover a DIFFERENT aspect. " +
+                "Insight 1: CONTEXT — Explain why the top-ranked product leads (reference its name and strongest scores). " +
+                "Insight 2: TRADE_OFF — Compare the top 2 products, highlighting what the runner-up does better. " +
+                "Insight 3: TIP — Give a practical buying tip relevant to the user's preferences (budget, usage area, style). " +
+                "Return strict JSON: {\"insights\":[{\"insightType\":\"CONTEXT|TRADE_OFF|TIP\",\"title\":\"unique short title\",\"detail\":\"2-3 sentence explanation\",\"productId\":null}]} " +
+                "IMPORTANT: Return EXACTLY 3 insights, each with a unique title. No duplicates. " +
                 "Payload: " + payloadJson;
     }
 
-    private List<RecommendationInsightDTO> callExternalAI(String prompt) throws Exception {
+    private List<RecommendationInsightDTO> callGemini(String prompt) throws Exception {
         if ("UNCONFIGURED".equals(apiKey)) {
-            throw new IllegalStateException("AI API key not configured.");
+            throw new IllegalStateException("Gemini API key not configured.");
         }
+
+        // Build Gemini request body
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("contents", List.of(
+                Map.of("parts", List.of(Map.of("text", prompt)))
+        ));
+        body.put("generationConfig", Map.of(
+                "temperature", 0.2,
+                "responseMimeType", "application/json"
+        ));
+
+        String urlWithKey = apiUrl + "?key=" + apiKey;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(apiKey);
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("model", "gpt-4o-mini");
-        body.put("temperature", 0.2);
-        body.put("messages", List.of(Map.of("role", "user", "content", prompt)));
+        HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(body), headers);
 
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-        ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, entity, String.class);
-
-        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            throw new IllegalStateException("AI service returned non-success status.");
+        // Retry with exponential backoff for 429 rate limiting
+        ResponseEntity<String> response = null;
+        int maxRetries = 2;
+        for (int attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                response = restTemplate.postForEntity(urlWithKey, entity, String.class);
+                break; // success
+            } catch (org.springframework.web.client.HttpClientErrorException.TooManyRequests e) {
+                if (attempt < maxRetries) {
+                    long delay = (attempt + 1) * 3000L; // 3s, 6s
+                    log.warn("Gemini 429 rate limited, retrying in {}ms (attempt {}/{})", delay, attempt + 1, maxRetries);
+                    try { Thread.sleep(delay); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+                } else {
+                    throw new IllegalStateException("Gemini rate limit exceeded after " + maxRetries + " retries", e);
+                }
+            }
         }
 
-        log.info("Hybrid AI raw response captured for monitoring. status={}", response.getStatusCode());
+        if (response == null || !response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new IllegalStateException("Gemini returned non-success status: " + (response != null ? response.getStatusCode() : "null"));
+        }
 
-        String content = extractAssistantContent(response.getBody());
+        log.info("Gemini augmentation response captured. status={}", response.getStatusCode());
+
+        // Parse Gemini response structure
+        String content = extractGeminiContent(response.getBody());
         JsonNode contentJson = objectMapper.readTree(content);
         JsonNode insightsNode = contentJson.path("insights");
 
@@ -134,17 +161,26 @@ public class RecommendationAugmentationService {
         });
     }
 
-    private String extractAssistantContent(String rawApiResponse) throws Exception {
+    /**
+     * Extract text content from Gemini API response structure.
+     * Gemini format: { candidates: [{ content: { parts: [{ text: "..." }] } }] }
+     */
+    private String extractGeminiContent(String rawApiResponse) throws Exception {
         JsonNode root = objectMapper.readTree(rawApiResponse);
-        JsonNode choices = root.path("choices");
-        if (!choices.isArray() || choices.isEmpty()) {
-            throw new IllegalStateException("AI response does not include choices.");
+        JsonNode candidates = root.path("candidates");
+        if (!candidates.isArray() || candidates.isEmpty()) {
+            throw new IllegalStateException("Gemini response does not include candidates.");
         }
 
-        JsonNode message = choices.get(0).path("message");
-        String content = message.path("content").asText();
+        String content = candidates.get(0)
+                .path("content")
+                .path("parts")
+                .get(0)
+                .path("text")
+                .asText();
+
         if (content == null || content.isBlank()) {
-            throw new IllegalStateException("AI response content is empty.");
+            throw new IllegalStateException("Gemini response content is empty.");
         }
 
         return content;

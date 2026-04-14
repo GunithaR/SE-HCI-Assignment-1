@@ -1,6 +1,5 @@
 package com.constructionplatform.app.service;
 
-import com.constructionplatform.app.dto.explanation.ExplanationRequestDTO;
 import com.constructionplatform.app.dto.recommendation.ComparisonAttributeDTO;
 import com.constructionplatform.app.dto.recommendation.ComparisonProductDTO;
 import com.constructionplatform.app.dto.recommendation.ComparisonRequestDTO;
@@ -8,8 +7,10 @@ import com.constructionplatform.app.dto.recommendation.ComparisonResponseDTO;
 import com.constructionplatform.app.dto.recommendation.HybridRecommendationResponseDTO;
 import com.constructionplatform.app.dto.recommendation.RecommendationRequestDTO;
 import com.constructionplatform.app.dto.recommendation.RecommendationResponseDTO;
+import com.constructionplatform.app.engine.AdjustedProductScore;
 import com.constructionplatform.app.engine.RecommendationEngine;
 import com.constructionplatform.app.engine.RecommendationEngine.ProductScore;
+import com.constructionplatform.app.engine.RulePostProcessor;
 import com.constructionplatform.app.engine.UserAnswers;
 import com.constructionplatform.app.entity.Product;
 import com.constructionplatform.app.entity.ProductAttribute;
@@ -19,17 +20,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * Orchestrates the recommendation flow:
- * 1. Receive category + answers from frontend
+ * 1. AI-normalise user answers (with deterministic fallback)
  * 2. Load candidate products by category
  * 3. Run the Strategy Pattern–based RecommendationEngine
- * 4. Map results to response DTOs with score breakdowns and trade-off warnings
+ * 4. Apply admin-configured rules as post-processing adjustments
+ * 5. Map results to response DTOs with score breakdowns and trade-off warnings
  */
 @Service
 public class RecommendationService {
@@ -37,19 +38,31 @@ public class RecommendationService {
     private static final Logger log = LoggerFactory.getLogger(RecommendationService.class);
     private static final int TOP_N = 5;
 
+    @org.springframework.beans.factory.annotation.Value("${ai.gemini.api-key:UNCONFIGURED}")
+    private String geminiApiKey;
+
+    @org.springframework.beans.factory.annotation.Value("${ai.gemini.url:https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent}")
+    private String geminiUrl;
+
     private final ProductRepository productRepository;
     private final RecommendationEngine recommendationEngine;
     private final ExplanationAIService explanationAIService;
     private final RecommendationAugmentationService recommendationAugmentationService;
+    private final AnswerNormalizationService normalizationService;
+    private final RulePostProcessor rulePostProcessor;
 
     public RecommendationService(ProductRepository productRepository,
                                   RecommendationEngine recommendationEngine,
                                   ExplanationAIService explanationAIService,
-                                  RecommendationAugmentationService recommendationAugmentationService) {
+                                  RecommendationAugmentationService recommendationAugmentationService,
+                                  AnswerNormalizationService normalizationService,
+                                  RulePostProcessor rulePostProcessor) {
         this.productRepository = productRepository;
         this.recommendationEngine = recommendationEngine;
         this.explanationAIService = explanationAIService;
         this.recommendationAugmentationService = recommendationAugmentationService;
+        this.normalizationService = normalizationService;
+        this.rulePostProcessor = rulePostProcessor;
     }
 
     /**
@@ -60,12 +73,19 @@ public class RecommendationService {
         }
 
         /**
-         * Generate ranked recommendations and augment them with contextual AI insights.
-         * The ranked list remains authoritative and immutable.
+         * Generate ranked recommendations with AI explanations and contextual insights.
+         * Pipeline: Normalize(1 call) → 4s → BatchExplain(1 call) → 4s → Augment(1 call)
+         * Total: 3 Gemini calls, well within 15 RPM free tier.
          */
         public HybridRecommendationResponseDTO generateHybridRecommendations(RecommendationRequestDTO requestDTO) {
         List<RecommendationResponseDTO> rankedRecommendations = generateRankedRecommendations(requestDTO);
 
+        // --- Step 2: Batch-generate AI explanations for all products (single Gemini call) ---
+        geminiDelay();
+        batchEnhanceExplanations(rankedRecommendations);
+
+        // --- Step 3: Generate augmentation insights (single Gemini call) ---
+        geminiDelay();
         RecommendationAugmentationService.AugmentationResult augmentation =
             recommendationAugmentationService.generateInsights(
                 requestDTO.getCategory(),
@@ -80,16 +100,109 @@ public class RecommendationService {
         );
         }
 
-        private List<RecommendationResponseDTO> generateRankedRecommendations(RecommendationRequestDTO requestDTO) {
+    /**
+     * Batch-generates AI explanations for all products in a single Gemini call.
+     * Falls back to the existing deterministic explanations on failure.
+     */
+    private void batchEnhanceExplanations(List<RecommendationResponseDTO> products) {
+        try {
+            StringBuilder prompt = new StringBuilder();
+            prompt.append("You are an expert construction materials advisor. ");
+            prompt.append("For each product below, write a concise 1-2 sentence explanation of why it's recommended. ");
+            prompt.append("Return ONLY a JSON array of strings, one per product, in the same order. ");
+            prompt.append("No markdown, no numbering, just the JSON array.\n\n");
+
+            for (int i = 0; i < products.size(); i++) {
+                RecommendationResponseDTO p = products.get(i);
+                prompt.append(String.format("[%d] %s (score: %.1f/10", i + 1, p.getProductName(), p.getTotalScore()));
+                if (p.getStrategyScores() != null) {
+                    p.getStrategyScores().forEach((strategy, score) -> {
+                        if (score >= 7.0) {
+                            prompt.append(String.format(", strong %s: %.1f", strategy.toLowerCase(), score));
+                        }
+                    });
+                }
+                if (p.getTradeOffs() != null && !p.getTradeOffs().isEmpty()) {
+                    prompt.append(", trade-offs: ").append(String.join(", ", p.getTradeOffs()));
+                }
+                prompt.append(")\n");
+            }
+
+            String aiResponse = callGeminiText(prompt.toString());
+            
+            // Parse JSON array of explanations
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            List<String> explanations = mapper.readValue(aiResponse, 
+                mapper.getTypeFactory().constructCollectionType(List.class, String.class));
+
+            // Assign AI explanations to products
+            for (int i = 0; i < Math.min(explanations.size(), products.size()); i++) {
+                String aiExplanation = explanations.get(i).trim();
+                if (!aiExplanation.isBlank()) {
+                    products.get(i).setExplanation(aiExplanation);
+                }
+            }
+
+            log.info("Batch AI explanations generated for {} products", Math.min(explanations.size(), products.size()));
+
+        } catch (Exception e) {
+            log.warn("Batch AI explanations failed, keeping deterministic fallback. reason={}", e.getMessage());
+            // Keep the existing deterministic explanations — no change needed
+        }
+    }
+
+    /**
+     * Calls Gemini API for a plain-text response. Used for batch explanations.
+     */
+    private String callGeminiText(String prompt) throws Exception {
+        if ("UNCONFIGURED".equals(geminiApiKey)) {
+            throw new IllegalStateException("Gemini API key not configured");
+        }
+
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
+        Map<String, Object> body = Map.of(
+            "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
+            "generationConfig", Map.of(
+                "temperature", 0.7,
+                "maxOutputTokens", 800,
+                "responseMimeType", "application/json"
+            )
+        );
+
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+
+        String urlWithKey = geminiUrl + "?key=" + geminiApiKey;
+        org.springframework.http.HttpEntity<String> entity =
+            new org.springframework.http.HttpEntity<>(mapper.writeValueAsString(body), headers);
+
+        org.springframework.web.client.RestTemplate rest = new org.springframework.web.client.RestTemplate();
+        org.springframework.http.ResponseEntity<String> response = rest.postForEntity(urlWithKey, entity, String.class);
+
+        com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(response.getBody());
+        return root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText().trim();
+    }
+
+    /** 2-second delay between Gemini calls to avoid rate limiting on free tier. */
+    private void geminiDelay() {
+        try { Thread.sleep(2000); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+    }
+
+    private List<RecommendationResponseDTO> generateRankedRecommendations(RecommendationRequestDTO requestDTO) {
         String category = requestDTO.getCategory();
-        Map<String, String> answers = requestDTO.getAnswers();
+        Map<String, String> rawAnswers = requestDTO.getAnswers();
 
-        log.info("Generating recommendations for category='{}' with {} answers", category, answers.size());
+        log.info("Generating recommendations for category='{}' with {} answers", category, rawAnswers.size());
 
-        // 1. Build UserAnswers
-        UserAnswers userAnswers = new UserAnswers(category, answers);
+        // 1. AI-normalise user answers (with deterministic fallback)
+        Map<String, String> normalizedAnswers = normalizationService.normalize(category, rawAnswers);
+        log.debug("Normalised answers: {}", normalizedAnswers);
 
-        // 2. Load candidate products (by category, or all if category not found)
+        // 2. Build UserAnswers with normalised values
+        UserAnswers userAnswers = new UserAnswers(category, normalizedAnswers);
+
+        // 3. Load candidate products (by category, or all if category not found)
         List<Product> candidates = loadCandidates(category);
         log.info("Found {} candidate products for category '{}'", candidates.size(), category);
 
@@ -97,12 +210,15 @@ public class RecommendationService {
             return List.of();
         }
 
-        // 3. Run the recommendation engine (scores every product, never filters out)
-        List<ProductScore> scoredProducts = recommendationEngine.recommend(candidates, userAnswers, TOP_N);
+        // 4. Run the recommendation engine (scores every product, never filters out)
+        List<ProductScore> strategyScores = recommendationEngine.recommend(candidates, userAnswers, TOP_N);
 
-        // 4. Convert to response DTOs
-        return scoredProducts.stream()
-                .map(this::mapToResponseDTO)
+        // 5. Apply admin-configured rules as post-processing adjustments
+        List<AdjustedProductScore> adjustedScores = rulePostProcessor.applyRules(strategyScores, normalizedAnswers);
+
+        // 6. Convert to response DTOs — include excluded products (shown greyed-out)
+        return adjustedScores.stream()
+                .map(this::mapAdjustedToResponseDTO)
                 .collect(Collectors.toList());
     }
 
@@ -127,9 +243,14 @@ public class RecommendationService {
         return productRepository.findByIsActiveTrue();
     }
 
-    private RecommendationResponseDTO mapToResponseDTO(ProductScore scored) {
+    /**
+     * Maps a rule-adjusted product score to the response DTO.
+     * Uses finalScore (strategy + rule adjustments) as the totalScore.
+     * Excluded products are included with excluded=true for greyed-out display.
+     */
+    private RecommendationResponseDTO mapAdjustedToResponseDTO(AdjustedProductScore adjusted) {
         RecommendationResponseDTO dto = new RecommendationResponseDTO();
-        Product product = scored.getProduct();
+        Product product = adjusted.getProduct();
 
         dto.setProductId(product.getId());
         dto.setProductName(product.getName());
@@ -138,17 +259,22 @@ public class RecommendationService {
         dto.setBasePrice(product.getBasePrice());
         dto.setImageUrl(product.getImageUrl());
 
-        dto.setTotalScore(scored.getTotalScore());
-        dto.setStrategyScores(scored.getStrategyScores());
-        dto.setTradeOffs(scored.getTradeOffs());
-        dto.setExcluded(false);
+        dto.setTotalScore(adjusted.getFinalScore());
+        dto.setStrategyScores(adjusted.getStrategyScores());
+        dto.setTradeOffs(adjusted.getTradeOffs());
+
+        // Rule adjustment info
+        dto.setRuleAdjustment(adjusted.getRuleAdjustment());
+        dto.setAppliedRuleNames(adjusted.getAppliedRuleNames());
+        dto.setExcluded(adjusted.isExcluded());
+        dto.setExcludedByRules(adjusted.getExcludedByRules());
 
         // Build human-readable explanation
-        dto.setExplanation(buildExplanation(scored));
+        dto.setExplanation(buildExplanation(adjusted));
 
         // Identify top-scoring strategies for matchedRuleNames (backward compat)
         List<String> topStrategies = new ArrayList<>();
-        scored.getStrategyScores().forEach((strategy, score) -> {
+        adjusted.getStrategyScores().forEach((strategy, score) -> {
             if (score >= 8.0) {
                 topStrategies.add(strategy + " match");
             }
@@ -158,8 +284,8 @@ public class RecommendationService {
         return dto;
     }
 
-    private String buildExplanation(ProductScore scored) {
-        Map<String, Double> scores = scored.getStrategyScores();
+    private String buildExplanation(AdjustedProductScore adjusted) {
+        Map<String, Double> scores = adjusted.getStrategyScores();
         List<String> strengths = new ArrayList<>();
         List<String> weaknesses = new ArrayList<>();
 
@@ -172,16 +298,28 @@ public class RecommendationService {
         });
 
         StringBuilder sb = new StringBuilder();
+
+        if (adjusted.isExcluded()) {
+            sb.append("⛔ Excluded by rule: ").append(String.join(", ", adjusted.getExcludedByRules())).append(". ");
+            return sb.toString().trim();
+        }
+
         if (!strengths.isEmpty()) {
             sb.append("Strong match for: ").append(String.join(", ", strengths)).append(". ");
         }
 
-        if (!scored.getTradeOffs().isEmpty()) {
-            sb.append("⚠️ Trade-off: ").append(String.join("; ", scored.getTradeOffs())).append(".");
+        if (!adjusted.getTradeOffs().isEmpty()) {
+            sb.append("⚠️ Trade-off: ").append(String.join("; ", adjusted.getTradeOffs())).append(". ");
         } else if (weaknesses.isEmpty() && !strengths.isEmpty()) {
-            sb.append("Well-rounded recommendation.");
+            sb.append("Well-rounded recommendation. ");
         } else if (strengths.isEmpty()) {
-            sb.append("Moderate match across all criteria.");
+            sb.append("Moderate match across all criteria. ");
+        }
+
+        if (adjusted.getRuleAdjustment() != 0) {
+            String sign = adjusted.getRuleAdjustment() > 0 ? "+" : "";
+            sb.append("Rule adjustment: ").append(sign)
+              .append(String.format("%.1f", adjusted.getRuleAdjustment())).append(".");
         }
 
         return sb.toString().trim();
@@ -282,25 +420,13 @@ public class RecommendationService {
      * Generates a comparative narrative explaining key differences between products.
      * Falls back to rule-based narrative if AI service fails.
      */
+    /**
+     * Generates a comparative narrative.
+     * Uses deterministic fallback (AI augmentation for comparisons is handled
+     * separately via the hybrid endpoint if needed).
+     */
     private String generateComparativeNarrative(List<ComparisonProductDTO> products) {
-        try {
-            // Build a narrative describing the products
-            List<String> productNames = products.stream()
-                    .map(p -> p.getProductName())
-                    .collect(Collectors.toList());
-
-            StringBuilder prompt = new StringBuilder();
-            prompt.append("You are a helpful assistant. Compare these products in 1-2 sentences, highlighting their key differences and strengths: ");
-            prompt.append(String.join(", ", productNames)).append(".");
-
-            // For now, return fallback since we don't have real AI integration
-            // In production, this would call the actual AI service
-            return generateFallbackComparison(products);
-
-        } catch (Exception e) {
-            log.warn("Failed to generate AI comparative narrative: {}", e.getMessage());
-            return generateFallbackComparison(products);
-        }
+        return generateFallbackComparison(products);
     }
 
     /**

@@ -16,6 +16,7 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
+        proxyTimeout: 120000,
       },
       // Proxy uploaded product images
       '/uploads': {
