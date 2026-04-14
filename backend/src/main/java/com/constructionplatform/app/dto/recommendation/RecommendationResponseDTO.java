@@ -35,7 +35,17 @@ public class RecommendationResponseDTO {
     /** Matched rule names (carried over for backward compatibility). */
     private List<String> matchedRuleNames = new ArrayList<>();
 
+    /** Score adjustment applied by the rule post-processor. */
+    private double ruleAdjustment;
+
+    /** Names of rules that applied adjustments (with effect details). */
+    private List<String> appliedRuleNames = new ArrayList<>();
+
+    /** Whether this product was excluded by a FILTER_OUT rule. */
     private boolean excluded;
+
+    /** Names of FILTER_OUT rules that excluded this product. */
+    private List<String> excludedByRules = new ArrayList<>();
 
     public RecommendationResponseDTO() {
     }
@@ -136,6 +146,30 @@ public class RecommendationResponseDTO {
 
     public void setExcluded(boolean excluded) {
         this.excluded = excluded;
+    }
+
+    public double getRuleAdjustment() {
+        return ruleAdjustment;
+    }
+
+    public void setRuleAdjustment(double ruleAdjustment) {
+        this.ruleAdjustment = ruleAdjustment;
+    }
+
+    public List<String> getAppliedRuleNames() {
+        return appliedRuleNames;
+    }
+
+    public void setAppliedRuleNames(List<String> appliedRuleNames) {
+        this.appliedRuleNames = appliedRuleNames;
+    }
+
+    public List<String> getExcludedByRules() {
+        return excludedByRules;
+    }
+
+    public void setExcludedByRules(List<String> excludedByRules) {
+        this.excludedByRules = excludedByRules;
     }
 
     // Keep backward-compatible integer score getter
