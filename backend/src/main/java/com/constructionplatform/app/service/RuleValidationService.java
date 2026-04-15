@@ -37,8 +37,8 @@ public class RuleValidationService {
         if (dto.getRuleType() == null) {
             throw new InvalidRuleException("Rule type is mandatory");
         }
-        if (dto.getRulePriority() == null) {
-            throw new InvalidRuleException("Rule priority is mandatory");
+        if (dto.getRulePriority() == null && dto.getRuleType() == com.constructionplatform.app.enums.RuleType.CONDITIONAL_MATCH) {
+            throw new InvalidRuleException("Rule priority is mandatory for CONDITIONAL_MATCH rules");
         }
 
         switch (dto.getRuleType()) {

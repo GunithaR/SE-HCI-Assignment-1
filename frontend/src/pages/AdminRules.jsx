@@ -20,9 +20,9 @@ const PRIORITIES = [
 ];
 
 const SCORING_MODES = [
-    { value: 'LEVELED',     label: '📊 Leveled',     desc: 'Rank-based (LOW/MEDIUM/HIGH or numeric)' },
-    { value: 'CATEGORICAL', label: '🏷️ Categorical', desc: 'Exact match vs no-match' },
-    { value: 'FIXED',       label: '📌 Fixed',       desc: 'Static score regardless of product' },
+    { value: 'LEVELED',     label: '📊 Tier-Based / Numeric Match', desc: 'Compares ranked values (e.g., HIGH durability vs MEDIUM durability)' },
+    { value: 'CATEGORICAL', label: '🏷️ Exact Category Match',   desc: 'Matches exact text strings (e.g., WOODEN style)' },
+    { value: 'FIXED',       label: '📌 Fixed Baseline Override', desc: 'Assigns a flat score regardless of product attributes' },
 ];
 
 const TYPE_COLORS = {
@@ -147,19 +147,23 @@ function FlatMappingRow({ mapping, index, onChange, onRemove, onDuplicate, quest
             </div>
 
             {/* Trigger: answer key + answer value */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 12, marginBottom: 12, alignItems: 'center' }}>
                 <div>
-                    <label style={{ display: 'block', fontSize: '0.68rem', color: '#64748b', fontWeight: 700, marginBottom: 2 }}>ANSWER KEY</label>
+                    <label style={{ display: 'block', fontSize: '0.72rem', color: '#64748b', fontWeight: 700, marginBottom: 4 }}>
+                        If user question is...
+                    </label>
                     <select value={mapping.answerKey} onChange={e => onChange('answerKey', e.target.value)} style={inp}>
-                        <option value="">Select key...</option>
+                        <option value="">Select question key...</option>
                         {(questionKeys || []).map(q => <option key={q.key} value={q.key}>{q.key} — {q.label?.substring(0, 40)}</option>)}
                     </select>
                 </div>
                 <div>
-                    <label style={{ display: 'block', fontSize: '0.68rem', color: '#64748b', fontWeight: 700, marginBottom: 2 }}>ANSWER VALUE</label>
+                    <label style={{ display: 'block', fontSize: '0.72rem', color: '#64748b', fontWeight: 700, marginBottom: 4 }}>
+                        And their answer is...
+                    </label>
                     {answerOptions.length > 0 ? (
                         <select value={mapping.answerValue} onChange={e => onChange('answerValue', e.target.value)} style={inp}>
-                            <option value="">Select value...</option>
+                            <option value="">Select answer value...</option>
                             {answerOptions.map(o => <option key={o.value} value={o.value}>{o.label || o.value}</option>)}
                         </select>
                     ) : (
@@ -170,32 +174,40 @@ function FlatMappingRow({ mapping, index, onChange, onRemove, onDuplicate, quest
 
             {/* Mode-specific fields */}
             {mapping.scoringMode === 'FIXED' ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.68rem', color: '#64748b', fontWeight: 700, marginBottom: 2 }}>FIXED SCORE</label>
+                <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+                    <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.72rem', color: '#64748b', fontWeight: 700, marginBottom: 4 }}>
+                            Then assign this Fixed Score:
+                        </label>
                         <input type="number" min="0" max="10" step="0.5" value={mapping.fixedScore} onChange={e => onChange('fixedScore', Number(e.target.value))} style={{ ...inp, textAlign: 'center' }} />
                     </div>
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.68rem', color: '#64748b', fontWeight: 700, marginBottom: 2 }}>NO-DATA SCORE</label>
+                    <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.72rem', color: '#64748b', fontWeight: 700, marginBottom: 4 }}>
+                            If data is missing, assign NO-DATA Score:
+                        </label>
                         <input type="number" min="0" max="10" step="0.5" value={mapping.noDataScore} onChange={e => onChange('noDataScore', Number(e.target.value))} style={{ ...inp, textAlign: 'center' }} />
                     </div>
                 </div>
             ) : (
                 <>
                     {/* Product attribute + ideal level */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 12, marginBottom: 16 }}>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.68rem', color: '#64748b', fontWeight: 700, marginBottom: 2 }}>PRODUCT ATTRIBUTE</label>
+                            <label style={{ display: 'block', fontSize: '0.72rem', color: '#64748b', fontWeight: 700, marginBottom: 4 }}>
+                                Then evaluate this Product Field...
+                            </label>
                             <select value={mapping.productAttribute} onChange={e => onChange('productAttribute', e.target.value)} style={inp}>
                                 <option value="">Select attribute...</option>
                                 {(attrMeta?.attributes || []).map(a => <option key={a.name} value={a.name}>{a.label}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.68rem', color: '#64748b', fontWeight: 700, marginBottom: 2 }}>IDEAL LEVEL</label>
+                            <label style={{ display: 'block', fontSize: '0.72rem', color: '#64748b', fontWeight: 700, marginBottom: 4 }}>
+                                Targeting a required value of...
+                            </label>
                             {attrValues.length > 0 && mapping.scoringMode !== 'CATEGORICAL' ? (
                                 <select value={mapping.idealLevel} onChange={e => onChange('idealLevel', e.target.value)} style={inp}>
-                                    <option value="">Select ideal...</option>
+                                    <option value="">Select required target...</option>
                                     {attrValues.map(v => <option key={v} value={v}>{v}</option>)}
                                 </select>
                             ) : (
@@ -205,35 +217,41 @@ function FlatMappingRow({ mapping, index, onChange, onRemove, onDuplicate, quest
                     </div>
 
                     {/* Scoring parameters */}
+                    <div style={{ background: 'rgba(255,255,255,0.4)', borderRadius: 8, padding: '10px 12px' }}>
+                        <label style={{ display: 'block', fontSize: '0.72rem', color: '#64748b', fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>
+                            Scoring Resolution
+                        </label>
                     {mapping.scoringMode === 'LEVELED' ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10 }}>
                             {[
-                                { key: 'exactMatchScore', label: 'EXACT', color: '#4ade80' },
-                                { key: 'deviation1Score', label: '1-OFF', color: '#fbbf24' },
-                                { key: 'deviation2Score', label: '2+ OFF', color: '#f87171' },
-                                { key: 'noDataScore', label: 'NO DATA', color: '#64748b' },
+                                { key: 'exactMatchScore', label: 'Perfect Match', desc: 'Value meets/exceeds target', color: '#22c55e' },
+                                { key: 'deviation1Score', label: 'Minor Deviation', desc: '1 level off target', color: '#d97706' },
+                                { key: 'deviation2Score', label: 'Major Deviation', desc: '2+ levels off target', color: '#dc2626' },
+                                { key: 'noDataScore', label: 'Missing Data', desc: 'Fallback score (default 3.0)', color: '#475569' },
                             ].map(s => (
-                                <div key={s.key}>
-                                    <label style={{ display: 'block', fontSize: '0.62rem', color: s.color, fontWeight: 700, marginBottom: 1, textAlign: 'center' }}>{s.label}</label>
-                                    <input type="number" min="0" max="10" step="0.5" value={mapping[s.key]} onChange={e => onChange(s.key, Number(e.target.value))} style={{ ...inp, textAlign: 'center', fontSize: '0.78rem' }} />
+                                <div key={s.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <label style={{ display: 'block', fontSize: '0.68rem', color: s.color, fontWeight: 700, marginBottom: 2 }}>{s.label}</label>
+                                    <span style={{ fontSize: '0.55rem', color: '#64748b', marginBottom: 4, textAlign: 'center', minHeight: 14 }}>{s.desc}</span>
+                                    <input type="number" min="0" max="10" step="0.5" value={mapping[s.key]} onChange={e => onChange(s.key, Number(e.target.value))} style={{ ...inp, textAlign: 'center', fontSize: '0.85rem', fontWeight: 700, padding: '5px' }} />
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                             {[
-                                { key: 'matchScore', label: 'EXACT', color: '#4ade80' },
-                                { key: 'deviation1Score', label: 'COMPAT', color: '#fbbf24' },
-                                { key: 'noMatchScore', label: 'NO MATCH', color: '#f87171' },
-                                { key: 'noDataScore', label: 'NO DATA', color: '#64748b' },
+                                { key: 'matchScore', label: 'Perfect Match', desc: 'Text matches target', color: '#22c55e' },
+                                { key: 'noMatchScore', label: 'Failed Match', desc: 'Text differs', color: '#dc2626' },
+                                { key: 'noDataScore', label: 'Missing Data', desc: 'Fallback score (default 3.0)', color: '#475569' },
                             ].map(s => (
-                                <div key={s.key}>
-                                    <label style={{ display: 'block', fontSize: '0.62rem', color: s.color, fontWeight: 700, marginBottom: 1, textAlign: 'center' }}>{s.label}</label>
-                                    <input type="number" min="0" max="10" step="0.5" value={mapping[s.key]} onChange={e => onChange(s.key, Number(e.target.value))} style={{ ...inp, textAlign: 'center', fontSize: '0.78rem' }} />
+                                <div key={s.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <label style={{ display: 'block', fontSize: '0.68rem', color: s.color, fontWeight: 700, marginBottom: 2 }}>{s.label}</label>
+                                    <span style={{ fontSize: '0.55rem', color: '#64748b', marginBottom: 4, textAlign: 'center', minHeight: 14 }}>{s.desc}</span>
+                                    <input type="number" min="0" max="10" step="0.5" value={mapping[s.key]} onChange={e => onChange(s.key, Number(e.target.value))} style={{ ...inp, textAlign: 'center', fontSize: '0.85rem', fontWeight: 700, padding: '5px' }} />
                                 </div>
                             ))}
                         </div>
                     )}
+                    </div>
                 </>
             )}
         </div>
@@ -307,7 +325,7 @@ function RuleFormModal({ editingRule, categories, products, attrMeta, questionKe
                 name: form.name.trim(),
                 description: form.description.trim(),
                 ruleType: form.ruleType,
-                rulePriority: form.rulePriority,
+                rulePriority: form.ruleType === 'CONDITIONAL_MATCH' ? form.rulePriority : null,
                 targetCategoryName: form.targetCategoryName || null,
             };
 
@@ -396,12 +414,14 @@ function RuleFormModal({ editingRule, categories, products, attrMeta, questionKe
                                 {RULE_TYPES.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}
                             </select>
                         </div>
-                        <div>
-                            <label style={lbl}>Priority *</label>
-                            <select value={form.rulePriority} onChange={set('rulePriority')} style={inp}>
-                                {PRIORITIES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                            </select>
-                        </div>
+                        {form.ruleType === 'CONDITIONAL_MATCH' && (
+                            <div>
+                                <label style={lbl}>Priority *</label>
+                                <select value={form.rulePriority} onChange={set('rulePriority')} style={inp}>
+                                    {PRIORITIES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                                </select>
+                            </div>
+                        )}
                         <div>
                             <label style={lbl}>Target Category</label>
                             <select value={form.targetCategoryName} onChange={set('targetCategoryName')} style={inp}>
@@ -419,12 +439,19 @@ function RuleFormModal({ editingRule, categories, products, attrMeta, questionKe
                     {/* ── CONDITIONAL_MATCH: Flat Mappings Editor ── */}
                     {form.ruleType === 'CONDITIONAL_MATCH' && (
                         <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                            {/* Guidelines Box */}
+                            <div style={{ background: 'rgba(56,189,248,0.06)', borderLeft: '4px solid #38bdf8', padding: '12px 16px', borderRadius: '0 8px 8px 0', marginBottom: 20 }}>
+                                <h4 style={{ margin: '0 0 6px 0', color: '#0369a1', fontSize: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>📘 Mapping Guidelines & Examples</h4>
+                                <ul style={{ margin: 0, paddingLeft: 20, color: '#334155', fontSize: '0.78rem', lineHeight: 1.5 }}>
+                                    <li style={{ marginBottom: 4 }}><strong>Tier-Based Example:</strong> If user question is <code>budget</code> and their answer is <code>economy</code>, evaluate the product's <code>budgetLevel</code> targeting <code>LOW</code>. Perfect matches get 10.0.</li>
+                                    <li style={{ marginBottom: 4 }}><strong>Categorical Example:</strong> If user question is <code>style</code> and their answer is <code>wooden look</code>, evaluate the product's <code>style</code> targeting <code>WOODEN</code>. Perfect matches get 10.0.</li>
+                                    <li><strong>Missing Answers:</strong> If the user does not answer the mapped question in the UI, the rule automatically skips and applies the <strong>Default Score</strong> safely.</li>
+                                </ul>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                                 <div>
-                                    <label style={{ ...lbl, margin: 0 }}>🔗 Answer → Attribute Mappings</label>
-                                    <p style={{ color: '#64748b', fontSize: '0.7rem', marginTop: 2 }}>
-                                        Each mapping links a user answer to a product attribute with a scoring mode.
-                                    </p>
+                                    <label style={{ ...lbl, margin: 0, fontSize: '0.9rem' }}>🔗 Build Your Rules Engine logic</label>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -711,9 +738,13 @@ export default function AdminRules() {
                                                     </span>
                                                 </td>
                                                 <td style={{ padding: '12px 16px' }}>
-                                                    <span style={{ color: rule.rulePriority === 'HIGH' ? '#f59e0b' : rule.rulePriority === 'MEDIUM' ? '#3b82f6' : '#64748b', fontWeight: 600, fontSize: '0.8rem' }}>
-                                                        {rule.rulePriority} (w={rule.weight})
-                                                    </span>
+                                                    {rule.ruleType === 'CONDITIONAL_MATCH' ? (
+                                                        <span style={{ color: rule.rulePriority === 'HIGH' ? '#f59e0b' : rule.rulePriority === 'MEDIUM' ? '#3b82f6' : '#64748b', fontWeight: 600, fontSize: '0.8rem' }}>
+                                                            {rule.rulePriority} (w={rule.weight})
+                                                        </span>
+                                                    ) : (
+                                                        <span style={{ color: 'var(--color-muted)', fontSize: '0.8rem' }}>N/A</span>
+                                                    )}
                                                 </td>
                                                 <td style={{ padding: '12px 16px', fontSize: '0.78rem', color: 'var(--color-muted)' }}>
                                                     {rule.ruleType === 'CONDITIONAL_MATCH' && (

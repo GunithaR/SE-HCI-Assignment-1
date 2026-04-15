@@ -44,7 +44,7 @@ public class Rule {
     private RuleStatus ruleStatus;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "rule_priority", nullable = false, length = 10)
+    @Column(name = "rule_priority", nullable = true, length = 10)
     private RulePriority rulePriority;
 
     /** Effect type for SCORE_ADJUST rules (ADD_SCORE or DEDUCT_SCORE). */

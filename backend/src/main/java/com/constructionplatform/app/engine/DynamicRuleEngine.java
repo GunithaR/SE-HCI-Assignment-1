@@ -219,21 +219,40 @@ public class DynamicRuleEngine {
         Integer productInt = tryParseInt(productValue);
         Integer idealInt = tryParseInt(idealLevel);
 
+        boolean isConstraintAttribute = mapping.getProductAttribute().toLowerCase().contains("budget") || 
+                                        mapping.getProductAttribute().toLowerCase().contains("maintenance");
+
         if (productInt != null && idealInt != null) {
-            // Numeric comparison: each point of difference = ~1 deviation step
-            int diff = Math.abs(productInt - idealInt);
-            if (diff == 0) return mapping.getExactMatchScore() != null ? mapping.getExactMatchScore() : 10.0;
-            if (diff <= 2) return mapping.getDeviation1Score() != null ? mapping.getDeviation1Score() : 5.0;
+            int diff = productInt - idealInt;
+            
+            if (!isConstraintAttribute && diff > 0) {
+                return mapping.getExactMatchScore() != null ? mapping.getExactMatchScore() : 10.0;
+            }
+
+            // Numeric comparison: each 1-2 points of difference = ~1 deviation step
+            int absDiff = Math.abs(diff);
+            if (absDiff == 0) return mapping.getExactMatchScore() != null ? mapping.getExactMatchScore() : 10.0;
+            if (absDiff <= 2) return mapping.getDeviation1Score() != null ? mapping.getDeviation1Score() : 5.0;
             return mapping.getDeviation2Score() != null ? mapping.getDeviation2Score() : 2.0;
         }
 
         // Tier-based comparison (LOW/MEDIUM/HIGH)
         int productRank = LEVEL_RANKS.getOrDefault(productValue.toUpperCase(), 2);
         int idealRank = LEVEL_RANKS.getOrDefault(idealLevel.toUpperCase(), 2);
-        int diff = Math.abs(productRank - idealRank);
+        
+        int diff = productRank - idealRank;
 
-        if (diff == 0) return mapping.getExactMatchScore() != null ? mapping.getExactMatchScore() : 10.0;
-        if (diff == 1) return mapping.getDeviation1Score() != null ? mapping.getDeviation1Score() : 5.0;
+        // In the legacy system, exceeding a required ResistanceLevel (e.g., getting HIGH durability when only MEDIUM was needed)
+        // yielded a perfect 10.0 score. However, exceeding a constraint like Budget or Maintenance is a negative deviation.
+        if (!isConstraintAttribute && diff > 0) {
+            // Exceeding a resistance threshold grants a perfect score
+            return mapping.getExactMatchScore() != null ? mapping.getExactMatchScore() : 10.0;
+        }
+
+        int absDiff = Math.abs(diff);
+
+        if (absDiff == 0) return mapping.getExactMatchScore() != null ? mapping.getExactMatchScore() : 10.0;
+        if (absDiff == 1) return mapping.getDeviation1Score() != null ? mapping.getDeviation1Score() : 5.0;
         return mapping.getDeviation2Score() != null ? mapping.getDeviation2Score() : 2.0;
     }
 
