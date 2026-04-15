@@ -50,7 +50,7 @@ jwt:
 
 ai:
   gemini:
-    api-key: 
+    api-key: AIzaSyBO9e-1pXUlmgN96pYfsBBDAUBcrCAgJgQ
     url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
 
 # ── Logging ──────────────────────────────────────────────────────────────────

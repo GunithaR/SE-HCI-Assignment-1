@@ -362,19 +362,21 @@ public class DataSeeder implements ApplicationRunner {
 
         // ─── 1. BUDGET (HIGH priority, weight=25) ───
         Rule budget = makeRule("Budget Match", "Matches product budget level to user preference", RulePriority.HIGH, 5.0);
-        leveled(budget, "budget", "LOW",     "budgetLevel", "LOW");
-        leveled(budget, "budget", "MEDIUM",  "budgetLevel", "MEDIUM");
-        leveled(budget, "budget", "HIGH",    "budgetLevel", "HIGH");
+        leveled(budget, "budget", "economy", "budgetLevel", "LOW");
+        leveled(budget, "budget", "mid",     "budgetLevel", "MEDIUM");
+        leveled(budget, "budget", "mid-range", "budgetLevel", "MEDIUM");
+        leveled(budget, "budget", "premium", "budgetLevel", "HIGH");
         ruleRepository.save(budget);
 
         // ─── 2. ENVIRONMENT (HIGH priority, weight=25) ───
         Rule env = makeRule("Environment Match", "Scores environmental suitability based on location/climate", RulePriority.HIGH, 5.0);
-        leveled(env, "location", "COASTAL",  "corrosionResistance", "HIGH", 6.0);
-        leveled(env, "location", "TROPICAL", "waterResistance", "HIGH", 6.0);
-        leveled(env, "location", "HOT_DRY",  "heatResistance", "HIGH", 6.0);
-        fixed(env, "location", "ALL", 7.0);
+        leveled(env, "location", "coastal",  "corrosionResistance", "HIGH", 6.0);
+        leveled(env, "location", "heavy rain", "waterResistance", "HIGH", 6.0);
+        leveled(env, "location", "hot/dry",  "heatResistance", "HIGH", 6.0);
+        fixed(env, "location", "urban/normal", 7.0);
         leveled(env, "environment", "humid",  "waterResistance", "HIGH", 6.0);
         leveled(env, "environment", "dry",    "heatResistance", "HIGH", 6.0);
+        fixed(env, "environment", "normal", 7.0);
         leveled(env, "usage_environment", "outdoor", "waterResistance", "HIGH", 6.0);
         leveled(env, "usage_environment", "outdoor", "corrosionResistance", "HIGH", 6.0);
         fixed(env, "usage_environment", "indoor", 7.0);
@@ -382,12 +384,21 @@ public class DataSeeder implements ApplicationRunner {
 
         // ─── 3. PERFORMANCE (HIGH priority, weight=25) ───
         Rule perf = makeRule("Performance Match", "Scores product based on performance needs", RulePriority.HIGH, 5.0);
+        leveled(perf, "concern", "keep cost low", "budgetLevel", "LOW", 5.0);
         leveled(perf, "concern", "keep house cool", "heatResistance", "HIGH", 6.0);
         leveled(perf, "concern", "long-lasting", "durabilityRating", "HIGH", 6.0);
         leveled(perf, "concern", "reduce noise", "noiseReduction", "HIGH", 6.0);
         leveled(perf, "priority", "long-lasting", "durabilityRating", "HIGH", 6.0);
+        leveled(perf, "priority", "durability", "durabilityRating", "HIGH", 6.0);
+        leveled(perf, "priority", "protection", "durabilityRating", "HIGH", 6.0);
         leveled(perf, "priority", "easy to clean", "waterResistance", "HIGH", 6.0);
+        leveled(perf, "priority", "easy cleaning", "waterResistance", "HIGH", 6.0);
         leveled(perf, "priority", "affordable", "budgetLevel", "LOW", 5.0); // budget uses 5.0
+        leveled(perf, "priority", "cost", "budgetLevel", "LOW", 5.0);
+        leveled(perf, "priority", "budget", "budgetLevel", "LOW", 5.0);
+        fixed(perf, "priority", "compatibility", 7.0);
+        fixed(perf, "priority", "appearance", 7.0);
+        fixed(perf, "priority", "decoration", 7.0);
         leveled(perf, "goal", "heat reduction", "heatResistance", "HIGH", 6.0);
         leveled(perf, "goal", "sound insulation", "noiseReduction", "HIGH", 6.0);
         fixed(perf, "goal", "appearance", 7.0);
@@ -398,22 +409,23 @@ public class DataSeeder implements ApplicationRunner {
 
         // ─── 4. STYLE (MEDIUM priority, weight=15) ───
         Rule style = makeRule("Style Match", "Matches product style to user preference", RulePriority.MEDIUM, 5.0);
-        categorical(style, "style", "MODERN", "style", "MODERN,MINIMAL,INDUSTRIAL");
-        categorical(style, "style", "MINIMAL", "style", "MINIMAL,MODERN,INDUSTRIAL");
-        categorical(style, "style", "INDUSTRIAL", "style", "INDUSTRIAL,MODERN,MINIMAL");
-        categorical(style, "style", "TRADITIONAL", "style", "TRADITIONAL,RUSTIC");
-        categorical(style, "style", "RUSTIC", "style", "RUSTIC,TRADITIONAL");
-        categorical(style, "style", "NATURAL", "style", "NATURAL,WOODEN,MARBLE,TEXTURED");
-        categorical(style, "style", "WOODEN", "style", "WOODEN,NATURAL,MARBLE,TEXTURED");
-        categorical(style, "style", "MARBLE", "style", "MARBLE,NATURAL,WOODEN,TEXTURED");
-        categorical(style, "style", "TEXTURED", "style", "TEXTURED,NATURAL,WOODEN,MARBLE");
+        categorical(style, "style", "modern", "style", "MODERN,MINIMAL,INDUSTRIAL");
+        categorical(style, "style", "minimal", "style", "MINIMAL,MODERN,INDUSTRIAL");
+        categorical(style, "style", "industrial", "style", "INDUSTRIAL,MODERN,MINIMAL");
+        categorical(style, "style", "traditional", "style", "TRADITIONAL,RUSTIC");
+        categorical(style, "style", "rustic", "style", "RUSTIC,TRADITIONAL");
+        categorical(style, "style", "natural", "style", "NATURAL,WOODEN,MARBLE,TEXTURED");
+        categorical(style, "style", "wooden look", "style", "WOODEN,NATURAL,MARBLE,TEXTURED");
+        categorical(style, "style", "wooden finish", "style", "WOODEN,NATURAL,MARBLE,TEXTURED");
+        categorical(style, "style", "marble look", "style", "MARBLE,NATURAL,WOODEN,TEXTURED");
+        categorical(style, "style", "textured", "style", "TEXTURED,NATURAL,WOODEN,MARBLE");
         ruleRepository.save(style);
 
         // ─── 5. MAINTENANCE (LOW priority, weight=10) ───
         Rule maint = makeRule("Maintenance Match", "Matches maintenance level preference", RulePriority.LOW, 5.0);
-        leveled(maint, "maintenance", "LOW",    "maintenanceLevel", "LOW");
-        leveled(maint, "maintenance", "MEDIUM", "maintenanceLevel", "MEDIUM");
-        leveled(maint, "maintenance", "HIGH",   "maintenanceLevel", "HIGH");
+        leveled(maint, "maintenance", "low",    "maintenanceLevel", "LOW");
+        leveled(maint, "maintenance", "medium", "maintenanceLevel", "MEDIUM");
+        leveled(maint, "maintenance", "high",   "maintenanceLevel", "HIGH");
         ruleRepository.save(maint);
 
         // ─── 6. USAGE (LOW priority, weight=10) ───
@@ -431,7 +443,8 @@ public class DataSeeder implements ApplicationRunner {
         leveled(usage, "wall_usage", "kitchen", "heatResistance", "HIGH", 6.0);
         leveled(usage, "wall_usage", "bathroom", "waterResistance", "HIGH", 6.0);
         fixed(usage, "wall_usage", "living room", 7.0);
-        leveled(usage, "accessory_type", "installation", "durabilityRating", "HIGH", 6.0);
+        fixed(usage, "wall_usage", "bedroom", 7.0);
+        leveled(usage, "accessory_type", "installation", "durabilityRating", "MEDIUM", 6.0);
         fixed(usage, "accessory_type", "finishing", 7.0);
         fixed(usage, "accessory_type", "decorative", 6.0);
         leveled(usage, "usage_duration", "long-term", "durabilityRating", "HIGH", 6.0);
