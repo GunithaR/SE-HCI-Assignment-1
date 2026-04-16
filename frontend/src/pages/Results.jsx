@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import catalogService from '../services/catalogService';
 
 /* ───────────────── Strategy display names & colors ─────────────────────── */
@@ -228,47 +228,18 @@ function ProductCard({ product, rank, isSelected, onToggleSelect }) {
     tradeOffs,
     matchedRuleNames,
     productId,
+    excluded,
+    ruleAdjustment,
+    appliedRuleNames,
+    excludedByRules,
   } = product;
-
-  const [aiExplanation, setAiExplanation] = useState(null);
-  const [loadingExplanation, setLoadingExplanation] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-    
-    const fetchExplanation = async () => {
-      try {
-        const payload = {
-          productId,
-          productName,
-          score: totalScore,
-          matchedRules: matchedRuleNames || [],
-          constraintsSatisfied: tradeOffs || [],
-          preferenceContributions: strategyScores || {}
-        };
-        const response = await catalogService.getExplanation(payload);
-        if (isMounted) {
-          setAiExplanation(response.explanation);
-        }
-      } catch (error) {
-        if (isMounted) {
-          setAiExplanation(product.explanation || "This product is recommended based on your preferences.");
-        }
-      } finally {
-        if (isMounted) setLoadingExplanation(false);
-      }
-    };
-    
-    fetchExplanation();
-    
-    return () => { isMounted = false; };
-  }, [product, productId, productName, totalScore, matchedRuleNames, tradeOffs, strategyScores]);
 
   const maxScore = 10;
 
   return (
-    <div className={`product-card${rank === 1 ? ' top-pick' : ''}`}>
-      {rank === 1 && <div className="top-badge">⭐ Top Pick</div>}
+    <div className={`product-card${rank === 1 && !excluded ? ' top-pick' : ''}${excluded ? ' excluded-card' : ''}`}>
+      {excluded && <div className="excluded-badge">⛔ Excluded by Rule</div>}
+      {rank === 1 && !excluded && <div className="top-badge">⭐ Top Pick</div>}
 
       {/* Header with checkbox inline */}
       <div className="card-header">
@@ -277,7 +248,8 @@ function ProductCard({ product, rank, isSelected, onToggleSelect }) {
           className="product-checkbox"
           checked={isSelected}
           onChange={onToggleSelect}
-          title="Select for comparison"
+          title={excluded ? 'Excluded products cannot be compared' : 'Select for comparison'}
+          disabled={excluded}
         />
         <div className="card-rank">#{rank}</div>
         <div className="card-info">
@@ -334,16 +306,34 @@ function ProductCard({ product, rank, isSelected, onToggleSelect }) {
         </div>
       )}
 
-      {/* Explanation */}
+      {/* Rule adjustments */}
+      {!excluded && appliedRuleNames && appliedRuleNames.length > 0 && (
+        <div className="rule-adjustments">
+          <h4>📋 Rule Adjustments</h4>
+          <div className="rule-adjustment-badge" style={{
+            color: ruleAdjustment > 0 ? '#22c55e' : ruleAdjustment < 0 ? '#ef4444' : 'rgba(255,255,255,.5)'
+          }}>
+            {ruleAdjustment > 0 ? '+' : ''}{ruleAdjustment.toFixed(1)} pts
+          </div>
+          {appliedRuleNames.map((name, i) => (
+            <p key={i} className="rule-item">{name}</p>
+          ))}
+        </div>
+      )}
+
+      {/* Excluded product reasons */}
+      {excluded && excludedByRules && excludedByRules.length > 0 && (
+        <div className="excluded-reason">
+          <h4>⛔ Excluded Reasons</h4>
+          {excludedByRules.map((rule, i) => (
+            <p key={i} className="excluded-rule-name">{rule}</p>
+          ))}
+        </div>
+      )}
+
+      {/* Explanation — served directly from backend (AI batch or deterministic) */}
       <div className="card-explanation-box">
-        {loadingExplanation ? (
-           <p className="loading-text">
-             <span className="spinner-sm" style={{ display: 'inline-block', borderColor: 'rgba(255,255,255,0.2)', borderTopColor: '#6366f1', borderWidth: '2px', marginRight: '6px', verticalAlign: 'middle', width: '12px', height: '12px', borderRadius: '50%', animation: 'spin .6s linear infinite' }} /> 
-             Generating narrative...
-           </p>
-        ) : (
-           <p className="card-explanation">✨ {aiExplanation}</p>
-        )}
+        <p className="card-explanation">✨ {product.explanation || "This product is recommended based on your preferences."}</p>
       </div>
     </div>
   );
@@ -896,6 +886,77 @@ function ResultsStyles() {
         margin: .2rem 0;
       }
 
+      /* ── Excluded card ─────────────────────────── */
+      .product-card.excluded-card {
+        opacity: 0.45;
+        filter: grayscale(60%);
+        border-color: rgba(239, 68, 68, .25);
+        position: relative;
+      }
+      .product-card.excluded-card:hover {
+        opacity: 0.65;
+        filter: grayscale(30%);
+        transform: none;
+        box-shadow: none;
+      }
+      .product-card.excluded-card .product-checkbox {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .excluded-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #dc2626, #ef4444);
+        color: #fff;
+        font-size: .75rem;
+        font-weight: 700;
+        padding: .3rem .8rem;
+        border-radius: 8px;
+        margin-bottom: .75rem;
+      }
+
+      /* ── Rule adjustments ──────────────────────── */
+      .rule-adjustments {
+        margin-top: .75rem;
+        background: rgba(99, 102, 241, .08);
+        border: 1px solid rgba(99, 102, 241, .2);
+        border-radius: 12px;
+        padding: .75rem 1rem;
+      }
+      .rule-adjustments h4 {
+        color: #a5b4fc;
+        font-size: .8rem;
+        margin: 0 0 .4rem;
+      }
+      .rule-adjustment-badge {
+        font-weight: 700;
+        font-size: .95rem;
+        margin-bottom: .3rem;
+      }
+      .rule-item {
+        color: rgba(255, 255, 255, .6);
+        font-size: .8rem;
+        margin: .2rem 0;
+      }
+
+      /* ── Excluded reason ───────────────────────── */
+      .excluded-reason {
+        margin-top: .75rem;
+        background: rgba(239, 68, 68, .1);
+        border: 1px solid rgba(239, 68, 68, .25);
+        border-radius: 12px;
+        padding: .75rem 1rem;
+      }
+      .excluded-reason h4 {
+        color: #fca5a5;
+        font-size: .8rem;
+        margin: 0 0 .4rem;
+      }
+      .excluded-rule-name {
+        color: rgba(255, 255, 255, .6);
+        font-size: .8rem;
+        margin: .2rem 0;
+      }
+
       .card-explanation-box {
         margin-top: 1rem;
         padding-top: .75rem;
@@ -912,6 +973,43 @@ function ResultsStyles() {
         color: rgba(255,255,255,.5);
         font-size: .85rem;
         margin: 0;
+      }
+
+      /* ── Enhance AI button ──────────────────────── */
+      .enhance-ai-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        margin-top: .5rem;
+        padding: .35rem .75rem;
+        border-radius: 8px;
+        border: 1px solid rgba(99,102,241,.3);
+        background: rgba(99,102,241,.1);
+        color: #a5b4fc;
+        font-size: .78rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all .2s;
+      }
+      .enhance-ai-btn:hover:not(:disabled) {
+        background: rgba(99,102,241,.2);
+        border-color: rgba(99,102,241,.5);
+        transform: translateY(-1px);
+      }
+      .enhance-ai-btn:disabled {
+        opacity: .6;
+        cursor: not-allowed;
+      }
+      .ai-badge {
+        display: inline-block;
+        margin-top: .5rem;
+        padding: .2rem .6rem;
+        border-radius: 6px;
+        background: rgba(34,197,94,.15);
+        border: 1px solid rgba(34,197,94,.3);
+        color: #22c55e;
+        font-size: .72rem;
+        font-weight: 600;
       }
 
       /* ── Answer Summary ────────────────────────── */
