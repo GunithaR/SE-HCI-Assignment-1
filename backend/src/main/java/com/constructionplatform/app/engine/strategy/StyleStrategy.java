@@ -45,17 +45,9 @@ public class StyleStrategy implements RecommendationStrategy {
     }
 
     private String normalizeStyle(String answer) {
-        return switch (answer.toLowerCase()) {
-            case "modern", "contemporary", "sleek" -> "MODERN";
-            case "traditional", "classic", "timeless" -> "TRADITIONAL";
-            case "natural", "rustic", "earthy" -> "NATURAL";
-            case "industrial", "raw", "urban" -> "INDUSTRIAL";
-            case "wooden look", "wooden", "wooden finish", "wood" -> "WOODEN";
-            case "marble look", "marble" -> "MARBLE";
-            case "textured" -> "TEXTURED";
-            case "minimal", "minimalist" -> "MINIMAL";
-            default -> answer.toUpperCase();
-        };
+        // Answers are pre-normalised by AnswerNormalizationService;
+        // this is a safety net for edge cases.
+        return answer.toUpperCase().trim();
     }
 
     private boolean areCompatible(String style1, String style2) {
