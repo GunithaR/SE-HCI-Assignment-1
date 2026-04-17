@@ -13,6 +13,7 @@ import Wizard from './pages/Wizard';
 import Results from './pages/Results';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminRules from './pages/AdminRules';
+import AdminRecommendationHistory from './pages/AdminRecommendationHistory';
 
 export default function App() {
   return (
@@ -43,6 +44,14 @@ export default function App() {
             element={
               <AdminRoute>
                 <AdminRules />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/history"
+            element={
+              <AdminRoute>
+                <AdminRecommendationHistory />
               </AdminRoute>
             }
           />

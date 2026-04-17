@@ -26,6 +26,8 @@ export default function Wizard() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
+  const [startedAt, setStartedAt] = useState(null);
+
   /* Load categories on mount */
   useEffect(() => {
     catalogService
@@ -43,6 +45,7 @@ export default function Wizard() {
   /* Load questions when category selected */
   const selectCategory = useCallback(async (cat) => {
     setSelectedCategory(cat);
+    setStartedAt(Date.now()); // Capture the exact timestamp when questionnaire begins
     setLoading(true);
     setError(null);
     try {
@@ -159,7 +162,7 @@ export default function Wizard() {
     setSubmitting(true);
     setError(null);
     try {
-      const payload = { category: selectedCategory, answers: cleanAnswers };
+      const payload = { category: selectedCategory, answers: cleanAnswers, startedAt: startedAt };
       const hybrid = await catalogService.getHybridRecommendations(payload);
       navigate('/results', {
         state: {
