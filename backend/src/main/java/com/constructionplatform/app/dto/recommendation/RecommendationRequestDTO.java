@@ -14,6 +14,8 @@ public class RecommendationRequestDTO {
     @NotBlank(message = "Category is required")
     private String category;
 
+    private Long startedAt;
+
     private Map<String, String> answers = new HashMap<>();
 
     public RecommendationRequestDTO() {
@@ -25,6 +27,14 @@ public class RecommendationRequestDTO {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public Long getStartedAt() {
+        return startedAt;
+    }
+
+    public void setStartedAt(Long startedAt) {
+        this.startedAt = startedAt;
     }
 
     public Map<String, String> getAnswers() {

@@ -111,6 +111,9 @@ const catalogService = {
 
     /** POST /api/admin/sub-admins */
     createSubAdminUser: (data) => apiClient.post('/admin/sub-admins', data).then((r) => r.data),
+
+    /** GET /api/admin/recommendation-history */
+    getRecommendationHistory: () => apiClient.get('/admin/recommendation-history').then((r) => r.data),
 };
 
 export default catalogService;
