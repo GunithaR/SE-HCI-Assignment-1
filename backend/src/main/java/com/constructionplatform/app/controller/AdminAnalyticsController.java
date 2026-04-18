@@ -3,6 +3,9 @@ package com.constructionplatform.app.controller;
 import com.constructionplatform.app.repository.SiteVisitRepository;
 import com.constructionplatform.app.repository.UserRepository;
 import com.constructionplatform.app.repository.RecommendationHistoryRepository;
+import com.constructionplatform.app.repository.RuleRepository;
+import com.constructionplatform.app.entity.Rule;
+import com.constructionplatform.app.enums.RuleStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -21,13 +25,16 @@ public class AdminAnalyticsController {
     private final SiteVisitRepository siteVisitRepository;
     private final UserRepository userRepository;
     private final RecommendationHistoryRepository recommendationHistoryRepository;
+    private final RuleRepository ruleRepository;
 
     public AdminAnalyticsController(SiteVisitRepository siteVisitRepository, 
                                     UserRepository userRepository,
-                                    RecommendationHistoryRepository recommendationHistoryRepository) {
+                                    RecommendationHistoryRepository recommendationHistoryRepository,
+                                    RuleRepository ruleRepository) {
         this.siteVisitRepository = siteVisitRepository;
         this.userRepository = userRepository;
         this.recommendationHistoryRepository = recommendationHistoryRepository;
+        this.ruleRepository = ruleRepository;
     }
 
     @GetMapping("/visits")
@@ -74,5 +81,11 @@ public class AdminAnalyticsController {
         metrics.put("total", totalSessions);
 
         return ResponseEntity.ok(metrics);
+    }
+
+    @GetMapping("/rules/active")
+    public ResponseEntity<List<Rule>> getActiveRules() {
+        List<Rule> activeRules = ruleRepository.findByRuleStatus(RuleStatus.ACTIVE);
+        return ResponseEntity.ok(activeRules);
     }
 }

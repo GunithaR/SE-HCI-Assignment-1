@@ -124,6 +124,9 @@ const catalogService = {
     /** GET /api/admin/analytics/sessions */
     getAnalyticsSessions: () => apiClient.get('/admin/analytics/sessions').then((r) => r.data),
 
+    /** GET /api/admin/analytics/rules/active */
+    getAnalyticsActiveRules: () => apiClient.get('/admin/analytics/rules/active').then((r) => r.data),
+
     /** POST /api/public/analytics/visit */
     recordVisit: () => apiClient.post('/public/analytics/visit').then((r) => r.data),
 };

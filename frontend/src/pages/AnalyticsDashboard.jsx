@@ -7,6 +7,7 @@ export default function AnalyticsDashboard() {
     const [visits, setVisits] = useState(null);
     const [users, setUsers] = useState(null);
     const [sessions, setSessions] = useState(null);
+    const [activeRules, setActiveRules] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -15,15 +16,25 @@ export default function AnalyticsDashboard() {
         Promise.all([
             catalogService.getAnalyticsVisits().catch(() => null),
             catalogService.getAnalyticsUsers().catch(() => null),
-            catalogService.getAnalyticsSessions().catch(() => null)
-        ]).then(([visitsData, usersData, sessionsData]) => {
+            catalogService.getAnalyticsSessions().catch(() => null),
+            catalogService.getAnalyticsActiveRules().catch(() => null)
+        ]).then(([visitsData, usersData, sessionsData, rulesData]) => {
             if (visitsData) setVisits(visitsData);
             if (usersData) setUsers(usersData);
             if (sessionsData) setSessions(sessionsData);
-            if (!visitsData && !usersData && !sessionsData) setError("Failed to load some analytics data.");
+            if (rulesData) setActiveRules(rulesData);
+            if (!visitsData && !usersData && !sessionsData && !rulesData) setError("Failed to load some analytics data.");
             setLoading(false);
         });
     }, []);
+
+    // Helper to format rule effect
+    const formatEffect = (rule) => {
+        if (rule.effectType === 'ADD_SCORE') return <span style={{ color: '#10b981', fontWeight: 700 }}>+{rule.effectValue} Score</span>;
+        if (rule.effectType === 'DEDUCT_SCORE') return <span style={{ color: '#ef4444', fontWeight: 700 }}>-{rule.effectValue} Score</span>;
+        if (rule.effectType === 'FILTER_OUT') return <span style={{ color: '#64748b', fontWeight: 700 }}>Filter Out</span>;
+        return rule.effectType;
+    };
 
     return (
         <div style={{ minHeight: '100vh', background: 'var(--bg-color)', padding: '7rem 1.5rem 3rem' }}>
@@ -145,16 +156,18 @@ export default function AnalyticsDashboard() {
                     )}
                 </div>
 
-                {/* Phase 2: Users Row */}
-                <div style={{ marginBottom: '3rem' }}>
-                    <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '1.5rem', borderBottom: '2px solid rgba(139,92,246,0.1)', paddingBottom: 8 }}>
-                        User Base
-                    </h2>
+                {/* Grid container for Phase 2 and Phase 4 */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem', marginBottom: '3rem' }}>
                     
-                    {loading && !users ? (
-                        <div className="skeleton-box" style={{ width: 300, height: 120, borderRadius: 12 }} />
-                    ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                    {/* Phase 2: Users Row */}
+                    <div>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '1.5rem', borderBottom: '2px solid rgba(139,92,246,0.1)', paddingBottom: 8 }}>
+                            User Base
+                        </h2>
+                        
+                        {loading && !users ? (
+                            <div className="skeleton-box" style={{ width: '100%', height: 120, borderRadius: 12 }} />
+                        ) : (
                             <StatCard 
                                 icon="👥" 
                                 title="Total Registered Users" 
@@ -162,8 +175,47 @@ export default function AnalyticsDashboard() {
                                 subtitle="Accounts in system" 
                                 accent="#ec4899" 
                             />
-                        </div>
-                    )}
+                        )}
+                    </div>
+
+                    {/* Phase 4: Active Rules Row */}
+                    <div>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '1.5rem', borderBottom: '2px solid rgba(139,92,246,0.1)', paddingBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            Currently Active Rules
+                            <span style={{ fontSize: '0.85rem', background: '#ecfdf5', color: '#10b981', padding: '2px 8px', borderRadius: 999 }}>{activeRules?.length || 0} Active</span>
+                        </h2>
+                        
+                        {loading && !activeRules ? (
+                            <div className="skeleton-box" style={{ width: '100%', height: 150, borderRadius: 12 }} />
+                        ) : (
+                            <div className="card" style={{ background: 'var(--color-surface)', borderRadius: 12, border: '1px solid rgba(0,0,0,0.05)', maxHeight: 300, overflowY: 'auto' }}>
+                                {activeRules?.length === 0 ? (
+                                    <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>
+                                        No active rules. Recommendations are purely mathematical right now.
+                                    </div>
+                                ) : (
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                        <thead>
+                                            <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                                                <th style={{ padding: '0.75rem 1rem', color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase' }}>Rule Name</th>
+                                                <th style={{ padding: '0.75rem 1rem', color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase' }}>Priority</th>
+                                                <th style={{ padding: '0.75rem 1rem', color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase' }}>Effect</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {activeRules.map(rule => (
+                                                <tr key={rule.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+                                                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#4c1d95' }}>{rule.name}</td>
+                                                    <td style={{ padding: '0.75rem 1rem', color: 'var(--color-text)' }}>{rule.priority}</td>
+                                                    <td style={{ padding: '0.75rem 1rem' }}>{formatEffect(rule)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Placeholder for future phases */}
