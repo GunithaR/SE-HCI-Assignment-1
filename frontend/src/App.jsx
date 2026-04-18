@@ -4,6 +4,7 @@ import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute';
 
 import Navbar from './components/Navbar';
 import AssistantWidget from './components/AssistantWidget';
+import VisitTracker from './components/VisitTracker';
 
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -14,12 +15,14 @@ import Results from './pages/Results';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminRules from './pages/AdminRules';
 import AdminRecommendationHistory from './pages/AdminRecommendationHistory';
+import AnalyticsDashboard from './pages/AnalyticsDashboard';
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Navbar />
+        <VisitTracker />
 
         <Routes>
           {/* ── Public ──────────────────────────────────────────────────── */}
@@ -52,6 +55,14 @@ export default function App() {
             element={
               <AdminRoute>
                 <AdminRecommendationHistory />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/analytics"
+            element={
+              <AdminRoute>
+                <AnalyticsDashboard />
               </AdminRoute>
             }
           />
