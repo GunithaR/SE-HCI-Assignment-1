@@ -9,6 +9,7 @@ export default function AnalyticsDashboard() {
     const [sessions, setSessions] = useState(null);
     const [activeRules, setActiveRules] = useState(null);
     const [ruleUsage, setRuleUsage] = useState(null);
+    const [topProducts, setTopProducts] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -19,14 +20,16 @@ export default function AnalyticsDashboard() {
             catalogService.getAnalyticsUsers().catch(() => null),
             catalogService.getAnalyticsSessions().catch(() => null),
             catalogService.getAnalyticsActiveRules().catch(() => null),
-            catalogService.getAnalyticsRuleUsage().catch(() => null)
-        ]).then(([visitsData, usersData, sessionsData, rulesData, ruleUsageData]) => {
+            catalogService.getAnalyticsRuleUsage().catch(() => null),
+            catalogService.getAnalyticsTopProducts().catch(() => null)
+        ]).then(([visitsData, usersData, sessionsData, rulesData, ruleUsageData, topProductsData]) => {
             if (visitsData) setVisits(visitsData);
             if (usersData) setUsers(usersData);
             if (sessionsData) setSessions(sessionsData);
             if (rulesData) setActiveRules(rulesData);
             if (ruleUsageData) setRuleUsage(ruleUsageData);
-            if (!visitsData && !usersData && !sessionsData && !rulesData && !ruleUsageData) setError("Failed to load some analytics data.");
+            if (topProductsData) setTopProducts(topProductsData);
+            if (!visitsData && !usersData && !sessionsData && !rulesData && !ruleUsageData && !topProductsData) setError("Failed to load analytics data.");
             setLoading(false);
         }).catch(() => {
             setError("A critical error occurred loading the analytics dashboard.");
@@ -243,7 +246,62 @@ export default function AnalyticsDashboard() {
                     )}
                 </div>
 
-                {/* Placeholder for future phases */}
+                {/* Phase 7: Top Recommended Products by Category */}
+                <div style={{ marginBottom: '3rem' }}>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '1.5rem', borderBottom: '2px solid rgba(139,92,246,0.1)', paddingBottom: 8 }}>
+                        🛆 Top Recommended Products by Category
+                    </h2>
+
+                    {loading && !topProducts ? (
+                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                            <div className="skeleton-box" style={{ width: 340, height: 220, borderRadius: 12 }} />
+                            <div className="skeleton-box" style={{ width: 340, height: 220, borderRadius: 12 }} />
+                        </div>
+                    ) : (
+                        (() => {
+                            // Collect all categories from both weeks
+                            const allCategories = new Set([
+                                ...Object.keys(topProducts?.thisWeek || {}),
+                                ...Object.keys(topProducts?.lastWeek || {})
+                            ]);
+
+                            if (allCategories.size === 0) {
+                                return (
+                                    <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', background: 'var(--color-surface)', borderRadius: 12 }}>
+                                        No recommendation data yet. Run the recommendation wizard to start tracking!
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                    {[...allCategories].map(category => (
+                                        <div key={category} className="card" style={{ background: 'var(--color-surface)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.07)' }}>
+                                            <div style={{ padding: '0.85rem 1.25rem', background: 'rgba(139,92,246,0.08)', borderBottom: '1px solid rgba(139,92,246,0.12)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                                <span style={{ fontSize: '1.1rem' }}>📦</span>
+                                                <span style={{ fontWeight: 800, color: '#6d28d9', fontSize: '1rem' }}>{category}</span>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+                                                <div style={{ padding: '1rem', borderRight: '1px solid rgba(0,0,0,0.06)' }}>
+                                                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>
+                                                        ● This Week
+                                                    </p>
+                                                    <ProductRankList products={topProducts?.thisWeek?.[category] || []} accentColor="#6366f1" />
+                                                </div>
+                                                <div style={{ padding: '1rem' }}>
+                                                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>
+                                                        ● Last Week
+                                                    </p>
+                                                    <ProductRankList products={topProducts?.lastWeek?.[category] || []} accentColor="#94a3b8" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        })()
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -306,6 +364,32 @@ function RuleUsageTable({ title, accentColor, rows }) {
                     })}
                 </div>
             )}
+        </div>
+    );
+}
+
+function ProductRankList({ products, accentColor }) {
+    const medals = ['🥇', '🥈', '🥉'];
+
+    if (products.length === 0) {
+        return <p style={{ color: '#94a3b8', fontSize: '0.85rem', fontStyle: 'italic' }}>No data this period.</p>;
+    }
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {products.map((product, idx) => (
+                <div key={product.name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '6px 8px', borderRadius: 8, background: idx === 0 ? `${accentColor}12` : 'transparent' }}>
+                    <span style={{ fontSize: '1rem', width: 22, textAlign: 'center' }}>
+                        {medals[idx] || `#${idx + 1}`}
+                    </span>
+                    <span style={{ flex: 1, fontSize: '0.85rem', fontWeight: idx === 0 ? 700 : 500, color: idx === 0 ? 'var(--color-text)' : '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {product.name}
+                    </span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: accentColor, background: `${accentColor}18`, padding: '2px 7px', borderRadius: 99, flexShrink: 0 }}>
+                        {product.count}x
+                    </span>
+                </div>
+            ))}
         </div>
     );
 }

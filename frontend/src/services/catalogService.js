@@ -130,6 +130,9 @@ const catalogService = {
     /** GET /api/admin/analytics/rules/usage */
     getAnalyticsRuleUsage: () => apiClient.get('/admin/analytics/rules/usage').then((r) => r.data),
 
+    /** GET /api/admin/analytics/products/top */
+    getAnalyticsTopProducts: () => apiClient.get('/admin/analytics/products/top').then((r) => r.data),
+
     /** POST /api/public/analytics/visit */
     recordVisit: () => apiClient.post('/public/analytics/visit').then((r) => r.data),
 };

@@ -154,4 +154,76 @@ public class AdminAnalyticsController {
                 })
                 .collect(Collectors.toList());
     }
+
+    @GetMapping("/products/top")
+    public ResponseEntity<Map<String, Map<String, List<Map<String, Object>>>>> getTopProducts() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime thisWeekStart = now.minusDays(7);
+        LocalDateTime lastWeekStart = now.minusDays(14);
+
+        List<com.constructionplatform.app.entity.RecommendationHistory> thisWeekSessions =
+                recommendationHistoryRepository.findSessionsInRange(thisWeekStart, now);
+        List<com.constructionplatform.app.entity.RecommendationHistory> lastWeekSessions =
+                recommendationHistoryRepository.findSessionsInRange(lastWeekStart, thisWeekStart);
+
+        Map<String, Map<String, List<Map<String, Object>>>> result = new HashMap<>();
+        result.put("thisWeek", aggregateTopProducts(thisWeekSessions));
+        result.put("lastWeek", aggregateTopProducts(lastWeekSessions));
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Parses each session's resultSummaryJson to extract product recommendations,
+     * aggregates counts per product grouped by category.
+     * Returns: { "CategoryName": [ {name, count}, ... ] }
+     */
+    private Map<String, List<Map<String, Object>>> aggregateTopProducts(
+            List<com.constructionplatform.app.entity.RecommendationHistory> sessions) {
+        ObjectMapper mapper = new ObjectMapper();
+        // category -> (productName -> count)
+        Map<String, Map<String, Integer>> categoryProductCounts = new LinkedHashMap<>();
+
+        for (com.constructionplatform.app.entity.RecommendationHistory session : sessions) {
+            String json = session.getResultSummaryJson();
+            if (json == null || json.isBlank()) continue;
+            try {
+                com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(json);
+                com.fasterxml.jackson.databind.JsonNode recommendations = root.path("recommendations");
+                if (!recommendations.isArray()) continue;
+
+                for (com.fasterxml.jackson.databind.JsonNode rec : recommendations) {
+                    String productName = rec.path("productName").asText(null);
+                    String categoryName = rec.path("categoryName").asText(null);
+                    if (productName == null || categoryName == null) continue;
+
+                    // Only count non-excluded products
+                    boolean excluded = rec.path("excluded").asBoolean(false);
+                    if (excluded) continue;
+
+                    categoryProductCounts
+                        .computeIfAbsent(categoryName, k -> new LinkedHashMap<>())
+                        .merge(productName, 1, Integer::sum);
+                }
+            } catch (Exception ignored) {
+                // Malformed JSON — skip this session
+            }
+        }
+
+        // For each category, sort products by count descending and convert to list of DTOs
+        Map<String, List<Map<String, Object>>> result = new LinkedHashMap<>();
+        categoryProductCounts.forEach((category, productCounts) -> {
+            List<Map<String, Object>> ranked = productCounts.entrySet().stream()
+                    .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                    .limit(5)  // Top 5 per category
+                    .map(e -> {
+                        Map<String, Object> entry = new LinkedHashMap<>();
+                        entry.put("name", e.getKey());
+                        entry.put("count", e.getValue());
+                        return entry;
+                    })
+                    .collect(Collectors.toList());
+            result.put(category, ranked);
+        });
+        return result;
+    }
 }
