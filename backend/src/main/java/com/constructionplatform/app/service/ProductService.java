@@ -332,6 +332,30 @@ public class ProductService {
          * a clear message, which {@link com.constructionplatform.app.exception.GlobalExceptionHandler}
          * will surface as a 409 CONFLICT to the admin UI.</p>
          */
+        public String getCompactProductCatalog() {
+                java.util.List<Product> products = productRepository.findAll();
+                StringBuilder sb = new StringBuilder();
+                sb.append("--- AVAILABLE PLATFORM PRODUCTS ---\n");
+                for (Product p : products) {
+                        if (p.getIsActive() != null && p.getIsActive()) {
+                                sb.append(String.format("- %s | Brand: %s | Category: %s | Price: Rs.%.2f",
+                                                p.getName(),
+                                                p.getBrand() != null ? p.getBrand().getName() : "Unknown",
+                                                p.getCategory() != null ? p.getCategory().getName() : "Unknown",
+                                                p.getBasePrice()));
+                                if (p.getAttribute() != null) {
+                                        sb.append(String.format(" | Budget: %s, Climate: %s, Durability: %s, Material: %s",
+                                                        p.getAttribute().getBudgetLevel() != null ? p.getAttribute().getBudgetLevel() : "ANY",
+                                                        p.getAttribute().getClimateSuitability() != null ? p.getAttribute().getClimateSuitability() : "ANY",
+                                                        p.getAttribute().getDurabilityRating() != null ? p.getAttribute().getDurabilityRating() : "ANY",
+                                                        p.getAttribute().getMaterial() != null ? p.getAttribute().getMaterial() : "ANY"));
+                                }
+                                sb.append("\n");
+                        }
+                }
+                return sb.toString();
+        }
+
         private void ensureNoCriticalDependencies(Product product) {
                 // Example for future extension:
                 // if (orderRepository.existsByProductId(product.getId())) {
