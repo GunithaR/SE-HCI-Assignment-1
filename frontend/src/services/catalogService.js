@@ -118,6 +118,12 @@ const catalogService = {
     /** GET /api/admin/analytics/visits */
     getAnalyticsVisits: () => apiClient.get('/admin/analytics/visits').then((r) => r.data),
 
+    /** GET /api/admin/analytics/users */
+    getAnalyticsUsers: () => apiClient.get('/admin/analytics/users').then((r) => r.data),
+
+    /** GET /api/admin/analytics/sessions */
+    getAnalyticsSessions: () => apiClient.get('/admin/analytics/sessions').then((r) => r.data),
+
     /** POST /api/public/analytics/visit */
     recordVisit: () => apiClient.post('/public/analytics/visit').then((r) => r.data),
 };

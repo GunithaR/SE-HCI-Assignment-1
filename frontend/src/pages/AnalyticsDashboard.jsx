@@ -5,16 +5,22 @@ import catalogService from '../services/catalogService';
 export default function AnalyticsDashboard() {
     const navigate = useNavigate();
     const [visits, setVisits] = useState(null);
+    const [users, setUsers] = useState(null);
+    const [sessions, setSessions] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         // Fetch all independently loading analytics endpoints
         Promise.all([
-            catalogService.getAnalyticsVisits().catch(() => null)
-        ]).then(([visitsData]) => {
+            catalogService.getAnalyticsVisits().catch(() => null),
+            catalogService.getAnalyticsUsers().catch(() => null),
+            catalogService.getAnalyticsSessions().catch(() => null)
+        ]).then(([visitsData, usersData, sessionsData]) => {
             if (visitsData) setVisits(visitsData);
-            else setError("Failed to load some analytics data.");
+            if (usersData) setUsers(usersData);
+            if (sessionsData) setSessions(sessionsData);
+            if (!visitsData && !usersData && !sessionsData) setError("Failed to load some analytics data.");
             setLoading(false);
         });
     }, []);
@@ -89,6 +95,72 @@ export default function AnalyticsDashboard() {
                                 value={visits?.total || 0} 
                                 subtitle="Lifetime tracking" 
                                 accent="#f59e0b" 
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {/* Phase 3: Recommendation Engine Row */}
+                <div style={{ marginBottom: '3rem' }}>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '1.5rem', borderBottom: '2px solid rgba(139,92,246,0.1)', paddingBottom: 8 }}>
+                        Recommendation Engine Activity
+                    </h2>
+                    
+                    {loading && !sessions ? (
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div className="skeleton-box" style={{ width: 250, height: 120, borderRadius: 12 }} />
+                            <div className="skeleton-box" style={{ width: 250, height: 120, borderRadius: 12 }} />
+                        </div>
+                    ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.5rem' }}>
+                            <StatCard 
+                                icon="🧠" 
+                                title="Today's Sessions" 
+                                value={sessions?.lastDay || 0} 
+                                subtitle="Last 24 hours" 
+                                accent="#6366f1" 
+                            />
+                            <StatCard 
+                                icon="📊" 
+                                title="This Week" 
+                                value={sessions?.lastWeek || 0} 
+                                subtitle="Last 7 days" 
+                                accent="#a855f7" 
+                            />
+                            <StatCard 
+                                icon="🗓️" 
+                                title="This Month" 
+                                value={sessions?.lastMonth || 0} 
+                                subtitle="Last 30 days" 
+                                accent="#d946ef" 
+                            />
+                            <StatCard 
+                                icon="📜" 
+                                title="All Sessions" 
+                                value={sessions?.total || 0} 
+                                subtitle="Total historical logs" 
+                                accent="#64748b" 
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {/* Phase 2: Users Row */}
+                <div style={{ marginBottom: '3rem' }}>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '1.5rem', borderBottom: '2px solid rgba(139,92,246,0.1)', paddingBottom: 8 }}>
+                        User Base
+                    </h2>
+                    
+                    {loading && !users ? (
+                        <div className="skeleton-box" style={{ width: 300, height: 120, borderRadius: 12 }} />
+                    ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                            <StatCard 
+                                icon="👥" 
+                                title="Total Registered Users" 
+                                value={users?.total || 0} 
+                                subtitle="Accounts in system" 
+                                accent="#ec4899" 
                             />
                         </div>
                     )}
