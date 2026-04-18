@@ -75,6 +75,7 @@ export default function AdminRecommendationHistory() {
                                     <th style={{ padding: '1rem', color: '#64748b', fontSize: '0.85rem', textTransform: 'uppercase' }}>Started At</th>
                                     <th style={{ padding: '1rem', color: '#64748b', fontSize: '0.85rem', textTransform: 'uppercase' }}>User</th>
                                     <th style={{ padding: '1rem', color: '#64748b', fontSize: '0.85rem', textTransform: 'uppercase' }}>Category</th>
+                                    <th style={{ padding: '1rem', color: '#64748b', fontSize: '0.85rem', textTransform: 'uppercase' }}>Rules Triggered</th>
                                     <th style={{ padding: '1rem', color: '#64748b', fontSize: '0.85rem', textTransform: 'uppercase' }}>Top Recommendation</th>
                                     <th style={{ padding: '1rem', color: '#64748b', fontSize: '0.85rem', textTransform: 'uppercase' }}>Action</th>
                                 </tr>
@@ -82,32 +83,44 @@ export default function AdminRecommendationHistory() {
                             <tbody>
                                 {history.length === 0 ? (
                                     <tr>
-                                        <td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>
+                                        <td colSpan="7" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>
                                             No recommendation history logs found.
                                         </td>
                                     </tr>
                                 ) : (
-                                    history.map(log => (
-                                        <tr key={log.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', transition: 'background 0.2s' }}>
-                                            <td style={{ padding: '1rem', fontWeight: 600, color: '#475569' }}>#{log.id}</td>
-                                            <td style={{ padding: '1rem', color: 'var(--color-text)' }}>
-                                                {new Date(log.startedAt).toLocaleString()}
-                                            </td>
-                                            <td style={{ padding: '1rem', color: log.userEmail ? '#10b981' : '#94a3b8', fontWeight: log.userEmail ? 600 : 400 }}>
-                                                {log.userEmail || 'Anonymous'}
-                                            </td>
-                                            <td style={{ padding: '1rem', color: '#8b5cf6', fontWeight: 600 }}>{log.category}</td>
-                                            <td style={{ padding: '1rem', color: 'var(--color-text)' }}>
-                                                {getTopResultName(log.resultSummaryJson)}
-                                            </td>
-                                            <td style={{ padding: '1rem' }}>
-                                                <button onClick={() => setSelectedSession(log)}
-                                                    style={{ padding: '6px 14px', borderRadius: 6, background: 'var(--color-primary)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
-                                                    View Details
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
+                                    history.map(log => {
+                                        const appliedRules = parseJSON(log.appliedRulesJson) || [];
+                                        return (
+                                            <tr key={log.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', transition: 'background 0.2s' }}>
+                                                <td style={{ padding: '1rem', fontWeight: 600, color: '#475569' }}>#{log.id}</td>
+                                                <td style={{ padding: '1rem', color: 'var(--color-text)' }}>
+                                                    {new Date(log.startedAt).toLocaleString()}
+                                                </td>
+                                                <td style={{ padding: '1rem', color: log.userEmail ? '#10b981' : '#94a3b8', fontWeight: log.userEmail ? 600 : 400 }}>
+                                                    {log.userEmail || 'Anonymous'}
+                                                </td>
+                                                <td style={{ padding: '1rem', color: '#8b5cf6', fontWeight: 600 }}>{log.category}</td>
+                                                <td style={{ padding: '1rem' }}>
+                                                    {appliedRules.length > 0 ? (
+                                                        <span style={{ background: '#ecfdf5', color: '#10b981', padding: '2px 8px', borderRadius: 999, fontSize: '0.8rem', fontWeight: 700 }}>
+                                                            {appliedRules.length} Active
+                                                        </span>
+                                                    ) : (
+                                                        <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>None</span>
+                                                    )}
+                                                </td>
+                                                <td style={{ padding: '1rem', color: 'var(--color-text)' }}>
+                                                    {getTopResultName(log.resultSummaryJson)}
+                                                </td>
+                                                <td style={{ padding: '1rem' }}>
+                                                    <button onClick={() => setSelectedSession(log)}
+                                                        style={{ padding: '6px 14px', borderRadius: 6, background: 'var(--color-primary)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
+                                                        View Details
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>
@@ -130,6 +143,7 @@ function SessionDetailsModal({ session, onClose }) {
     const answers = JSON.parse(session.answersJson || '{}');
     const resultSummary = JSON.parse(session.resultSummaryJson || '{}');
     const recommendations = resultSummary.recommendations || [];
+    const appliedRules = JSON.parse(session.appliedRulesJson || '[]');
 
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
@@ -159,6 +173,35 @@ function SessionDetailsModal({ session, onClose }) {
                         <p style={{ fontSize: '0.85rem', color: 'var(--color-muted)', marginBottom: 2 }}>Completed At</p>
                         <p style={{ fontWeight: 500 }}>{new Date(session.completedAt).toLocaleString()}</p>
                     </div>
+                </div>
+
+                <div style={{ marginBottom: '2rem' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '1rem', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: 8 }}>
+                        Rules Applied During Evaluation
+                    </h3>
+                    {appliedRules.length === 0 ? (
+                        <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>Recommendations were purely mathematical. No rules intervened.</p>
+                    ) : (
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            {appliedRules.map((rule, idx) => {
+                                const isPositive = rule.includes('[+');
+                                const isNegative = rule.includes('[-');
+                                const isFilterOut = rule.includes('[FILTER_OUT]');
+                                
+                                let bg = 'rgba(100,116,139,0.1)';
+                                let col = '#64748b';
+                                if (isPositive) { bg = 'rgba(16,185,129,0.1)'; col = '#10b981'; }
+                                if (isNegative) { bg = 'rgba(239,68,68,0.1)'; col = '#ef4444'; }
+                                if (isFilterOut) { bg = 'rgba(202,138,4,0.1)'; col = '#ca8a04'; }
+
+                                return (
+                                    <span key={idx} style={{ background: bg, color: col, padding: '4px 10px', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600 }}>
+                                        {rule}
+                                    </span>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 <div style={{ marginBottom: '2rem' }}>

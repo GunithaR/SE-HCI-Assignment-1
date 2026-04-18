@@ -32,6 +32,9 @@ public class RecommendationHistory {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String resultSummaryJson; // Information of the end recommendation result
 
+    @Column(name = "applied_rules_json", columnDefinition = "TEXT")
+    private String appliedRulesJson; // Rules applied during this specific session
+
     public RecommendationHistory() {
     }
 
@@ -97,5 +100,13 @@ public class RecommendationHistory {
 
     public void setResultSummaryJson(String resultSummaryJson) {
         this.resultSummaryJson = resultSummaryJson;
+    }
+
+    public String getAppliedRulesJson() {
+        return appliedRulesJson;
+    }
+
+    public void setAppliedRulesJson(String appliedRulesJson) {
+        this.appliedRulesJson = appliedRulesJson;
     }
 }
