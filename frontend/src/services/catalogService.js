@@ -114,6 +114,12 @@ const catalogService = {
 
     /** GET /api/admin/recommendation-history */
     getRecommendationHistory: () => apiClient.get('/admin/recommendation-history').then((r) => r.data),
+
+    /** GET /api/admin/analytics/visits */
+    getAnalyticsVisits: () => apiClient.get('/admin/analytics/visits').then((r) => r.data),
+
+    /** POST /api/public/analytics/visit */
+    recordVisit: () => apiClient.post('/public/analytics/visit').then((r) => r.data),
 };
 
 export default catalogService;

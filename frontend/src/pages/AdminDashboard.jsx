@@ -560,6 +560,10 @@ export default function AdminDashboard() {
                             style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.35)', color: '#22c55e', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
                             📜 Rec. History
                         </button>
+                        <button onClick={() => navigate('/admin/analytics')}
+                            style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.35)', color: '#6366f1', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
+                            📈 Analytics
+                        </button>
                         {isFullAdmin && (
                             <button onClick={() => setShowSubAdminModal(true)}
                                 style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', color: '#f59e0b', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
