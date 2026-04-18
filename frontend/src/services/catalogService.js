@@ -114,6 +114,27 @@ const catalogService = {
 
     /** GET /api/admin/recommendation-history */
     getRecommendationHistory: () => apiClient.get('/admin/recommendation-history').then((r) => r.data),
+
+    /** GET /api/admin/analytics/visits */
+    getAnalyticsVisits: () => apiClient.get('/admin/analytics/visits').then((r) => r.data),
+
+    /** GET /api/admin/analytics/users */
+    getAnalyticsUsers: () => apiClient.get('/admin/analytics/users').then((r) => r.data),
+
+    /** GET /api/admin/analytics/sessions */
+    getAnalyticsSessions: () => apiClient.get('/admin/analytics/sessions').then((r) => r.data),
+
+    /** GET /api/admin/analytics/rules/active */
+    getAnalyticsActiveRules: () => apiClient.get('/admin/analytics/rules/active').then((r) => r.data),
+
+    /** GET /api/admin/analytics/rules/usage */
+    getAnalyticsRuleUsage: () => apiClient.get('/admin/analytics/rules/usage').then((r) => r.data),
+
+    /** GET /api/admin/analytics/products/top */
+    getAnalyticsTopProducts: () => apiClient.get('/admin/analytics/products/top').then((r) => r.data),
+
+    /** POST /api/public/analytics/visit */
+    recordVisit: () => apiClient.post('/public/analytics/visit').then((r) => r.data),
 };
 
 export default catalogService;
