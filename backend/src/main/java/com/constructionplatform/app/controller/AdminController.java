@@ -7,6 +7,8 @@ import com.constructionplatform.app.dto.BrandDTO;
 import com.constructionplatform.app.dto.ProductCreateRequestDTO;
 import com.constructionplatform.app.dto.ProductResponseDTO;
 import com.constructionplatform.app.dto.ProductUpdateRequestDTO;
+import com.constructionplatform.app.entity.RecommendationHistory;
+import com.constructionplatform.app.repository.RecommendationHistoryRepository;
 import com.constructionplatform.app.service.AdminUserService;
 import com.constructionplatform.app.service.BrandService;
 import com.constructionplatform.app.service.ProductService;
@@ -32,13 +34,16 @@ public class AdminController {
     private final ProductService productService;
     private final AdminUserService adminUserService;
     private final BrandService brandService;
+    private final RecommendationHistoryRepository recommendationHistoryRepository;
 
     public AdminController(ProductService productService,
             AdminUserService adminUserService,
-            BrandService brandService) {
+            BrandService brandService,
+            RecommendationHistoryRepository recommendationHistoryRepository) {
         this.productService = productService;
         this.adminUserService = adminUserService;
         this.brandService = brandService;
+        this.recommendationHistoryRepository = recommendationHistoryRepository;
     }
 
     // ── Product management ────────────────────────────────────────────────────
@@ -112,5 +117,13 @@ public class AdminController {
     public ResponseEntity<AuthResponse> createSubAdminUser(
             @Valid @RequestBody AdminUserCreateRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(adminUserService.createSubAdminUser(request));
+    }
+
+    // ── Recommendation History management ──────────────────────────────────────
+
+    /** GET /api/admin/recommendation-history — fetch all logged recommendation sessions */
+    @GetMapping("/recommendation-history")
+    public ResponseEntity<java.util.List<RecommendationHistory>> getRecommendationHistory() {
+        return ResponseEntity.ok(recommendationHistoryRepository.findAllByOrderByStartedAtDesc());
     }
 }
