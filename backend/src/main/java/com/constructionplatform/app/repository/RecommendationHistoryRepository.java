@@ -15,4 +15,7 @@ public interface RecommendationHistoryRepository extends JpaRepository<Recommend
 
     @Query("SELECT COUNT(h) FROM RecommendationHistory h WHERE h.startedAt >= :since")
     long countSessionsSince(@Param("since") LocalDateTime since);
+
+    @Query("SELECT h FROM RecommendationHistory h WHERE h.startedAt >= :from AND h.startedAt < :to")
+    List<RecommendationHistory> findSessionsInRange(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 }

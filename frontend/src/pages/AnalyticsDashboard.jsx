@@ -8,6 +8,7 @@ export default function AnalyticsDashboard() {
     const [users, setUsers] = useState(null);
     const [sessions, setSessions] = useState(null);
     const [activeRules, setActiveRules] = useState(null);
+    const [ruleUsage, setRuleUsage] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -17,13 +18,18 @@ export default function AnalyticsDashboard() {
             catalogService.getAnalyticsVisits().catch(() => null),
             catalogService.getAnalyticsUsers().catch(() => null),
             catalogService.getAnalyticsSessions().catch(() => null),
-            catalogService.getAnalyticsActiveRules().catch(() => null)
-        ]).then(([visitsData, usersData, sessionsData, rulesData]) => {
+            catalogService.getAnalyticsActiveRules().catch(() => null),
+            catalogService.getAnalyticsRuleUsage().catch(() => null)
+        ]).then(([visitsData, usersData, sessionsData, rulesData, ruleUsageData]) => {
             if (visitsData) setVisits(visitsData);
             if (usersData) setUsers(usersData);
             if (sessionsData) setSessions(sessionsData);
             if (rulesData) setActiveRules(rulesData);
-            if (!visitsData && !usersData && !sessionsData && !rulesData) setError("Failed to load some analytics data.");
+            if (ruleUsageData) setRuleUsage(ruleUsageData);
+            if (!visitsData && !usersData && !sessionsData && !rulesData && !ruleUsageData) setError("Failed to load some analytics data.");
+            setLoading(false);
+        }).catch(() => {
+            setError("A critical error occurred loading the analytics dashboard.");
             setLoading(false);
         });
     }, []);
@@ -218,6 +224,25 @@ export default function AnalyticsDashboard() {
                     </div>
                 </div>
 
+                {/* Phase 6: Most Used Rules Comparison */}
+                <div style={{ marginBottom: '3rem' }}>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '1.5rem', borderBottom: '2px solid rgba(139,92,246,0.1)', paddingBottom: 8 }}>
+                        🏆 Most Used Rules
+                    </h2>
+
+                    {loading && !ruleUsage ? (
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div className="skeleton-box" style={{ flex: 1, height: 200, borderRadius: 12 }} />
+                            <div className="skeleton-box" style={{ flex: 1, height: 200, borderRadius: 12 }} />
+                        </div>
+                    ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            <RuleUsageTable title="This Week" accentColor="#6366f1" rows={ruleUsage?.thisWeek || []} />
+                            <RuleUsageTable title="Last Week" accentColor="#94a3b8" rows={ruleUsage?.lastWeek || []} />
+                        </div>
+                    )}
+                </div>
+
                 {/* Placeholder for future phases */}
             </div>
         </div>
@@ -240,6 +265,47 @@ function StatCard({ icon, title, value, subtitle, accent }) {
             <p style={{ color: accent, fontSize: '0.8rem', fontWeight: 600, margin: 0 }}>
                 {subtitle}
             </p>
+        </div>
+    );
+}
+
+function RuleUsageTable({ title, accentColor, rows }) {
+    const maxCount = rows.length > 0 ? rows[0].count : 1;
+
+    return (
+        <div className="card" style={{ background: 'var(--color-surface)', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
+            <div style={{ padding: '1rem 1.25rem', borderBottom: '2px solid rgba(139,92,246,0.08)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: accentColor }} />
+                <span style={{ fontWeight: 700, color: 'var(--color-text)', fontSize: '0.95rem' }}>{title}</span>
+            </div>
+
+            {rows.length === 0 ? (
+                <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem' }}>
+                    No rules were applied during this period.
+                </div>
+            ) : (
+                <div style={{ padding: '0.75rem' }}>
+                    {rows.map((row, idx) => {
+                        const pct = Math.round((row.count / maxCount) * 100);
+                        return (
+                            <div key={row.name} style={{ marginBottom: '0.85rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)' }}>
+                                        <span style={{ color: accentColor, marginRight: 6, fontWeight: 800 }}>#{idx + 1}</span>
+                                        {row.name}
+                                    </span>
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: accentColor }}>
+                                        {row.count}x
+                                    </span>
+                                </div>
+                                <div style={{ height: 6, borderRadius: 99, background: 'rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+                                    <div style={{ height: '100%', width: `${pct}%`, background: accentColor, borderRadius: 99, transition: 'width 0.6s ease' }} />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 }

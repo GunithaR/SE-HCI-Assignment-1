@@ -12,10 +12,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/analytics")
@@ -84,8 +85,73 @@ public class AdminAnalyticsController {
     }
 
     @GetMapping("/rules/active")
-    public ResponseEntity<List<Rule>> getActiveRules() {
+    public ResponseEntity<List<Map<String, Object>>> getActiveRules() {
         List<Rule> activeRules = ruleRepository.findByRuleStatus(RuleStatus.ACTIVE);
-        return ResponseEntity.ok(activeRules);
+        
+        // Map to safe flat DTOs to avoid Jackson infinite recursion from Rule <-> RuleCondition bidirectional relationship
+        List<Map<String, Object>> ruleDTOs = activeRules.stream().map(rule -> {
+            Map<String, Object> dto = new HashMap<>();
+            dto.put("id", rule.getId());
+            dto.put("name", rule.getName());
+            dto.put("description", rule.getDescription());
+            dto.put("priority", rule.getPriority());
+            dto.put("effectType", rule.getEffectType() != null ? rule.getEffectType().name() : null);
+            dto.put("effectValue", rule.getEffectValue());
+            dto.put("targetScope", rule.getTargetScope() != null ? rule.getTargetScope().name() : null);
+            dto.put("targetCategoryName", rule.getTargetCategoryName());
+            dto.put("ruleStatus", rule.getRuleStatus() != null ? rule.getRuleStatus().name() : null);
+            return dto;
+        }).collect(java.util.stream.Collectors.toList());
+
+        return ResponseEntity.ok(ruleDTOs);
+    }
+
+    @GetMapping("/rules/usage")
+    public ResponseEntity<Map<String, List<Map<String, Object>>>> getRuleUsage() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime thisWeekStart = now.minusDays(7);
+        LocalDateTime lastWeekStart = now.minusDays(14);
+
+        List<com.constructionplatform.app.entity.RecommendationHistory> thisWeekSessions =
+                recommendationHistoryRepository.findSessionsInRange(thisWeekStart, now);
+        List<com.constructionplatform.app.entity.RecommendationHistory> lastWeekSessions =
+                recommendationHistoryRepository.findSessionsInRange(lastWeekStart, thisWeekStart);
+
+        Map<String, List<Map<String, Object>>> result = new HashMap<>();
+        result.put("thisWeek", aggregateRuleUsage(thisWeekSessions));
+        result.put("lastWeek", aggregateRuleUsage(lastWeekSessions));
+        return ResponseEntity.ok(result);
+    }
+
+    private List<Map<String, Object>> aggregateRuleUsage(
+            List<com.constructionplatform.app.entity.RecommendationHistory> sessions) {
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Integer> counts = new LinkedHashMap<>();
+
+        for (com.constructionplatform.app.entity.RecommendationHistory session : sessions) {
+            String json = session.getAppliedRulesJson();
+            if (json == null || json.isBlank()) continue;
+            try {
+                List<String> ruleEntries = mapper.readValue(json, new TypeReference<List<String>>() {});
+                for (String entry : ruleEntries) {
+                    // Strip the suffix like " [+10.0]", " [-5.0]", " [FILTER_OUT]" to get the base rule name
+                    String baseName = entry.replaceAll("\\s*\\[.*\\]\\s*$", "").trim();
+                    counts.merge(baseName, 1, Integer::sum);
+                }
+            } catch (Exception ignored) {
+                // Malformed JSON — skip this session
+            }
+        }
+
+        // Sort by count descending and map to list of {name, count}
+        return counts.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .map(e -> {
+                    Map<String, Object> entry = new LinkedHashMap<>();
+                    entry.put("name", e.getKey());
+                    entry.put("count", e.getValue());
+                    return entry;
+                })
+                .collect(Collectors.toList());
     }
 }
