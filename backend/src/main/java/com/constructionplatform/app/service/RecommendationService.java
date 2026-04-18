@@ -14,11 +14,18 @@ import com.constructionplatform.app.engine.RulePostProcessor;
 import com.constructionplatform.app.engine.UserAnswers;
 import com.constructionplatform.app.entity.Product;
 import com.constructionplatform.app.entity.ProductAttribute;
+import com.constructionplatform.app.entity.RecommendationHistory;
+import com.constructionplatform.app.entity.User;
 import com.constructionplatform.app.repository.ProductRepository;
+import com.constructionplatform.app.repository.RecommendationHistoryRepository;
+import com.constructionplatform.app.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -50,19 +57,25 @@ public class RecommendationService {
     private final RecommendationAugmentationService recommendationAugmentationService;
     private final AnswerNormalizationService normalizationService;
     private final RulePostProcessor rulePostProcessor;
+    private final RecommendationHistoryRepository historyRepository;
+    private final UserRepository userRepository;
 
     public RecommendationService(ProductRepository productRepository,
                                   RecommendationEngine recommendationEngine,
                                   ExplanationAIService explanationAIService,
                                   RecommendationAugmentationService recommendationAugmentationService,
                                   AnswerNormalizationService normalizationService,
-                                  RulePostProcessor rulePostProcessor) {
+                                  RulePostProcessor rulePostProcessor,
+                                  RecommendationHistoryRepository historyRepository,
+                                  UserRepository userRepository) {
         this.productRepository = productRepository;
         this.recommendationEngine = recommendationEngine;
         this.explanationAIService = explanationAIService;
         this.recommendationAugmentationService = recommendationAugmentationService;
         this.normalizationService = normalizationService;
         this.rulePostProcessor = rulePostProcessor;
+        this.historyRepository = historyRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -93,11 +106,49 @@ public class RecommendationService {
                 rankedRecommendations
             );
 
-        return new HybridRecommendationResponseDTO(
+        HybridRecommendationResponseDTO responseDTO = new HybridRecommendationResponseDTO(
             rankedRecommendations,
             augmentation.insights(),
             augmentation.fallbackUsed()
         );
+
+        // --- Step 4: Save History Log ---
+        saveRecommendationHistory(requestDTO, responseDTO);
+
+        return responseDTO;
+        }
+
+        private void saveRecommendationHistory(RecommendationRequestDTO requestDTO, HybridRecommendationResponseDTO responseDTO) {
+            try {
+                RecommendationHistory history = new RecommendationHistory();
+                history.setCategory(requestDTO.getCategory() != null ? requestDTO.getCategory() : "Unknown");
+
+                // Timestamps
+                long startedAtMillis = requestDTO.getStartedAt() != null ? requestDTO.getStartedAt() : System.currentTimeMillis();
+                history.setStartedAt(java.time.Instant.ofEpochMilli(startedAtMillis)
+                        .atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
+                history.setCompletedAt(LocalDateTime.now());
+
+                // Find logged-in user if available
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                    String userEmail = auth.getName();
+                    history.setUserEmail(userEmail);
+                    userRepository.findByEmail(userEmail).ifPresent(user -> history.setUserId(user.getId()));
+                }
+
+                // Serialize JSON manually or via simple Jackson
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                String answersJson = mapper.writeValueAsString(requestDTO.getAnswers());
+                String resultSummaryJson = mapper.writeValueAsString(responseDTO);
+
+                history.setAnswersJson(answersJson);
+                history.setResultSummaryJson(resultSummaryJson);
+
+                historyRepository.save(history);
+            } catch (Exception e) {
+                log.error("Failed to save recommendation history: {}", e.getMessage(), e);
+            }
         }
 
     /**

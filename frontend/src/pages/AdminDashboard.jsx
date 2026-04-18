@@ -556,6 +556,10 @@ export default function AdminDashboard() {
                             style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.35)', color: '#0ea5e9', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
                             ⚙️ Manage Rules
                         </button>
+                        <button onClick={() => navigate('/admin/history')}
+                            style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.35)', color: '#22c55e', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
+                            📜 Rec. History
+                        </button>
                         {isFullAdmin && (
                             <button onClick={() => setShowSubAdminModal(true)}
                                 style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', color: '#f59e0b', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
