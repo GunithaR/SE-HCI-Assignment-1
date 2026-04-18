@@ -142,8 +142,25 @@ public class RecommendationService {
                 String answersJson = mapper.writeValueAsString(requestDTO.getAnswers());
                 String resultSummaryJson = mapper.writeValueAsString(responseDTO);
 
+                // Collect unique set of applied and excluded rules across all recommended products
+                java.util.Set<String> allAppliedRules = new java.util.HashSet<>();
+                if (responseDTO.getRecommendations() != null) {
+                    for (RecommendationResponseDTO rec : responseDTO.getRecommendations()) {
+                        if (rec.getAppliedRuleNames() != null) {
+                            allAppliedRules.addAll(rec.getAppliedRuleNames());
+                        }
+                        if (rec.getExcludedByRules() != null) {
+                            for (String ruleName : rec.getExcludedByRules()) {
+                                allAppliedRules.add(ruleName + " [FILTER_OUT]");
+                            }
+                        }
+                    }
+                }
+                String appliedRulesJson = mapper.writeValueAsString(allAppliedRules);
+
                 history.setAnswersJson(answersJson);
                 history.setResultSummaryJson(resultSummaryJson);
+                history.setAppliedRulesJson(appliedRulesJson);
 
                 historyRepository.save(history);
             } catch (Exception e) {
