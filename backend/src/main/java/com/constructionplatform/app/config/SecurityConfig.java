@@ -71,6 +71,7 @@ public class SecurityConfig {
                         // ── Public endpoints ──────────────────────────────────────
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/api/chat/**").permitAll()      // AI Chatbot
                         .requestMatchers("/uploads/**").permitAll()       // product images
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // pre-flight
 
