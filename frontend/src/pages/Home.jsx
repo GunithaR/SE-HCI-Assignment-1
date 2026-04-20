@@ -1,6 +1,6 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import catalogService from '../services/catalogService';
+import ProductCard from '../components/ProductCard';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Category metadata — icons + accent colours for the 5 blocks
@@ -12,107 +12,6 @@ const CATEGORY_META = {
     'Wall Solution': { img: '/Wall_Solution.jpg', color: '#3b82f6', desc: 'Insulation, cladding & renders' },
     'Accessories': { img: '/Accessories.jpg', color: '#a855f7', desc: 'Fittings, fixings & more' },
 };
-
-const BUDGET_COLORS = {
-    LOW: { bg: 'rgba(34,197,94,0.12)', fg: '#4ade80' },
-    MEDIUM: { bg: 'rgba(245,158,11,0.12)', fg: '#fbbf24' },
-    HIGH: { bg: 'rgba(239,68,68,0.12)', fg: '#f87171' },
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Product Card
-// ─────────────────────────────────────────────────────────────────────────────
-function ProductCard({ product }) {
-    const bc = BUDGET_COLORS[product.budgetLevel] || { bg: 'rgba(148,163,184,0.1)', fg: '#94a3b8' };
-    return (
-        <div style={{
-            background: 'var(--color-surface)',
-            border: '2px solid #a78bfa',
-            boxShadow: '0 4px 12px rgba(139,92,246,0.1)',
-            borderRadius: 16,
-            overflow: 'hidden',
-            padding: 0,
-            display: 'flex', flexDirection: 'column', gap: 0,
-            transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s',
-            cursor: 'default',
-        }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.4)'; e.currentTarget.style.boxShadow = 'var(--shadow-glow)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.boxShadow = 'none'; }}
-        >
-            {/* Product Image */}
-            {product.imageUrl && (
-                <div style={{ width: '100%', height: 180, overflow: 'hidden', background: 'var(--color-surface-alt)' }}>
-                    <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                        onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
-                    />
-                </div>
-            )}
-
-            {/* Card body */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '1.25rem', flex: 1 }}>
-                {/* Top row */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                    <div style={{ flex: 1 }}>
-                        <h3 style={{ color: 'var(--color-text)', fontWeight: 600, fontSize: '0.95rem', marginBottom: 2 }}>
-                            {product.name}
-                        </h3>
-                        <p style={{ color: 'var(--color-muted)', fontSize: '0.75rem' }}>
-                            {product.brandName && <span>{product.brandName}</span>}
-                            {product.brandName && product.categoryName && <span> · </span>}
-                            {product.categoryName && <span style={{ color: '#a78bfa' }}>{product.categoryName}</span>}
-                        </p>
-                    </div>
-                    {product.budgetLevel && (
-                        <span style={{ background: bc.bg, color: bc.fg, border: `1px solid ${bc.fg}44`, borderRadius: 9999, padding: '2px 10px', fontSize: '0.7rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                            {product.budgetLevel}
-                        </span>
-                    )}
-                </div>
-
-                {/* Description */}
-                <p style={{ color: 'var(--color-muted)', fontSize: '0.78rem', lineHeight: 1.65, flex: 1 }}>
-                    {product.description || 'Premium construction material.'}
-                </p>
-
-                {/* Attribute badges */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                    {product.climateSuitability && (
-                        <span style={{ background: 'rgba(139,92,246,0.12)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.25)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem' }}>
-                            ☁ {product.climateSuitability}
-                        </span>
-                    )}
-                    {product.maintenanceLevel && (
-                        <span style={{ background: 'rgba(20,184,166,0.12)', color: '#14b8a6', border: '1px solid rgba(20,184,166,0.25)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem' }}>
-                            🔧 {product.maintenanceLevel}
-                        </span>
-                    )}
-                    {product.durabilityRating && (
-                        <span style={{ background: 'var(--color-surface-alt)', color: 'var(--color-muted)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem', border: '1px solid var(--color-border)' }}>
-                            ★ {product.durabilityRating}/10
-                        </span>
-                    )}
-                </div>
-
-                {/* Price */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: 10 }}>
-                    <span style={{ color: '#8b5cf6', fontWeight: 700, fontSize: '1.15rem' }}>
-                        Rs. {Number(product.basePrice).toFixed(2)}
-                    </span>
-                    <span style={{
-                        padding: '3px 10px', borderRadius: 9999, fontSize: '0.68rem', fontWeight: 600,
-                        background: product.isActive ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-                        color: product.isActive ? '#16a34a' : '#dc2626',
-                    }}>
-                        {product.isActive ? 'In Stock' : 'Out of Stock'}
-                    </span>
-                </div>
-            </div>{/* end card body */}
-        </div>
-    );
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Home Page
@@ -226,12 +125,15 @@ export default function Home() {
                     </div>
                 ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-                        {categories.map((cat) => {
-                            const meta = CATEGORY_META[cat.name] || { icon: '📦', color: '#6c63ff', desc: '' };
+                        {[{ id: null, name: 'All Products' }, ...categories].map((cat) => {
+                            const isAll = cat.id === null;
+                            const meta = isAll 
+                                ? { icon: '🌐', color: '#f43f5e', desc: 'Browse our entire catalog' } 
+                                : (CATEGORY_META[cat.name] || { icon: '📦', color: '#6c63ff', desc: '' });
                             const isActive = activeCatId === cat.id;
                             return (
                                 <button
-                                    key={cat.id}
+                                    key={cat.id || 'all'}
                                     onClick={() => handleCatClick(cat.id)}
                                     style={{
                                         background: isActive
@@ -255,7 +157,7 @@ export default function Home() {
                                         {meta.img ? (
                                             <img src={meta.img} alt={cat.name} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', borderRadius: 8 }} />
                                         ) : (
-                                            <span style={{ fontSize: '2.8rem' }}>📦</span>
+                                            <span style={{ fontSize: '2.8rem' }}>{meta.icon || '📦'}</span>
                                         )}
                                     </div>
                                     <div style={{ color: isActive ? 'var(--color-text)' : 'var(--color-text)', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.35rem' }}>
