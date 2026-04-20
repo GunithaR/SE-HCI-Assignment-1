@@ -12,6 +12,7 @@ import Register from './pages/Register';
 import Catalog from './pages/Catalog';
 import Wizard from './pages/Wizard';
 import Results from './pages/Results';
+import ProductDetails from './pages/ProductDetails';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminRules from './pages/AdminRules';
 import AdminRecommendationHistory from './pages/AdminRecommendationHistory';
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/wizard" element={<Wizard />} />
           <Route path="/results" element={<Results />} />
+          <Route path="/product/:id" element={<ProductDetails />} />
 
           {/* ── Admin (ADMIN role required) ──────────────────────────────── */}
           <Route
