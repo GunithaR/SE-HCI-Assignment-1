@@ -1,340 +1,450 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useEffect, useState, useCallback } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import catalogService from '../services/catalogService';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Category metadata — icons + accent colours for the 5 blocks
+// Category accent colors
 // ─────────────────────────────────────────────────────────────────────────────
 const CATEGORY_META = {
-    'Roofing Solution': { img: '/Roofing_Solution.jpg', color: '#6c63ff', desc: 'Durable roofing for every climate' },
-    'Flooring Solution': { img: '/Flooring_Solution.jpg', color: '#f59e0b', desc: 'Tiles, wood & beyond' },
-    'Ceiling Solution': { img: '/Ceiling_Solution.jpg', color: '#10b981', desc: 'Finish every room with style' },
-    'Wall Solution': { img: '/Wall_Solution.jpg', color: '#3b82f6', desc: 'Insulation, cladding & renders' },
-    'Accessories': { img: '/Accessories.jpg', color: '#a855f7', desc: 'Fittings, fixings & more' },
-};
-
-const BUDGET_COLORS = {
-    LOW: { bg: 'rgba(34,197,94,0.12)', fg: '#4ade80' },
-    MEDIUM: { bg: 'rgba(245,158,11,0.12)', fg: '#fbbf24' },
-    HIGH: { bg: 'rgba(239,68,68,0.12)', fg: '#f87171' },
+    'Roofing Solution':  { color: '#7c3aed', badge: 'Roofing' },
+    'Flooring Solution': { color: '#f59e0b', badge: 'Flooring' },
+    'Ceiling Solution':  { color: '#10b981', badge: 'Ceiling' },
+    'Wall Solution':     { color: '#3b82f6', badge: 'Wall' },
+    'Accessories':       { color: '#a855f7', badge: 'Accessories' },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Product Card
+// Product Card  — matches Figma design (white card, rounded-[48px])
 // ─────────────────────────────────────────────────────────────────────────────
-function ProductCard({ product }) {
-    const bc = BUDGET_COLORS[product.budgetLevel] || { bg: 'rgba(148,163,184,0.1)', fg: '#94a3b8' };
+function ProductCard({ product, onViewDetails }) {
+    const accentColor = CATEGORY_META[product.categoryName]?.color || '#630ed4';
+
     return (
-        <div style={{
-            background: 'var(--color-surface)',
-            border: '2px solid #a78bfa',
-            boxShadow: '0 4px 12px rgba(139,92,246,0.1)',
-            borderRadius: 16,
-            overflow: 'hidden',
-            padding: 0,
-            display: 'flex', flexDirection: 'column', gap: 0,
-            transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s',
-            cursor: 'default',
-        }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.4)'; e.currentTarget.style.boxShadow = 'var(--shadow-glow)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.boxShadow = 'none'; }}
+        <div
+            style={{
+                background: '#fff',
+                borderRadius: 48,
+                width: 300,
+                height: 481,
+                flexShrink: 0,
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 4px 24px rgba(99,14,212,0.10)',
+                position: 'relative',
+                isolation: 'isolate',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(99,14,212,0.18)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(99,14,212,0.10)'; }}
         >
-            {/* Product Image */}
-            {product.imageUrl && (
-                <div style={{ width: '100%', height: 180, overflow: 'hidden', background: 'var(--color-surface-alt)' }}>
+            {/* Product image */}
+            <div style={{ height: 256, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                {product.imageUrl ? (
                     <img
                         src={product.imageUrl}
                         alt={product.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                        onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+                        style={{ width: '100%', height: '109.37%', objectFit: 'cover', position: 'absolute', top: '-4.69%', left: 0 }}
+                        onError={e => { e.currentTarget.parentElement.style.background = '#e9e7f3'; e.currentTarget.style.display = 'none'; }}
                     />
-                </div>
-            )}
+                ) : (
+                    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #e9e7f3, #d4c9f0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '4rem' }}>
+                        📦
+                    </div>
+                )}
+                {/* Badge — budget level */}
+                {product.budgetLevel && (
+                    <div style={{
+                        position: 'absolute', top: 16, left: 16,
+                        background: product.budgetLevel === 'LOW' ? '#2d6a4f' : product.budgetLevel === 'HIGH' ? '#93000a' : '#630ed4',
+                        borderRadius: 9999, padding: '4px 12px',
+                        color: '#fff', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px',
+                    }}>
+                        {product.budgetLevel === 'LOW' ? 'Budget Pick' : product.budgetLevel === 'HIGH' ? 'Premium' : 'Best Seller'}
+                    </div>
+                )}
+            </div>
 
             {/* Card body */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '1.25rem', flex: 1 }}>
-                {/* Top row */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                    <div style={{ flex: 1 }}>
-                        <h3 style={{ color: 'var(--color-text)', fontWeight: 600, fontSize: '0.95rem', marginBottom: 2 }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px 15px' }}>
+                {/* Name + rating */}
+                <div style={{ marginBottom: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <h3 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 20, color: '#1a1b23', lineHeight: '28px', flex: 1, marginRight: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {product.name}
                         </h3>
-                        <p style={{ color: 'var(--color-muted)', fontSize: '0.75rem' }}>
-                            {product.brandName && <span>{product.brandName}</span>}
-                            {product.brandName && product.categoryName && <span> · </span>}
-                            {product.categoryName && <span style={{ color: '#a78bfa' }}>{product.categoryName}</span>}
-                        </p>
+                        {product.durabilityRating && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 3, color: '#6f46b9', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                                <svg width="11" height="11" viewBox="0 0 12 12" fill="#6f46b9"><path d="M6 1l1.39 2.82L10.5 4.3l-2.25 2.2.53 3.09L6 8.02 3.22 9.59l.53-3.09L1.5 4.3l3.11-.48z"/></svg>
+                                {(product.durabilityRating / 2).toFixed(1)}
+                            </span>
+                        )}
                     </div>
-                    {product.budgetLevel && (
-                        <span style={{ background: bc.bg, color: bc.fg, border: `1px solid ${bc.fg}44`, borderRadius: 9999, padding: '2px 10px', fontSize: '0.7rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                            {product.budgetLevel}
-                        </span>
-                    )}
-                </div>
-
-                {/* Description */}
-                <p style={{ color: 'var(--color-muted)', fontSize: '0.78rem', lineHeight: 1.65, flex: 1 }}>
-                    {product.description || 'Premium construction material.'}
-                </p>
-
-                {/* Attribute badges */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                    {product.climateSuitability && (
-                        <span style={{ background: 'rgba(139,92,246,0.12)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.25)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem' }}>
-                            ☁ {product.climateSuitability}
-                        </span>
-                    )}
-                    {product.maintenanceLevel && (
-                        <span style={{ background: 'rgba(20,184,166,0.12)', color: '#14b8a6', border: '1px solid rgba(20,184,166,0.25)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem' }}>
-                            🔧 {product.maintenanceLevel}
-                        </span>
-                    )}
-                    {product.durabilityRating && (
-                        <span style={{ background: 'var(--color-surface-alt)', color: 'var(--color-muted)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem', border: '1px solid var(--color-border)' }}>
-                            ★ {product.durabilityRating}/10
-                        </span>
-                    )}
                 </div>
 
                 {/* Price */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: 10 }}>
-                    <span style={{ color: '#8b5cf6', fontWeight: 700, fontSize: '1.15rem' }}>
-                        Rs. {Number(product.basePrice).toFixed(2)}
+                <div style={{ marginBottom: 16 }}>
+                    <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 18, color: '#630ed4' }}>
+                        Rs.{Number(product.basePrice).toFixed(2)}
                     </span>
-                    <span style={{
-                        padding: '3px 10px', borderRadius: 9999, fontSize: '0.68rem', fontWeight: 600,
-                        background: product.isActive ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-                        color: product.isActive ? '#16a34a' : '#dc2626',
-                    }}>
-                        {product.isActive ? 'In Stock' : 'Out of Stock'}
-                    </span>
+                    {product.size && (
+                        <span style={{ color: '#7b7487', fontSize: 12, marginLeft: 6 }}>/ {product.size}</span>
+                    )}
                 </div>
-            </div>{/* end card body */}
+
+                {/* Attribute badges */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+                    {product.climateSuitability && (
+                        <span style={{ background: '#e9e7f3', borderRadius: 16, padding: '4px 8px', color: '#4a4455', fontSize: 10, fontWeight: 600 }}>
+                            {product.climateSuitability}
+                        </span>
+                    )}
+                    {product.maintenanceLevel && (
+                        <span style={{ background: '#e9e7f3', borderRadius: 16, padding: '4px 8px', color: '#4a4455', fontSize: 10, fontWeight: 600 }}>
+                            {product.maintenanceLevel} Maint.
+                        </span>
+                    )}
+                    {product.material && (
+                        <span style={{ background: '#e9e7f3', borderRadius: 16, padding: '4px 8px', color: '#4a4455', fontSize: 10, fontWeight: 600 }}>
+                            {product.material}
+                        </span>
+                    )}
+                </div>
+
+                {/* View Details button */}
+                <button
+                    onClick={() => onViewDetails && onViewDetails(product)}
+                    style={{
+                        width: '100%', padding: '13px 1px',
+                        border: '1px solid #ccc3d8', borderRadius: 32,
+                        background: 'transparent', cursor: 'pointer',
+                        color: '#630ed4', fontWeight: 700, fontSize: 16,
+                        transition: 'background 0.2s, color 0.2s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#630ed4'; e.currentTarget.style.color = '#fff'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#630ed4'; }}
+                >
+                    View Details
+                </button>
+            </div>
         </div>
     );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Home Page
+// Horizontal scrollable product row section
 // ─────────────────────────────────────────────────────────────────────────────
-export default function Home() {
-    const [categories, setCategories] = useState([]);
-    const [activeCatId, setActiveCatId] = useState(null); // null = show all
-    const [products, setProducts] = useState([]);
-    const [loadingCats, setLoadingCats] = useState(true);
-    const [loadingProds, setLoadingProds] = useState(false);
-    const [search, setSearch] = useState('');
+function ProductRow({ title, products, loading, onViewAll, onViewDetails }) {
+    const scrollRef = useRef(null);
 
-    // Load categories on mount
-    useEffect(() => {
-        catalogService.getCategories()
-            .then((cats) => setCategories(cats))
-            .catch(() => { })
-            .finally(() => setLoadingCats(false));
-    }, []);
-
-    // Load products whenever active category changes
-    const loadProducts = useCallback((catId) => {
-        setLoadingProds(true);
-        const fetcher = catId
-            ? catalogService.getProductsByCategory(catId, 0, 24)
-            : catalogService.getAllProducts(0, 24);
-
-        fetcher
-            .then((data) => {
-                // getAllProducts returns a Page, getProductsByCategory too
-                setProducts(data.content ?? []);
-            })
-            .catch(() => setProducts([]))
-            .finally(() => setLoadingProds(false));
-    }, []);
-
-    // Load all products initially (after categories loaded)
-    useEffect(() => {
-        if (!loadingCats) loadProducts(activeCatId);
-    }, [activeCatId, loadingCats, loadProducts]);
-
-    const handleCatClick = (catId) => {
-        // clicking the active category deselects it → show all
-        setActiveCatId((prev) => (prev === catId ? null : catId));
-        setSearch('');
+    const scroll = (dir) => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollBy({ left: dir * 360, behavior: 'smooth' });
+        }
     };
 
-    const filtered = search
-        ? products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
-        : products;
+    return (
+        <section style={{ marginBottom: 80 }}>
+            {/* Section header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 30px', marginBottom: 16 }}>
+                <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 30, color: '#1a1b23', letterSpacing: '-0.75px' }}>
+                    {title}
+                </h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <button onClick={() => scroll(-1)} style={{ background: '#e9e7f3', border: 'none', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#630ed4' }}>‹</button>
+                    <button onClick={() => scroll(1)}  style={{ background: '#e9e7f3', border: 'none', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#630ed4' }}>›</button>
+                    <button
+                        onClick={onViewAll}
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: '#630ed4', fontWeight: 700, fontSize: 16, cursor: 'pointer' }}
+                    >
+                        View All
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="#630ED4"><path d="M1 5h8M5 1l4 4-4 4"/></svg>
+                    </button>
+                </div>
+            </div>
 
-    const activeCat = categories.find((c) => c.id === activeCatId);
+            {/* Scrollable row */}
+            <div
+                ref={scrollRef}
+                style={{
+                    display: 'flex', gap: 40, overflowX: 'auto', scrollbarWidth: 'none',
+                    padding: '20px 40px 20px', alignItems: 'flex-start',
+                }}
+            >
+                {loading ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} style={{ width: 300, height: 481, borderRadius: 48, background: '#e9e7f3', flexShrink: 0, animation: 'pulse 1.5s infinite' }} />
+                    ))
+                ) : products.length === 0 ? (
+                    <div style={{ padding: '3rem 2rem', color: '#94a3b8', textAlign: 'center', width: '100%' }}>No products available.</div>
+                ) : (
+                    products.map(p => <ProductCard key={p.id} product={p} onViewDetails={onViewDetails} />)
+                )}
+            </div>
+        </section>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Home Page
+// ─────────────────────────────────────────────────────────────────────────────
+export default function Home() {
+    const navigate = useNavigate();
+    const [categories, setCategories] = useState([]);
+    const [activeCatId, setActiveCatId] = useState(null);
+    const [allProducts, setAllProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState('');
+
+    useEffect(() => {
+        Promise.all([
+            catalogService.getCategories().catch(() => []),
+            catalogService.getAllProducts(0, 48).catch(() => ({ content: [] })),
+        ]).then(([cats, page]) => {
+            setCategories(cats);
+            setAllProducts(page.content ?? []);
+            setLoading(false);
+        });
+    }, []);
+
+    const displayedProducts = activeCatId
+        ? allProducts.filter(p => categories.find(c => c.id === activeCatId)?.name === p.categoryName)
+        : allProducts;
+
+    const filtered = search
+        ? displayedProducts.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
+        : displayedProducts;
+
+    // Slice products into sections
+    const popular  = allProducts.slice(0, 8);
+    const budget   = allProducts.filter(p => p.budgetLevel === 'LOW').slice(0, 8);
+    const premium  = allProducts.filter(p => p.budgetLevel === 'HIGH').slice(0, 8);
+    const trending = allProducts.slice().reverse().slice(0, 8);
+
+    const handleViewDetails = (product) => navigate('/catalog');
 
     return (
-        <div className="light-theme" style={{ minHeight: '100vh', background: 'var(--bg-color)', position: 'relative', paddingTop: '5rem' }}>
+        <div style={{ minHeight: '100vh', background: '#fbf8ff', position: 'relative' }}>
 
+            {/* ── HERO SECTION ──────────────────────────────────────────────────── */}
+            <div style={{ position: 'relative', width: '100%', height: 923, overflow: 'hidden', borderBottomLeftRadius: 70, borderBottomRightRadius: 70, flexShrink: 0 }}>
+                <img
+                    src="/store-bg.jpg"
+                    alt=""
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', borderBottomLeftRadius: 70, borderBottomRightRadius: 70 }}
+                    onError={e => { e.currentTarget.style.display = 'none'; }}
+                />
+                {/* Dark purple gradient overlay — exactly from Figma */}
+                <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} fill="none" preserveAspectRatio="none" viewBox="0 0 1440 923">
+                    <path d="M0 40H1440V923H0V40Z" fill="url(#g1)" />
+                    <path d="M0 0H1440V923H0V0Z" fill="url(#g2)" />
+                    <defs>
+                        <linearGradient id="g1" x1="720" x2="720" y1="923" y2="40" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#25005A" />
+                            <stop offset="1" stopColor="#25005A" stopOpacity="0" />
+                        </linearGradient>
+                        <radialGradient id="g2" cx="0" cy="0" gradientTransform="translate(720 461.5) scale(864.294 834.241)" gradientUnits="userSpaceOnUse" r="1">
+                            <stop offset="0.2" stopOpacity="0" />
+                            <stop offset="1" stopOpacity="0.4" />
+                        </radialGradient>
+                    </defs>
+                </svg>
 
-            {/* ── HERO ──────────────────────────────────────────────────────────── */}
-            <section style={{
-                textAlign: 'center',
-                padding: '9rem 1.5rem 4rem',
-                position: 'relative',
-                overflow: 'hidden',
-                backgroundImage: 'url("/store-bg.jpg")',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat'
-            }}>
-                {/* White/gray overlay layer */}
-                <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(255, 255, 255, 0.70)', zIndex: 0 }} />
-
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                    {/* Glow blobs */}
-                    <div style={{ position: 'absolute', top: '20%', left: '15%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%)', pointerEvents: 'none', zIndex: -1 }} />
-                    <div style={{ position: 'absolute', top: '10%', right: '10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%)', pointerEvents: 'none', zIndex: -1 }} />
-
-                    <p style={{ color: '#8b5cf6', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '1.2rem' }}>
-                        CONSTRUCTION PLATFORM
-                    </p>
-
-                    <h1 style={{
-                        fontFamily: 'Outfit, sans-serif',
-                        fontSize: 'clamp(3.5rem, 10vw, 8rem)',
-                        fontWeight: 900,
-                        letterSpacing: '-0.03em',
-                        lineHeight: 1.1,
-                        color: '#8b5cf6',
-                        marginBottom: '1.5rem',
-                    }}>
-                        L+<br /><span style={{ display: 'block', marginTop: '0.2em' }}>සිවිලිම</span>
-                    </h1>
-
-                    <p style={{ color: '#475569', fontSize: '1.05rem', maxWidth: 520, margin: '0 auto 2.5rem', lineHeight: 1.7, fontWeight: 500 }}>
-                        Browse premium construction materials from top brands. Filter by category, compare by budget and climate — all in one place.
-                    </p>
-                </div>
-            </section>
-
-            {/* ── 5 CATEGORY BLOCKS ─────────────────────────────────────────────── */}
-            <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1.5rem 4rem' }}>
-                <h2 style={{ textAlign: 'center', fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '1.6rem', color: 'var(--color-text)', marginBottom: '0.5rem' }}>
-                    Browse by Category
-                </h2>
-                <p style={{ textAlign: 'center', color: 'var(--color-muted)', fontSize: '0.85rem', marginBottom: '2rem' }}>
-                    Click any category to filter products below
-                </p>
-
-                {loadingCats ? (
-                    <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-                        <div className="spinner" />
-                    </div>
-                ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-                        {categories.map((cat) => {
-                            const meta = CATEGORY_META[cat.name] || { icon: '📦', color: '#6c63ff', desc: '' };
-                            const isActive = activeCatId === cat.id;
-                            return (
-                                <button
-                                    key={cat.id}
-                                    onClick={() => handleCatClick(cat.id)}
-                                    style={{
-                                        background: isActive
-                                            ? `linear-gradient(135deg, ${meta.color}33, ${meta.color}11)`
-                                            : 'var(--color-surface)',
-                                        border: isActive
-                                            ? `2px solid ${meta.color}`
-                                            : '2px solid #c4b5fd',
-                                        borderRadius: 20,
-                                        padding: '1.75rem 1rem',
-                                        cursor: 'pointer',
-                                        textAlign: 'center',
-                                        transition: 'all 0.25s',
-                                        transform: isActive ? 'translateY(-6px)' : 'translateY(0)',
-                                        boxShadow: isActive ? `0 12px 40px ${meta.color}33` : '0 4px 6px rgba(0,0,0,0.02)',
-                                    }}
-                                    onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.background = `${meta.color}15`; e.currentTarget.style.borderColor = `${meta.color}55`; e.currentTarget.style.transform = 'translateY(-3px)'; } }}
-                                    onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.background = 'var(--color-surface)'; e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.transform = 'translateY(0)'; } }}
-                                >
-                                    <div style={{ height: '64px', marginBottom: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', mixBlendMode: 'multiply' }}>
-                                        {meta.img ? (
-                                            <img src={meta.img} alt={cat.name} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', borderRadius: 8 }} />
-                                        ) : (
-                                            <span style={{ fontSize: '2.8rem' }}>📦</span>
-                                        )}
-                                    </div>
-                                    <div style={{ color: isActive ? 'var(--color-text)' : 'var(--color-text)', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.35rem' }}>
-                                        {cat.name}
-                                    </div>
-                                    <div style={{ color: isActive ? `${meta.color}dd` : 'var(--color-muted)', fontSize: '0.72rem', lineHeight: 1.4 }}>
-                                        {meta.desc}
-                                    </div>
-                                    {isActive && (
-                                        <div style={{ marginTop: '0.75rem', width: 32, height: 3, borderRadius: 9999, background: meta.color, margin: '0.75rem auto 0' }} />
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                )}
-            </section>
-
-            {/* ── PRODUCTS GRID ─────────────────────────────────────────────────── */}
-            <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1.5rem 5rem' }}>
-                {/* Section header */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: '1.5rem' }}>
-                    <div>
-                        <h2 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '1.4rem', color: 'var(--color-text)', marginBottom: 2 }}>
-                            {activeCat ? activeCat.name : 'All Products'}
-                        </h2>
-                        {activeCatId && (
-                            <button onClick={() => setActiveCatId(null)} style={{ background: 'none', border: 'none', color: '#6c63ff', fontSize: '0.78rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
-                                ← Show all categories
-                            </button>
-                        )}
-                    </div>
-
-                    <input
-                        placeholder="Search products…"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        style={{
-                            padding: '8px 16px', borderRadius: 10, fontSize: '0.85rem',
-                            background: 'var(--color-surface)',
-                            border: '2px solid #c4b5fd',
-                            color: '#3b0764', outline: 'none', width: 220,
-                            boxShadow: '0 2px 4px rgba(139,92,246,0.1)',
-                            fontWeight: 500
-                        }}
-                    />
-                </div>
-
-                {/* Divider */}
-                <div style={{ height: 1, background: 'var(--color-border)', marginBottom: '2rem' }} />
-
-                {loadingProds ? (
-                    <div style={{ display: 'flex', justifyContent: 'center', padding: '6rem' }}>
-                        <div className="spinner" />
-                    </div>
-                ) : filtered.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '5rem', color: '#64748b' }}>
-                        <p style={{ fontSize: '3rem', marginBottom: 12 }}>📭</p>
-                        <p style={{ color: 'var(--color-muted)', marginBottom: 8 }}>
-                            {search ? `No products match "${search}"` : 'No products in this category yet.'}
+                {/* Hero Content */}
+                <div style={{
+                    position: 'absolute',
+                    top: '5.63%', left: '23.08%', right: '23.84%',
+                    display: 'flex', flexDirection: 'column', gap: 40,
+                    alignItems: 'center', paddingTop: 87,
+                }}>
+                    {/* Brand name */}
+                    <div style={{ textAlign: 'center', width: '100%' }}>
+                        <h1 style={{
+                            fontFamily: 'Manrope, sans-serif', fontWeight: 900,
+                            fontSize: 'clamp(2.5rem, 6vw, 5.5rem)',
+                            letterSpacing: '-1.5px', lineHeight: 1.1,
+                            color: '#ffffff',
+                            textShadow: '0 4px 40px rgba(99,14,212,0.5)',
+                            transform: 'rotate(0.12deg)',
+                        }}>
+                            L+ SIVILIMA
+                        </h1>
+                        <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '1.1rem', fontWeight: 500, marginTop: 8, letterSpacing: '-0.3px' }}>
+                            Your trusted construction materials platform
                         </p>
-                        {search && (
-                            <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: '#8b5cf6', cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline' }}>
-                                Clear search
-                            </button>
-                        )}
                     </div>
+
+                    {/* Search bar */}
+                    <div style={{
+                        width: '100%', maxWidth: 700,
+                        background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)',
+                        borderRadius: 9999, padding: 8,
+                        display: 'flex', alignItems: 'center',
+                        boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+                    }}>
+                        <input
+                            placeholder="Search roofing, flooring, ceiling materials…"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            style={{
+                                flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                                color: '#fff', fontSize: 16, padding: '8px 20px',
+                            }}
+                        />
+                        <button
+                            onClick={() => {}}
+                            style={{
+                                background: '#630ed4', color: '#fff', border: 'none',
+                                borderRadius: 48, padding: '17px 40px', fontFamily: 'Manrope, sans-serif',
+                                fontWeight: 700, fontSize: 18, cursor: 'pointer', whiteSpace: 'nowrap',
+                                boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+                            }}
+                        >
+                            Search
+                        </button>
+                    </div>
+
+                    {/* CTA buttons */}
+                    <div style={{ display: 'flex', gap: 42, alignItems: 'center' }}>
+                        <button
+                            onClick={() => navigate('/catalog')}
+                            style={{
+                                background: '#630ed4', color: '#fff', border: 'none',
+                                borderRadius: 48, padding: '17px 40px',
+                                fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 18,
+                                cursor: 'pointer', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+                                transition: 'transform 0.2s, box-shadow 0.2s',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
+                        >
+                            Browse Materials
+                        </button>
+                        <button
+                            onClick={() => navigate('/wizard')}
+                            style={{
+                                background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(6px)',
+                                color: '#fff', border: '1px solid rgba(255,255,255,0.4)',
+                                borderRadius: 48, padding: '17px 41px',
+                                fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 18,
+                                cursor: 'pointer', whiteSpace: 'nowrap',
+                                boxShadow: '0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)',
+                                transition: 'transform 0.2s',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
+                        >
+                            Get Recommendations
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── CATEGORY TABS ─────────────────────────────────────────────────── */}
+            <div style={{
+                background: '#fbf8ff', borderBottomLeftRadius: 20, borderBottomRightRadius: 20,
+                boxShadow: '0 4px 4px rgba(0,0,0,0.25)', padding: '10px 30px',
+                display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center',
+            }}>
+                <button
+                    onClick={() => setActiveCatId(null)}
+                    style={{
+                        background: activeCatId === null ? '#630ed4' : '#e3e1ed',
+                        color: activeCatId === null ? '#fff' : '#1a1b23',
+                        border: 'none', borderRadius: 40, padding: '10px 30px',
+                        fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s',
+                    }}
+                >
+                    All
+                </button>
+                {categories.map(cat => (
+                    <button
+                        key={cat.id}
+                        onClick={() => setActiveCatId(prev => prev === cat.id ? null : cat.id)}
+                        style={{
+                            background: activeCatId === cat.id ? '#630ed4' : '#e3e1ed',
+                            color: activeCatId === cat.id ? '#fff' : '#1a1b23',
+                            border: 'none', borderRadius: 40, padding: '10px 30px',
+                            fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s',
+                        }}
+                    >
+                        {cat.name}
+                    </button>
+                ))}
+            </div>
+
+            {/* ── CONTENT AREA ──────────────────────────────────────────────────── */}
+            <div style={{ background: '#fbf8ff', paddingTop: 60 }}>
+                {/* If a category is selected or search is active, show filtered grid */}
+                {(activeCatId !== null || search) ? (
+                    <section style={{ maxWidth: 1400, margin: '0 auto', padding: '0 40px 80px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
+                            <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 26, color: '#1a1b23' }}>
+                                {search ? `Results for "${search}"` : categories.find(c => c.id === activeCatId)?.name}
+                            </h2>
+                            <button
+                                onClick={() => { setActiveCatId(null); setSearch(''); }}
+                                style={{ background: 'none', border: 'none', color: '#630ed4', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}
+                            >
+                                ← Show all
+                            </button>
+                        </div>
+                        {loading ? (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40 }}>
+                                {Array.from({length:4}).map((_,i) => <div key={i} style={{width:300,height:481,borderRadius:48,background:'#e9e7f3'}}/>)}
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40 }}>
+                                {filtered.map(p => <ProductCard key={p.id} product={p} onViewDetails={handleViewDetails} />)}
+                                {filtered.length === 0 && <p style={{ color: '#94a3b8' }}>No products found.</p>}
+                            </div>
+                        )}
+                    </section>
                 ) : (
                     <>
-                        <p style={{ color: 'var(--color-muted)', fontSize: '0.78rem', marginBottom: '1.25rem' }}>
-                            {filtered.length} product{filtered.length !== 1 ? 's' : ''}
-                            {activeCat ? ` in ${activeCat.name}` : ' across all categories'}
-                        </p>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: '1.25rem' }}>
-                            {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
-                        </div>
+                        <ProductRow title="Popular Right Now"       products={popular}  loading={loading} onViewAll={() => navigate('/catalog')} onViewDetails={handleViewDetails} />
+                        <ProductRow title="Budget Friendly Picks"    products={budget.length ? budget : popular.slice(4)} loading={loading} onViewAll={() => navigate('/catalog')} onViewDetails={handleViewDetails} />
+                        <ProductRow title="Premium Collection"       products={premium.length ? premium : trending.slice(0,4)} loading={loading} onViewAll={() => navigate('/catalog')} onViewDetails={handleViewDetails} />
+                        <ProductRow title="Trending Now"             products={trending} loading={loading} onViewAll={() => navigate('/catalog')} onViewDetails={handleViewDetails} />
                     </>
                 )}
-            </section>
+            </div>
+
+            {/* ── FOOTER ────────────────────────────────────────────────────────── */}
+            <footer style={{
+                background: '#f8fafc', height: 243,
+                borderTop: '1px solid rgba(204,195,216,0.1)',
+                display: 'flex', alignItems: 'center',
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '65px 48px' }}>
+                    <div>
+                        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 26, color: '#4c1d95', letterSpacing: '-1.2px', marginBottom: 8 }}>
+                            L + SIVILIMA
+                        </div>
+                        <p style={{ color: '#64748b', fontSize: 14 }}>
+                            Sri Lanka's trusted construction materials platform.
+                        </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 48, color: '#475569', fontSize: 14 }}>
+                        <div>
+                            <strong style={{ display: 'block', color: '#1a1b23', marginBottom: 8 }}>Navigate</strong>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                <a href="/catalog" style={{ color: '#475569', textDecoration: 'none' }}>Catalog</a>
+                                <a href="/wizard" style={{ color: '#475569', textDecoration: 'none' }}>Recommendations</a>
+                            </div>
+                        </div>
+                        <div>
+                            <strong style={{ display: 'block', color: '#1a1b23', marginBottom: 8 }}>Categories</strong>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                {categories.slice(0,3).map(c => (
+                                    <span key={c.id} style={{ color: '#475569' }}>{c.name}</span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 }
