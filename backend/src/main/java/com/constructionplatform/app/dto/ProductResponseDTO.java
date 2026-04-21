@@ -39,8 +39,10 @@ public class ProductResponseDTO {
     private String size;
     private String material;
 
-    // ── Image ─────────────────────────────────────────────────────────────────
-    private String imageUrl;
+    // ── Media & Ratings ───────────────────────────────────────────────────────
+    private java.util.List<String> imageUrls;
+    private Double averageRating = 0.0;
+    private Integer reviewCount = 0;
 
     public ProductResponseDTO() {
     }
@@ -79,7 +81,18 @@ public class ProductResponseDTO {
             dto.material = attr.getMaterial() != null ? attr.getMaterial().name() : null;
         }
 
-        dto.imageUrl = product.getImageUrl();
+        if (product.getImages() != null && !product.getImages().isEmpty()) {
+            dto.imageUrls = product.getImages().stream()
+                .map(com.constructionplatform.app.entity.ProductImage::getImageUrl)
+                .toList();
+        } else if (product.getImageUrl() != null && !product.getImageUrl().trim().isEmpty()) {
+            dto.imageUrls = java.util.List.of(product.getImageUrl());
+        } else {
+            dto.imageUrls = java.util.Collections.emptyList();
+        }
+
+        dto.averageRating = product.getAverageRating();
+        dto.reviewCount = product.getReviewCount();
 
         return dto;
     }
@@ -150,8 +163,16 @@ public class ProductResponseDTO {
         return material;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
+    public java.util.List<String> getImageUrls() {
+        return imageUrls;
+    }
+
+    public Double getAverageRating() {
+        return averageRating;
+    }
+
+    public Integer getReviewCount() {
+        return reviewCount;
     }
 
     // ── Setters ───────────────────────────────────────────────────────────────
@@ -220,7 +241,15 @@ public class ProductResponseDTO {
         this.material = material;
     }
 
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
+    public void setImageUrls(java.util.List<String> imageUrls) {
+        this.imageUrls = imageUrls;
+    }
+
+    public void setAverageRating(Double averageRating) {
+        this.averageRating = averageRating;
+    }
+
+    public void setReviewCount(Integer reviewCount) {
+        this.reviewCount = reviewCount;
     }
 }

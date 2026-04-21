@@ -181,7 +181,7 @@ public class ProductService {
          * @return persisted product as a {@link ProductResponseDTO}
          */
         @Transactional
-        public ProductResponseDTO createProduct(ProductCreateRequestDTO request, MultipartFile image) {
+        public ProductResponseDTO createProduct(ProductCreateRequestDTO request, java.util.List<MultipartFile> images) {
                 // Guard: duplicate name check
                 if (productRepository.existsByName(request.getName())) {
                         throw new IllegalArgumentException(
@@ -218,12 +218,17 @@ public class ProductService {
 
                 product.setAttribute(attribute);
 
-                // Persist first so we have the ID, then store image if provided
+                // Persist first so we have the ID, then store images if provided
                 Product saved = productRepository.save(product);
 
-                if (image != null && !image.isEmpty()) {
-                        String imageUrl = fileStorageService.store(image);
-                        saved.setImageUrl(imageUrl);
+                if (images != null && !images.isEmpty()) {
+                        for (MultipartFile imgFile : images) {
+                                if (!imgFile.isEmpty()) {
+                                        String imageUrl = fileStorageService.store(imgFile);
+                                        com.constructionplatform.app.entity.ProductImage img = new com.constructionplatform.app.entity.ProductImage(saved, imageUrl);
+                                        saved.getImages().add(img);
+                                }
+                        }
                         saved = productRepository.save(saved);
                 }
 
@@ -257,7 +262,7 @@ public class ProductService {
          * If no image is provided the existing imageUrl is preserved.
          */
         @Transactional
-        public ProductResponseDTO updateProduct(Long productId, ProductUpdateRequestDTO request, MultipartFile image) {
+        public ProductResponseDTO updateProduct(Long productId, ProductUpdateRequestDTO request, java.util.List<MultipartFile> images) {
                 Product product = productRepository.findById(productId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
 
@@ -293,10 +298,24 @@ public class ProductService {
                 attr.setSize(request.getSize());
                 attr.setMaterial(request.getMaterial());
 
-                // Replace image only if a new one was uploaded
-                if (image != null && !image.isEmpty()) {
-                        fileStorageService.delete(product.getImageUrl()); // delete old file, if any
-                        product.setImageUrl(fileStorageService.store(image));
+                // Replace images only if new ones were uploaded
+                if (images != null && !images.isEmpty() && images.stream().anyMatch(img -> !img.isEmpty())) {
+                        if (product.getImageUrl() != null && !product.getImageUrl().trim().isEmpty()) {
+                                fileStorageService.delete(product.getImageUrl());
+                                product.setImageUrl(null);
+                        }
+                        for (com.constructionplatform.app.entity.ProductImage oldImg : product.getImages()) {
+                                fileStorageService.delete(oldImg.getImageUrl());
+                        }
+                        product.getImages().clear();
+                        
+                        for (MultipartFile imgFile : images) {
+                                if (!imgFile.isEmpty()) {
+                                        String imageUrl = fileStorageService.store(imgFile);
+                                        com.constructionplatform.app.entity.ProductImage img = new com.constructionplatform.app.entity.ProductImage(product, imageUrl);
+                                        product.getImages().add(img);
+                                }
+                        }
                 }
 
                 Product saved = productRepository.save(product);

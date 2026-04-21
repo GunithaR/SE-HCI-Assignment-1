@@ -1,7 +1,10 @@
 package com.constructionplatform.app.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.Formula;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "products", indexes = {
@@ -43,6 +46,15 @@ public class Product {
         @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
         private ProductAttribute attribute;
 
+        @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+        private List<ProductImage> images = new ArrayList<>();
+
+        @Formula("(SELECT COALESCE(AVG(pr.score), 0) FROM product_reviews pr WHERE pr.product_id = id)")
+        private Double averageRating = 0.0;
+
+        @Formula("(SELECT COUNT(pr.id) FROM product_reviews pr WHERE pr.product_id = id)")
+        private Integer reviewCount = 0;
+
         public Product() {
         }
 
@@ -82,6 +94,18 @@ public class Product {
                 return imageUrl;
         }
 
+        public List<ProductImage> getImages() {
+                return images;
+        }
+
+        public Double getAverageRating() {
+                return averageRating;
+        }
+
+        public Integer getReviewCount() {
+                return reviewCount;
+        }
+
         public void setId(Long id) {
                 this.id = id;
         }
@@ -116,6 +140,10 @@ public class Product {
 
         public void setImageUrl(String imageUrl) {
                 this.imageUrl = imageUrl;
+        }
+
+        public void setImages(List<ProductImage> images) {
+                this.images = images;
         }
 
         public static Builder builder() {

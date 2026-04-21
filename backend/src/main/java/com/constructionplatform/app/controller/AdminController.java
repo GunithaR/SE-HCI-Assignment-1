@@ -59,24 +59,24 @@ public class AdminController {
         return ResponseEntity.ok(productService.findAll(pageable));
     }
 
-    /** POST /api/admin/products — create a new product with optional image */
+    /** POST /api/admin/products — create a new product with optional images */
     @PostMapping(value = "/products", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponseDTO> createProduct(
             @RequestPart("data") @Valid ProductCreateRequestDTO request,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(request, image));
+            @RequestPart(value = "images", required = false) java.util.List<MultipartFile> images) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(request, images));
     }
 
     /**
      * PUT /api/admin/products/{id} — fully replace all fields of an existing product.
-     * Optionally supply a new image to replace the old one.
+     * Optionally supply new images to replace the old ones.
      */
     @PutMapping(value = "/products/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponseDTO> updateProduct(
             @PathVariable Long id,
             @RequestPart("data") @Valid ProductUpdateRequestDTO request,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        return ResponseEntity.ok(productService.updateProduct(id, request, image));
+            @RequestPart(value = "images", required = false) java.util.List<MultipartFile> images) {
+        return ResponseEntity.ok(productService.updateProduct(id, request, images));
     }
 
     /**
