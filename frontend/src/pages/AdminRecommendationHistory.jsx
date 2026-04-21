@@ -38,7 +38,7 @@ export default function AdminRecommendationHistory() {
     };
 
     return (
-        <div style={{ minHeight: '100vh', background: 'var(--bg-color)', padding: '7rem 1.5rem 3rem' }}>
+        <div className="light-theme" style={{ minHeight: '100vh', background: 'var(--bg-color)', padding: '7rem 1.5rem 3rem' }}>
             <div style={{ maxWidth: 1200, margin: '0 auto' }}>
                 
                 {/* Header */}
