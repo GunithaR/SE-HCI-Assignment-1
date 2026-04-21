@@ -25,7 +25,7 @@ export default function Navbar() {
                 </Link>
 
                 {/* ── Right side: Nav links + Theme toggle + Auth ───────────── */}
-                <div className="flex items-center gap-6 relative right-3">
+                <div className="flex items-center gap-4 relative right-3">
 
                     {/* Nav links — Admin only */}
                     {isAdmin && (
@@ -56,7 +56,7 @@ export default function Navbar() {
                         </div>
                     )}
 
-
+                    {/* Adjusted button sizes to match Sign Up button */}
                     {isAuthenticated ? (
                         <div className="flex flex-col items-end gap-0.5">
                             <button
@@ -76,7 +76,7 @@ export default function Navbar() {
                     ) : (
                         <>
                             <Link to="/login">
-                                <button id="nav-login-btn" className="btn-secondary !rounded-full text-sm py-2 px-5">Login</button>
+                                <button id="nav-login-btn" className="btn-secondary !rounded-full text-sm py-2 px-5 shadow-lg shadow-indigo-500/30">Login</button>
                             </Link>
                             <Link to="/register">
                                 <button id="nav-register-btn" className="btn-primary !rounded-full text-sm py-2 px-5 shadow-lg shadow-indigo-500/30">Sign Up</button>

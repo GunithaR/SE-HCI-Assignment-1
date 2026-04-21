@@ -584,9 +584,9 @@ export default function AdminDashboard() {
                                 + Add Sub-Admin
                             </button>
                         )}
-                        <button onClick={handleLogout}
-                            style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', cursor: 'pointer', fontSize: '0.9rem' }}>
-                            Logout
+                        <button onClick={() => navigate('/catalog')}
+                            style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.35)', color: '#6366f1', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
+                            View Catalog
                         </button>
                     </div>
                 </div>
