@@ -27,15 +27,34 @@ export default function Navbar() {
                 {/* ── Right side: Nav links + Theme toggle + Auth ───────────── */}
                 <div className="flex items-center gap-6 relative right-3">
 
-                    {/* Nav links — Catalog & Admin */}
-                    <div className="hidden md:flex items-center gap-6 text-[0.95rem]">
-                        <Link to="/catalog" className="nav-link">Catalog</Link>
-                        {isAdmin && (
-                            <Link to="/admin" className="nav-link !font-bold !text-violet-600">
-                                Admin
+                    {/* Nav links — Admin only */}
+                    {isAdmin && (
+                        <div className="hidden md:flex items-center gap-4 text-[0.95rem]">
+                            <Link to="/admin" style={{ textDecoration: 'none' }}>
+                                <button
+                                    id="nav-admin-btn"
+                                    style={{
+                                        display: 'inline-flex', alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.5rem 1.25rem',
+                                        background: 'rgba(255,255,255,0.08)',
+                                        color: '#ef4444',
+                                        border: '1.5px solid #ef4444',
+                                        borderRadius: 9999,
+                                        fontWeight: 600,
+                                        fontSize: '0.875rem',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(239,68,68,0.25)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = 'none'; }}
+                                >
+                                    Go to Admin Dashboard
+                                </button>
                             </Link>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
 
                     {isAuthenticated ? (

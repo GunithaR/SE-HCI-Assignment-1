@@ -228,11 +228,11 @@ export default function Home() {
         <div style={{ minHeight: '100vh', background: '#fbf8ff', position: 'relative' }}>
 
             {/* ── HERO SECTION — full viewport height so categories only appear on scroll ── */}
-            <div style={{ position: 'relative', width: '100%', height: '100vh', minHeight: 600, overflow: 'hidden', borderBottomLeftRadius: 70, borderBottomRightRadius: 70, flexShrink: 0 }}>
+            <div style={{ position: 'relative', width: '100%', height: '100vh', minHeight: 600, overflow: 'hidden', flexShrink: 0 }}>
                 <img
                     src="/store-bg.jpg"
                     alt=""
-                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', borderBottomLeftRadius: 70, borderBottomRightRadius: 70, filter: 'blur(4px)', transform: 'scale(1.05)' }}
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', filter: 'blur(4px)', transform: 'scale(1.05)' }}
                     onError={e => { e.currentTarget.style.display = 'none'; }}
                 />
                 {/* Dark purple gradient overlay — exactly from Figma */}
@@ -241,12 +241,12 @@ export default function Home() {
                     <path d="M0 0H1440V923H0V0Z" fill="url(#g2)" />
                     <defs>
                         <linearGradient id="g1" x1="720" x2="720" y1="923" y2="40" gradientUnits="userSpaceOnUse">
-                            <stop stopColor="#25005A" />
+                            <stop stopColor="#25005A" stopOpacity="0.55" />
                             <stop offset="1" stopColor="#25005A" stopOpacity="0" />
                         </linearGradient>
                         <radialGradient id="g2" cx="0" cy="0" gradientTransform="translate(720 461.5) scale(864.294 834.241)" gradientUnits="userSpaceOnUse" r="1">
                             <stop offset="0.2" stopOpacity="0" />
-                            <stop offset="1" stopOpacity="0.4" />
+                            <stop offset="1" stopOpacity="0.2" />
                         </radialGradient>
                     </defs>
                 </svg>
@@ -310,28 +310,39 @@ export default function Home() {
                         </button>
                     </div>
 
-                    {/* CTA buttons */}
-                    <div style={{ display: 'flex', gap: 42, alignItems: 'center' }}>
-                        <button
-                            onClick={() => navigate('/catalog')}
-                            style={{
-                                background: '#630ed4', color: '#fff', border: 'none',
-                                borderRadius: 48, padding: '17px 40px',
-                                fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 18,
-                                cursor: 'pointer', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
-                                transition: 'transform 0.2s, box-shadow 0.2s',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
-                        >
-                            Browse Materials
-                        </button>
+                    {/* CTA buttons — Browse Materials | View Catalog | Get Recommendations */}
+                    <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+
+                        {/* Shared style for Browse Materials & View Catalog */}
+                        {[
+                            { label: 'Browse Materials',  path: '/catalog' },
+                            { label: 'View Catalog',      path: '/catalog' },
+                        ].map(({ label, path }) => (
+                            <button
+                                key={label}
+                                onClick={() => navigate(path)}
+                                style={{
+                                    background: '#630ed4', color: '#fff', border: 'none',
+                                    borderRadius: 48, padding: '17px 40px', minWidth: 200,
+                                    fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 18,
+                                    cursor: 'pointer', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+                                    transition: 'transform 0.2s, box-shadow 0.2s',
+                                    whiteSpace: 'nowrap', textAlign: 'center',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 30px 60px rgba(0,0,0,0.35)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 25px 50px rgba(0,0,0,0.25)'; }}
+                            >
+                                {label}
+                            </button>
+                        ))}
+
+                        {/* Get Recommendations — glass style */}
                         <button
                             onClick={() => navigate('/wizard')}
                             style={{
                                 background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(6px)',
                                 color: '#fff', border: '1px solid rgba(255,255,255,0.4)',
-                                borderRadius: 48, padding: '17px 41px',
+                                borderRadius: 48, padding: '17px 40px',
                                 fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 18,
                                 cursor: 'pointer', whiteSpace: 'nowrap',
                                 boxShadow: '0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)',
