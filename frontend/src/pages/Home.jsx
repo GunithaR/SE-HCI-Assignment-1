@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import catalogService from '../services/catalogService';
-import ProductCard from '../components/ProductCard';
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Category accent colors
@@ -19,7 +19,6 @@ const CATEGORY_META = {
 // Product Card  — matches Figma design (white card, rounded-[48px])
 // ─────────────────────────────────────────────────────────────────────────────
 function ProductCard({ product, onViewDetails }) {
-    const accentColor = CATEGORY_META[product.categoryName]?.color || '#630ed4';
 
     return (
         <div
