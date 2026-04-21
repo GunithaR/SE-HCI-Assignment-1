@@ -75,12 +75,17 @@ export default function Navbar() {
                         </div>
                     ) : (
                         <>
-                            <Link to="/login">
-                                <button id="nav-login-btn" className="btn-secondary !rounded-full text-sm py-2 px-5 shadow-lg shadow-indigo-500/30">Login</button>
-                            </Link>
-                            <Link to="/register">
-                                <button id="nav-register-btn" className="btn-primary !rounded-full text-sm py-2 px-5 shadow-lg shadow-indigo-500/30">Sign Up</button>
-                            </Link>
+                            {/* Conditionally render Login and Sign Up buttons */}
+                            {!isAuthenticated && window.location.pathname !== '/login' && (
+                                <Link to="/login">
+                                    <button id="nav-login-btn" className="btn-secondary !rounded-full text-sm py-2 px-5 shadow-lg shadow-indigo-500/30">Login</button>
+                                </Link>
+                            )}
+                            {!isAuthenticated && window.location.pathname !== '/register' && (
+                                <Link to="/register">
+                                    <button id="nav-register-btn" className="btn-primary !rounded-full text-sm py-2 px-5 shadow-lg shadow-indigo-500/30">Sign Up</button>
+                                </Link>
+                            )}
                         </>
                     )}
                 </div>
