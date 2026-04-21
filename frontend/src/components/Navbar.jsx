@@ -11,7 +11,7 @@ export default function Navbar() {
     };
 
     return (
-        <nav className="fixed left-0 w-full z-50 glass-pill backdrop-blur-md shadow-lg ring-1 ring-indigo-300 transition-all duration-300">
+        <nav className="fixed left-0 w-full z-50 glass-morph backdrop-blur-lg shadow-lg ring-1 ring-violet-300 transition-all duration-300">
             <div className="px-6 h-16 flex items-center justify-between">
 
                 {/* ── Logo / Brand ─────────────────────────────────────────── */}
