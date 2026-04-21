@@ -227,12 +227,12 @@ export default function Home() {
     return (
         <div style={{ minHeight: '100vh', background: '#fbf8ff', position: 'relative' }}>
 
-            {/* ── HERO SECTION ──────────────────────────────────────────────────── */}
-            <div style={{ position: 'relative', width: '100%', height: 923, overflow: 'hidden', borderBottomLeftRadius: 70, borderBottomRightRadius: 70, flexShrink: 0 }}>
+            {/* ── HERO SECTION — full viewport height so categories only appear on scroll ── */}
+            <div style={{ position: 'relative', width: '100%', height: '100vh', minHeight: 600, overflow: 'hidden', borderBottomLeftRadius: 70, borderBottomRightRadius: 70, flexShrink: 0 }}>
                 <img
                     src="/store-bg.jpg"
                     alt=""
-                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', borderBottomLeftRadius: 70, borderBottomRightRadius: 70 }}
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', borderBottomLeftRadius: 70, borderBottomRightRadius: 70, filter: 'blur(4px)', transform: 'scale(1.05)' }}
                     onError={e => { e.currentTarget.style.display = 'none'; }}
                 />
                 {/* Dark purple gradient overlay — exactly from Figma */}
@@ -251,29 +251,34 @@ export default function Home() {
                     </defs>
                 </svg>
 
-                {/* Hero Content */}
+                {/* Hero Content — vertically centered within the full-screen hero */}
                 <div style={{
                     position: 'absolute',
-                    top: '5.63%', left: '23.08%', right: '23.84%',
+                    inset: 0,
                     display: 'flex', flexDirection: 'column', gap: 40,
-                    alignItems: 'center', paddingTop: 87,
+                    alignItems: 'center', justifyContent: 'center',
+                    padding: '80px 24px 40px',
                 }}>
-                    {/* Brand name */}
+                    {/* Brand name — L+ stacked above සිවිලිම */}
                     <div style={{ textAlign: 'center', width: '100%' }}>
                         <h1 style={{
                             fontFamily: 'Manrope, sans-serif', fontWeight: 900,
-                            fontSize: 'clamp(2.5rem, 6vw, 5.5rem)',
-                            letterSpacing: '-1.5px', lineHeight: 1.1,
+                            letterSpacing: '-1.5px', lineHeight: 1.05,
                             color: '#ffffff',
                             textShadow: '0 4px 40px rgba(99,14,212,0.5)',
                             transform: 'rotate(0.12deg)',
+                            margin: 0,
                         }}>
-                            L+ SIVILIMA
+                            <span style={{ display: 'block', fontSize: 'clamp(4rem, 9vw, 8.5rem)', marginBottom: '0.4em' }}>L+</span>
+                            <span style={{ display: 'block', fontSize: 'clamp(3.5rem, 8.5vw, 8rem)' }}>සිවිලිම</span>
                         </h1>
-                        <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '1.1rem', fontWeight: 500, marginTop: 8, letterSpacing: '-0.3px' }}>
+                        <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '1.1rem', fontWeight: 500, marginTop: 12, letterSpacing: '-0.3px' }}>
                             Your trusted construction materials platform
                         </p>
                     </div>
+
+                    {/* Extra spacing before search + buttons */}
+                    <div style={{ height: 32 }} />
 
                     {/* Search bar */}
                     <div style={{
