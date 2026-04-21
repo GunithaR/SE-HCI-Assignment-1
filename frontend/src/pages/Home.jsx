@@ -1,10 +1,6 @@
-<<<<<<< HEAD
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-=======
-import React, { useEffect, useState, useCallback } from 'react';
->>>>>>> dev
 import catalogService from '../services/catalogService';
 import ProductCard from '../components/ProductCard';
 
@@ -12,7 +8,6 @@ import ProductCard from '../components/ProductCard';
 // Category accent colors
 // ─────────────────────────────────────────────────────────────────────────────
 const CATEGORY_META = {
-<<<<<<< HEAD
     'Roofing Solution':  { color: '#7c3aed', badge: 'Roofing' },
     'Flooring Solution': { color: '#f59e0b', badge: 'Flooring' },
     'Ceiling Solution':  { color: '#10b981', badge: 'Ceiling' },
@@ -138,15 +133,6 @@ function ProductCard({ product, onViewDetails }) {
     );
 }
 
-=======
-    'Roofing Solution': { img: '/Roofing_Solution.jpg', color: '#6c63ff', desc: 'Durable roofing for every climate' },
-    'Flooring Solution': { img: '/Flooring_Solution.jpg', color: '#f59e0b', desc: 'Tiles, wood & beyond' },
-    'Ceiling Solution': { img: '/Ceiling_Solution.jpg', color: '#10b981', desc: 'Finish every room with style' },
-    'Wall Solution': { img: '/Wall_Solution.jpg', color: '#3b82f6', desc: 'Insulation, cladding & renders' },
-    'Accessories': { img: '/Accessories.jpg', color: '#a855f7', desc: 'Fittings, fixings & more' },
-};
-
->>>>>>> dev
 // ─────────────────────────────────────────────────────────────────────────────
 // Horizontal scrollable product row section
 // ─────────────────────────────────────────────────────────────────────────────
