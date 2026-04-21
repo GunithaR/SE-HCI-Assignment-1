@@ -19,6 +19,10 @@ const catalogService = {
 
     getAttributeOptions: () => apiClient.get('/public/attributes/options').then((r) => r.data),
 
+    getReviews: (productId, page = 0, size = 10) => apiClient.get(`/products/${productId}/reviews`, { params: { page, size } }).then((r) => r.data),
+
+    addReview: (productId, score, comment) => apiClient.post(`/products/${productId}/reviews`, { score, comment }).then((r) => r.data),
+
     /**
      * GET /api/public/products — all in-stock products across every category.
      * No authentication required — used by the public home page.
@@ -83,19 +87,23 @@ const catalogService = {
     getAdminAllProducts: (page = 0, size = 200) =>
         apiClient.get('/admin/products', { params: { page, size } }).then((r) => r.data),
 
-    /** POST /api/admin/products — create a new product (multipart: data + optional image) */
-    createProduct: (data, imageFile) => {
+    /** POST /api/admin/products — create a new product (multipart: data + optional images array) */
+    createProduct: (data, imagesArray) => {
         const form = new FormData();
         form.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
-        if (imageFile) form.append('image', imageFile);
+        if (imagesArray && imagesArray.length > 0) {
+            imagesArray.forEach(img => form.append('images', img));
+        }
         return apiClient.post('/admin/products', form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data);
     },
 
-    /** PUT /api/admin/products/{id} — fully replace an existing product (multipart: data + optional image) */
-    updateProduct: (id, data, imageFile) => {
+    /** PUT /api/admin/products/{id} — fully replace an existing product (multipart: data + optional images array) */
+    updateProduct: (id, data, imagesArray) => {
         const form = new FormData();
         form.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
-        if (imageFile) form.append('image', imageFile);
+        if (imagesArray && imagesArray.length > 0) {
+            imagesArray.forEach(img => form.append('images', img));
+        }
         return apiClient.put(`/admin/products/${id}`, form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data);
     },
 
