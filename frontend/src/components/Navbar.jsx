@@ -11,7 +11,7 @@ export default function Navbar() {
     };
 
     return (
-        <nav className="fixed left-0 w-full z-50 glass-pill backdrop-blur-md shadow-lg ring-1 ring-indigo-300 transition-all duration-300">
+        <nav className="fixed left-0 w-full z-50 glass-morph backdrop-blur-lg shadow-lg ring-1 ring-violet-300 transition-all duration-300">
             <div className="px-6 h-16 flex items-center justify-between">
 
                 {/* ── Logo / Brand ─────────────────────────────────────────── */}
@@ -75,12 +75,17 @@ export default function Navbar() {
                         </div>
                     ) : (
                         <>
-                            <Link to="/login">
-                                <button id="nav-login-btn" className="btn-secondary !rounded-full text-sm py-2 px-5 shadow-lg shadow-indigo-500/30">Login</button>
-                            </Link>
-                            <Link to="/register">
-                                <button id="nav-register-btn" className="btn-primary !rounded-full text-sm py-2 px-5 shadow-lg shadow-indigo-500/30">Sign Up</button>
-                            </Link>
+                            {/* Conditionally render Login and Sign Up buttons */}
+                            {!isAuthenticated && window.location.pathname !== '/login' && (
+                                <Link to="/login">
+                                    <button id="nav-login-btn" className="btn-secondary !rounded-full text-sm py-2 px-5 shadow-lg shadow-indigo-500/30">Login</button>
+                                </Link>
+                            )}
+                            {!isAuthenticated && window.location.pathname !== '/register' && (
+                                <Link to="/register">
+                                    <button id="nav-register-btn" className="btn-primary !rounded-full text-sm py-2 px-5 shadow-lg shadow-indigo-500/30">Sign Up</button>
+                                </Link>
+                            )}
                         </>
                     )}
                 </div>

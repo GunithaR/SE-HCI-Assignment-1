@@ -92,7 +92,7 @@ export default function Results() {
   };
 
   return (
-    <div className="results-container">
+    <div className="light-theme results-container">
       <div className="results-content">
         {/* ── Header ──────────────────────────────────── */}
         <div className="results-header">
