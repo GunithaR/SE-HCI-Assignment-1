@@ -141,6 +141,9 @@ const catalogService = {
     /** GET /api/admin/analytics/products/top */
     getAnalyticsTopProducts: () => apiClient.get('/admin/analytics/products/top').then((r) => r.data),
 
+    /** GET /api/admin/users — list all registered users (ADMIN only) */
+    getAllUsers: () => apiClient.get('/admin/users').then((r) => r.data),
+
     /** POST /api/public/analytics/visit */
     recordVisit: () => apiClient.post('/public/analytics/visit').then((r) => r.data),
 };

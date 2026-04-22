@@ -222,13 +222,23 @@ public class ProductService {
                 Product saved = productRepository.save(product);
 
                 if (images != null && !images.isEmpty()) {
+                        java.util.List<String> storedUrls = new java.util.ArrayList<>();
                         for (MultipartFile imgFile : images) {
                                 if (!imgFile.isEmpty()) {
                                         String imageUrl = fileStorageService.store(imgFile);
+                                        storedUrls.add(imageUrl);
                                         com.constructionplatform.app.entity.ProductImage img = new com.constructionplatform.app.entity.ProductImage(saved, imageUrl);
                                         saved.getImages().add(img);
                                 }
                         }
+                        
+                        // Set main image if index is valid
+                        if (request.getMainImageIndex() != null && request.getMainImageIndex() >= 0 && request.getMainImageIndex() < storedUrls.size()) {
+                                saved.setImageUrl(storedUrls.get(request.getMainImageIndex()));
+                        } else if (!storedUrls.isEmpty()) {
+                                saved.setImageUrl(storedUrls.get(0)); // Default to first if not specified
+                        }
+                        
                         saved = productRepository.save(saved);
                 }
 
@@ -309,12 +319,26 @@ public class ProductService {
                         }
                         product.getImages().clear();
                         
+                        java.util.List<String> storedUrls = new java.util.ArrayList<>();
                         for (MultipartFile imgFile : images) {
                                 if (!imgFile.isEmpty()) {
                                         String imageUrl = fileStorageService.store(imgFile);
+                                        storedUrls.add(imageUrl);
                                         com.constructionplatform.app.entity.ProductImage img = new com.constructionplatform.app.entity.ProductImage(product, imageUrl);
                                         product.getImages().add(img);
                                 }
+                        }
+
+                        // Set main image if index is valid
+                        if (request.getMainImageIndex() != null && request.getMainImageIndex() >= 0 && request.getMainImageIndex() < storedUrls.size()) {
+                                product.setImageUrl(storedUrls.get(request.getMainImageIndex()));
+                        } else if (!storedUrls.isEmpty()) {
+                                product.setImageUrl(storedUrls.get(0));
+                        }
+                } else if (request.getMainImageIndex() != null && product.getImages() != null && !product.getImages().isEmpty()) {
+                        // If no new images but index provided, pick from existing images
+                        if (request.getMainImageIndex() >= 0 && request.getMainImageIndex() < product.getImages().size()) {
+                                product.setImageUrl(product.getImages().get(request.getMainImageIndex()).getImageUrl());
                         }
                 }
 

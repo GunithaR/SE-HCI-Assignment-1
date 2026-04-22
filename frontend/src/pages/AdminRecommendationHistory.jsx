@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import catalogService from '../services/catalogService';
+import './AdminDashboardUnified.css';
 
 export default function AdminRecommendationHistory() {
     const navigate = useNavigate();
@@ -145,42 +147,47 @@ function SessionDetailsModal({ session, onClose }) {
     const recommendations = resultSummary.recommendations || [];
     const appliedRules = JSON.parse(session.appliedRulesJson || '[]');
 
-    return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
-            onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="card" style={{ width: '100%', maxWidth: 700, maxHeight: '85vh', overflowY: 'auto', padding: '2rem', borderRadius: 16, background: 'var(--color-surface)', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '2px solid rgba(139,92,246,0.1)', paddingBottom: '1rem' }}>
-                    <h2 style={{ fontWeight: 800, fontSize: '1.5rem', color: 'var(--color-text)' }}>
-                        Session #{session.id} Details
+    // Lock background scroll while modal is open
+    React.useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = ''; };
+    }, []);
+
+    return createPortal(
+        <div className="admin-modal-overlay light-theme" onClick={(e) => e.target === e.currentTarget && onClose()}>
+            <div className="admin-modal-content" style={{ maxWidth: 700 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '2px solid #ede9fe', paddingBottom: '1rem' }}>
+                    <h2 style={{ fontWeight: 800, fontSize: '1.3rem', color: '#1e1b4b' }}>
+                        📋 Session #{session.id} Details
                     </h2>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
                 </div>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                     <div>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--color-muted)', marginBottom: 2 }}>User</p>
-                        <p style={{ fontWeight: 600, color: session.userEmail ? '#10b981' : '#94a3b8' }}>{session.userEmail || 'Anonymous'}</p>
+                        <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: 2, fontWeight: 600 }}>User</p>
+                        <p style={{ fontWeight: 600, color: session.userEmail ? '#10b981' : '#94a3b8', margin: 0 }}>{session.userEmail || 'Anonymous'}</p>
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--color-muted)', marginBottom: 2 }}>Category Filter</p>
-                        <p style={{ fontWeight: 600, color: '#8b5cf6' }}>{session.category}</p>
+                        <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: 2, fontWeight: 600 }}>Category Filter</p>
+                        <p style={{ fontWeight: 600, color: '#7c3aed', margin: 0 }}>{session.category}</p>
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--color-muted)', marginBottom: 2 }}>Started At</p>
-                        <p style={{ fontWeight: 500 }}>{new Date(session.startedAt).toLocaleString()}</p>
+                        <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: 2, fontWeight: 600 }}>Started At</p>
+                        <p style={{ fontWeight: 500, color: '#1e1b4b', margin: 0 }}>{new Date(session.startedAt).toLocaleString()}</p>
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--color-muted)', marginBottom: 2 }}>Completed At</p>
-                        <p style={{ fontWeight: 500 }}>{new Date(session.completedAt).toLocaleString()}</p>
+                        <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: 2, fontWeight: 600 }}>Completed At</p>
+                        <p style={{ fontWeight: 500, color: '#1e1b4b', margin: 0 }}>{new Date(session.completedAt).toLocaleString()}</p>
                     </div>
                 </div>
 
-                <div style={{ marginBottom: '2rem' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '1rem', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: 8 }}>
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#1e1b4b', marginBottom: '0.75rem', borderBottom: '1px solid #ede9fe', paddingBottom: 8 }}>
                         Rules Applied During Evaluation
                     </h3>
                     {appliedRules.length === 0 ? (
-                        <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>Recommendations were purely mathematical. No rules intervened.</p>
+                        <p style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.88rem' }}>Recommendations were purely mathematical. No rules intervened.</p>
                     ) : (
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                             {appliedRules.map((rule, idx) => {
@@ -195,7 +202,7 @@ function SessionDetailsModal({ session, onClose }) {
                                 if (isFilterOut) { bg = 'rgba(202,138,4,0.1)'; col = '#ca8a04'; }
 
                                 return (
-                                    <span key={idx} style={{ background: bg, color: col, padding: '4px 10px', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600 }}>
+                                    <span key={idx} style={{ background: bg, color: col, padding: '4px 10px', borderRadius: 6, fontSize: '0.82rem', fontWeight: 600 }}>
                                         {rule}
                                     </span>
                                 );
@@ -204,18 +211,18 @@ function SessionDetailsModal({ session, onClose }) {
                     )}
                 </div>
 
-                <div style={{ marginBottom: '2rem' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '1rem', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: 8 }}>
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#1e1b4b', marginBottom: '0.75rem', borderBottom: '1px solid #ede9fe', paddingBottom: 8 }}>
                         User's Answers
                     </h3>
                     {Object.keys(answers).length === 0 ? (
-                        <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>No answers recorded.</p>
+                        <p style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.88rem' }}>No answers recorded.</p>
                     ) : (
                         <ul style={{ listStyleType: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             {Object.entries(answers).map(([qKey, aVal]) => (
-                                <li key={qKey} style={{ background: 'var(--color-surface-alt)', padding: '10px 14px', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>{qKey}:</span>
-                                    <span style={{ color: 'var(--color-primary)', fontWeight: 700, fontSize: '0.9rem', background: 'rgba(139,92,246,0.1)', padding: '4px 10px', borderRadius: 99 }}>
+                                <li key={qKey} style={{ background: '#f5f3ff', padding: '10px 14px', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontWeight: 600, color: '#475569', fontSize: '0.88rem' }}>{qKey}:</span>
+                                    <span style={{ color: '#7c3aed', fontWeight: 700, fontSize: '0.88rem', background: 'rgba(124,58,237,0.1)', padding: '4px 10px', borderRadius: 99 }}>
                                         {aVal.toString()}
                                     </span>
                                 </li>
@@ -225,22 +232,22 @@ function SessionDetailsModal({ session, onClose }) {
                 </div>
 
                 <div>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '1rem', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: 8 }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#1e1b4b', marginBottom: '0.75rem', borderBottom: '1px solid #ede9fe', paddingBottom: 8 }}>
                         Top Recommendations Provided
                     </h3>
                     {recommendations.length === 0 ? (
-                        <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>No products were recommended.</p>
+                        <p style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.88rem' }}>No products were recommended.</p>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             {recommendations.slice(0, 3).map((rec, i) => (
-                                <div key={i} style={{ border: '1px solid rgba(0,0,0,0.1)', padding: '1rem', borderRadius: 12, display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: i === 0 ? '#f59e0b' : '#94a3b8' }}>
+                                <div key={i} style={{ border: '1.5px solid #ede9fe', padding: '1rem', borderRadius: 12, display: 'flex', gap: '1rem', alignItems: 'center', background: i === 0 ? '#fefce8' : '#fff' }}>
+                                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: i === 0 ? '#f59e0b' : '#94a3b8' }}>
                                         #{i+1}
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 700, color: 'var(--color-text)', fontSize: '1.1rem' }}>{rec.productName}</div>
-                                        <div style={{ fontSize: '0.85rem', color: 'var(--color-muted)', marginBottom: 4 }}>Score: {rec.totalScore?.toFixed(1)}/10</div>
-                                        <p style={{ fontSize: '0.9rem', color: '#475569', margin: 0, fontStyle: 'italic' }}>"{rec.explanation}"</p>
+                                        <div style={{ fontWeight: 700, color: '#1e1b4b', fontSize: '1rem' }}>{rec.productName}</div>
+                                        <div style={{ fontSize: '0.82rem', color: '#6b7280', marginBottom: 4 }}>Score: {rec.totalScore?.toFixed(1)}/10</div>
+                                        <p style={{ fontSize: '0.85rem', color: '#475569', margin: 0, fontStyle: 'italic' }}>"{rec.explanation}"</p>
                                     </div>
                                 </div>
                             ))}
@@ -248,6 +255,7 @@ function SessionDetailsModal({ session, onClose }) {
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
