@@ -56,6 +56,7 @@ public class ProductUpdateRequestDTO {
 
     /** true = In Stock / active, false = Out of Stock / inactive */
     private Boolean isActive = true;
+    private Integer mainImageIndex;
 
     // ── Getters ───────────────────────────────────────────────────────────────
 
@@ -111,6 +112,10 @@ public class ProductUpdateRequestDTO {
         return isActive;
     }
 
+    public Integer getMainImageIndex() {
+        return mainImageIndex;
+    }
+
     // ── Setters ───────────────────────────────────────────────────────────────
 
     public void setCategoryId(Long categoryId) {
@@ -163,5 +168,9 @@ public class ProductUpdateRequestDTO {
 
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public void setMainImageIndex(Integer mainImageIndex) {
+        this.mainImageIndex = mainImageIndex;
     }
 }
