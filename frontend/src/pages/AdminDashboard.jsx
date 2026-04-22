@@ -142,6 +142,7 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
     const [imagePreviews, setImagePreviews] = useState(
         isEdit && editingProduct.imageUrls ? editingProduct.imageUrls : []
     );
+    const [mainImageIndex, setMainImageIndex] = useState(0);
 
     const set = (field) => (e) => {
         const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -151,6 +152,7 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files || []);
         setImageFiles(files);
+        setMainImageIndex(0);
         
         if (files.length > 0) {
             const urls = files.map(file => URL.createObjectURL(file));
@@ -162,6 +164,7 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
 
     const clearImage = () => {
         setImageFiles([]);
+        setMainImageIndex(0);
         setImagePreviews(isEdit && editingProduct.imageUrls ? editingProduct.imageUrls : []);
     };
 
@@ -176,6 +179,7 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
             basePrice: parseFloat(form.basePrice),
             durabilityRating: parseInt(form.durabilityRating, 10),
             isActive: form.isActive,
+            mainImageIndex: mainImageIndex,
         };
         try {
             let result;
@@ -369,20 +373,27 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                             </div>
                             
                             {/* Preview strip */}
-                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', maxWidth: '350px' }}>
+                            <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', maxWidth: '350px' }}>
                                 {imagePreviews.length > 0 ? (
                                     imagePreviews.map((url, idx) => (
-                                        <div key={idx} style={{
-                                            width: 60, height: 60, borderRadius: 8, flexShrink: 0,
-                                            border: '1px solid rgba(139,92,246,0.4)', background: 'rgba(255,255,255,0.03)',
-                                            overflow: 'hidden',
-                                        }}>
-                                            <img src={url} alt={`preview ${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <div key={idx} 
+                                            onClick={() => setMainImageIndex(idx)}
+                                            style={{
+                                                width: 70, height: 70, borderRadius: 10, flexShrink: 0,
+                                                border: mainImageIndex === idx ? '3px solid #8b5cf6' : '1px solid rgba(139,92,246,0.3)', 
+                                                background: 'rgba(255,255,255,0.03)',
+                                                overflow: 'hidden', position: 'relative', cursor: 'pointer',
+                                                transition: 'all 0.2s'
+                                            }}>
+                                            <img src={url} alt={`preview ${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: mainImageIndex === idx ? 1 : 0.7 }} />
+                                            {mainImageIndex === idx && (
+                                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#8b5cf6', color: '#fff', fontSize: '9px', fontWeight: 800, textAlign: 'center', padding: '2px 0' }}>MAIN</div>
+                                            )}
                                         </div>
                                     ))
                                 ) : (
                                     <div style={{
-                                        width: 60, height: 60, borderRadius: 8, flexShrink: 0,
+                                        width: 70, height: 70, borderRadius: 10, flexShrink: 0,
                                         border: '2px dashed rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     }}>

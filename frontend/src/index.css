@@ -374,3 +374,36 @@ body {
   font-weight: 600;
   color: inherit;
 }
+
+/* ── Price Range Slider ───────────────────────────────────────────────────── */
+.price-range-wrap { position: relative; height: 36px; display: flex; align-items: center; }
+.price-range-track {
+  position: absolute; left: 0; right: 0; height: 4px;
+  background: #ede9fe; border-radius: 9999px;
+}
+.price-range-fill {
+  position: absolute; height: 4px;
+  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  border-radius: 9999px;
+}
+.price-range-thumb {
+  position: absolute; width: 18px; height: 18px;
+  background: #fff; border: 2.5px solid #7c3aed;
+  border-radius: 50%; cursor: pointer;
+  top: 50%; transform: translate(-50%, -50%);
+  box-shadow: 0 2px 8px rgba(124,58,237,0.3);
+  transition: box-shadow 0.15s;
+  -webkit-appearance: none; appearance: none;
+}
+input[type=range].price-slider {
+  position: absolute; width: 100%; height: 4px;
+  opacity: 0; cursor: pointer; margin: 0; padding: 0;
+  pointer-events: none;
+}
+input[type=range].price-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px;
+  pointer-events: all; cursor: pointer;
+}
+input[type=range].price-slider::-moz-range-thumb {
+  width: 18px; height: 18px; pointer-events: all; cursor: pointer;
+}
