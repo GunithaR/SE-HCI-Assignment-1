@@ -194,7 +194,7 @@ export default function Wizard() {
   }
 
   return (
-    <div className="wizard-container">
+    <div className="light-theme wizard-container">
       <div className="wizard-card">
         {/* ── Header ──────────────────────────────────────  */}
         <div className="wizard-header">
