@@ -1,100 +1,263 @@
 import { Link } from 'react-router-dom';
 
-const BUDGET_COLORS = {
-    LOW: { bg: 'rgba(34,197,94,0.12)', fg: '#4ade80' },
-    MEDIUM: { bg: 'rgba(245,158,11,0.12)', fg: '#fbbf24' },
-    HIGH: { bg: 'rgba(239,68,68,0.12)', fg: '#f87171' },
+// ── Budget tier config (friendly labels) ─────────────────────────────────────
+const BUDGET_CONFIG = {
+    LOW:    { label: 'Budget-Friendly', icon: '💰', color: '#16a34a', bg: 'rgba(22,163,74,0.13)',  border: 'rgba(22,163,74,0.4)' },
+    MEDIUM: { label: 'Mid-Range',       icon: '💎', color: '#7c3aed', bg: 'rgba(124,58,237,0.13)', border: 'rgba(124,58,237,0.4)' },
+    HIGH:   { label: 'Premium',         icon: '👑', color: '#b45309', bg: 'rgba(180,83,9,0.13)',   border: 'rgba(180,83,9,0.4)' },
 };
 
+// ── Maintenance level config ──────────────────────────────────────────────────
+const MAINTENANCE_CONFIG = {
+    LOW:    { label: 'Easy Care',    icon: '✨' },
+    MEDIUM: { label: 'Standard',     icon: '⚙️' },
+    HIGH:   { label: 'High Upkeep', icon: '🛠️' },
+};
+
+// ── Star display (filled/empty) ───────────────────────────────────────────────
+function StarRating({ rating }) {
+    const full  = Math.floor(rating);
+    const half  = rating - full >= 0.5;
+    const empty = 5 - full - (half ? 1 : 0);
+    return (
+        <span style={{ color: '#f59e0b', fontSize: '0.8rem', letterSpacing: 1 }}>
+            {'★'.repeat(full)}
+            {half ? '½' : ''}
+            <span style={{ color: '#d1d5db' }}>{'☆'.repeat(empty)}</span>
+        </span>
+    );
+}
+
+// ── Pill tag component ────────────────────────────────────────────────────────
+function Pill({ icon, label, color = '#7c3aed', bg = 'rgba(124,58,237,0.09)', border = 'rgba(124,58,237,0.25)' }) {
+    return (
+        <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+            background: bg, border: `1px solid ${border}`, color,
+            borderRadius: 9999, padding: '3px 9px',
+            fontSize: '0.68rem', fontWeight: 600, whiteSpace: 'nowrap',
+        }}>
+            {icon && <span style={{ fontSize: '0.72rem' }}>{icon}</span>}
+            {label}
+        </span>
+    );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function ProductCard({ product }) {
-    const bc = BUDGET_COLORS[product.budgetLevel] || { bg: 'rgba(148,163,184,0.1)', fg: '#94a3b8' };
-    const imageToDisplay = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls[0] : null;
+    // Unified field resolution — handles both Home & Catalog data shapes
+    const imageToDisplay = product.imageUrl || product.imageUrls?.[0] || null;
+    const rating = product.averageRating != null
+        ? product.averageRating
+        : (product.durabilityRating != null ? product.durabilityRating / 2 : null);
+    const reviewCount  = product.reviewCount ?? null;
+    const budget       = BUDGET_CONFIG[product.budgetLevel];
+    const maintenance  = MAINTENANCE_CONFIG[product.maintenanceLevel];
+    const isTopRated   = rating != null && rating >= 4.5;
+    // isActive defaults to true when field is absent (Home products)
+    const inStock      = product.isActive !== false;
 
     return (
-        <Link to={`/product/${product.id}`} style={{ textDecoration: 'none', display: 'flex' }}>
-            <div style={{
-                background: 'var(--color-surface)',
-                border: '2px solid #a78bfa',
-                boxShadow: '0 4px 12px rgba(139,92,246,0.1)',
-                borderRadius: 16,
-                overflow: 'hidden',
-                padding: 0,
-                display: 'flex', flexDirection: 'column', gap: 0,
-                transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s',
-                width: '100%'
-            }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.4)'; e.currentTarget.style.boxShadow = 'var(--shadow-glow)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.boxShadow = 'none'; }}
+        <Link to={`/product/${product.id}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
+            <div
+                style={{
+                    background: '#fff',
+                    border: '1.5px solid #ede9fe',
+                    borderRadius: 20,
+                    overflow: 'hidden',
+                    display: 'flex', flexDirection: 'column',
+                    height: '100%',
+                    transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
+                    boxShadow: '0 2px 16px rgba(124,58,237,0.08)',
+                    cursor: 'pointer',
+                }}
+                onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-6px)';
+                    e.currentTarget.style.boxShadow = '0 20px 48px rgba(124,58,237,0.22)';
+                    e.currentTarget.style.borderColor = '#a78bfa';
+                }}
+                onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 16px rgba(124,58,237,0.08)';
+                    e.currentTarget.style.borderColor = '#ede9fe';
+                }}
             >
-                {imageToDisplay && (
-                    <div style={{ width: '100%', height: 180, overflow: 'hidden', background: 'var(--color-surface-alt)' }}>
+                {/* ── Image ───────────────────────────────────────────────── */}
+                <div style={{
+                    position: 'relative', height: 200, flexShrink: 0, overflow: 'hidden',
+                    background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
+                }}>
+                    {imageToDisplay ? (
                         <img
                             src={imageToDisplay}
                             alt={product.name}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                            onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.4s ease' }}
+                            onError={e => { e.currentTarget.style.display = 'none'; }}
+                            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
                         />
-                    </div>
-                )}
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '1.25rem', flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                        <div style={{ flex: 1 }}>
-                            <h3 style={{ color: 'var(--color-text)', fontWeight: 600, fontSize: '0.95rem', marginBottom: 2 }}>
-                                {product.name}
-                            </h3>
-                            <p style={{ color: 'var(--color-muted)', fontSize: '0.75rem' }}>
-                                {product.brandName && <span>{product.brandName}</span>}
-                                {product.brandName && product.categoryName && <span> · </span>}
-                                {product.categoryName && <span style={{ color: '#a78bfa' }}>{product.categoryName}</span>}
-                            </p>
+                    ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '3rem', opacity: 0.45 }}>
+                            🏗️
                         </div>
-                        {product.budgetLevel && (
-                            <span style={{ background: bc.bg, color: bc.fg, border: `1px solid ${bc.fg}44`, borderRadius: 9999, padding: '2px 10px', fontSize: '0.7rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                {product.budgetLevel}
-                            </span>
-                        )}
-                    </div>
-                    
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: -4 }}>
-                        <span style={{ color: '#fbbf24', fontSize: '0.85rem' }}>★</span>
-                        <span style={{ color: 'var(--color-text)', fontSize: '0.8rem', fontWeight: 600 }}>
-                            {product.averageRating > 0 ? product.averageRating.toFixed(1) : 'No rating'}
-                        </span>
-                        <span style={{ color: 'var(--color-muted)', fontSize: '0.75rem' }}>
-                            ({product.reviewCount || 0})
-                        </span>
-                    </div>
+                    )}
 
-                    <p style={{ color: 'var(--color-muted)', fontSize: '0.78rem', lineHeight: 1.65, flex: 1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                        {product.description || 'Premium construction material.'}
-                    </p>
-
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                        {product.climateSuitability && (
-                            <span style={{ background: 'rgba(139,92,246,0.12)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.25)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem' }}>
-                                ☁ {product.climateSuitability}
-                            </span>
-                        )}
-                        {product.maintenanceLevel && (
-                            <span style={{ background: 'rgba(20,184,166,0.12)', color: '#14b8a6', border: '1px solid rgba(20,184,166,0.25)', borderRadius: 9999, padding: '2px 9px', fontSize: '0.68rem' }}>
-                                🔧 {product.maintenanceLevel}
-                            </span>
-                        )}
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: 10, marginTop: 'auto' }}>
-                        <span style={{ color: '#8b5cf6', fontWeight: 700, fontSize: '1.15rem' }}>
-                            Rs. {Number(product.basePrice).toFixed(2)}
-                        </span>
+                    {/* Budget badge — top left */}
+                    {budget && (
                         <span style={{
-                            padding: '3px 10px', borderRadius: 9999, fontSize: '0.68rem', fontWeight: 600,
-                            background: product.isActive ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-                            color: product.isActive ? '#16a34a' : '#dc2626',
+                            position: 'absolute', top: 10, left: 10,
+                            background: budget.bg, border: `1px solid ${budget.border}`, color: budget.color,
+                            borderRadius: 9999, padding: '4px 10px',
+                            fontSize: '0.67rem', fontWeight: 700,
+                            backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
                         }}>
-                            {product.isActive ? 'In Stock' : 'Out of Stock'}
+                            {budget.icon} {budget.label}
+                        </span>
+                    )}
+
+                    {/* Top Rated badge — top right */}
+                    {isTopRated && (
+                        <span style={{
+                            position: 'absolute', top: 10, right: 10,
+                            background: 'rgba(251,191,36,0.18)', border: '1px solid rgba(251,191,36,0.55)', color: '#92400e',
+                            borderRadius: 9999, padding: '4px 10px',
+                            fontSize: '0.67rem', fontWeight: 700,
+                            backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                        }}>
+                            ⭐ Top Rated
+                        </span>
+                    )}
+                </div>
+
+                {/* ── Body ────────────────────────────────────────────────── */}
+                <div style={{ padding: '1rem 1.15rem 1.2rem', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+
+                    {/* Name */}
+                    <h3 style={{
+                        fontFamily: "'Manrope', 'Inter', sans-serif",
+                        fontWeight: 700, fontSize: '0.97rem',
+                        color: '#1e1b4b', lineHeight: 1.35, margin: 0,
+                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                    }}>
+                        {product.name}
+                    </h3>
+
+                    {/* Brand · Category */}
+                    {(product.brandName || product.categoryName) && (
+                        <p style={{ margin: 0, color: '#9ca3af', fontSize: '0.72rem', lineHeight: 1.4 }}>
+                            {product.brandName && <span>{product.brandName}</span>}
+                            {product.brandName && product.categoryName && <span> · </span>}
+                            {product.categoryName && <span style={{ color: '#8b5cf6' }}>{product.categoryName}</span>}
+                        </p>
+                    )}
+
+                    {/* Rating */}
+                    {rating != null && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <StarRating rating={rating} />
+                            <span style={{ fontWeight: 700, fontSize: '0.8rem', color: '#374151' }}>
+                                {rating.toFixed(1)}
+                            </span>
+                            {reviewCount != null && (
+                                <span style={{ fontSize: '0.7rem', color: '#9ca3af' }}>({reviewCount})</span>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Description */}
+                    {product.description && (
+                        <p style={{
+                            margin: 0, color: '#6b7280', fontSize: '0.75rem', lineHeight: 1.6,
+                            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                        }}>
+                            {product.description}
+                        </p>
+                    )}
+
+                    {/* Attribute pills */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 2 }}>
+                        {product.climateSuitability && (
+                            <Pill
+                                icon="🌤"
+                                label={product.climateSuitability}
+                                color="#0369a1"
+                                bg="rgba(3,105,161,0.08)"
+                                border="rgba(3,105,161,0.25)"
+                            />
+                        )}
+                        {maintenance && (
+                            <Pill
+                                icon={maintenance.icon}
+                                label={maintenance.label}
+                                color="#7c3aed"
+                                bg="rgba(124,58,237,0.08)"
+                                border="rgba(124,58,237,0.25)"
+                            />
+                        )}
+                        {product.material && (
+                            <Pill
+                                icon="🧱"
+                                label={product.material}
+                                color="#374151"
+                                bg="rgba(55,65,81,0.07)"
+                                border="rgba(55,65,81,0.2)"
+                            />
+                        )}
+                    </div>
+
+                    {/* Spacer */}
+                    <div style={{ flex: 1, minHeight: 4 }} />
+
+                    {/* Price row */}
+                    <div style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        borderTop: '1px solid #f3f0ff', paddingTop: 10, marginTop: 4,
+                    }}>
+                        <div>
+                            <span style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: '1.1rem', color: '#7c3aed' }}>
+                                Rs. {Number(product.basePrice).toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                            {product.size && (
+                                <span style={{ color: '#9ca3af', fontSize: '0.7rem', marginLeft: 4 }}>/ {product.size}</span>
+                            )}
+                        </div>
+                        <span style={{
+                            padding: '3px 10px', borderRadius: 9999, fontSize: '0.67rem', fontWeight: 700,
+                            background: inStock ? 'rgba(22,163,74,0.1)' : 'rgba(220,38,38,0.1)',
+                            color: inStock ? '#16a34a' : '#dc2626',
+                            border: `1px solid ${inStock ? 'rgba(22,163,74,0.3)' : 'rgba(220,38,38,0.3)'}`,
+                        }}>
+                            {inStock ? '✅ In Stock' : '❌ Out of Stock'}
                         </span>
                     </div>
+
+                    {/* View Details button */}
+                    <button
+                        style={{
+                            width: '100%', padding: '10px 0',
+                            border: '1.5px solid #7c3aed', borderRadius: 50,
+                            background: 'transparent', cursor: 'pointer',
+                            color: '#7c3aed', fontWeight: 700, fontSize: '0.88rem',
+                            fontFamily: "'Manrope', sans-serif",
+                            transition: 'background 0.22s, color 0.22s, box-shadow 0.22s',
+                            marginTop: 4,
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.background = '#7c3aed';
+                            e.currentTarget.style.color = '#fff';
+                            e.currentTarget.style.boxShadow = '0 4px 18px rgba(124,58,237,0.35)';
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = '#7c3aed';
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}
+                    >
+                        View Details →
+                    </button>
                 </div>
             </div>
         </Link>

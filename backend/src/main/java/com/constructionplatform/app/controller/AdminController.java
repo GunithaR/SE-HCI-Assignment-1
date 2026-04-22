@@ -119,6 +119,15 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.CREATED).body(adminUserService.createSubAdminUser(request));
     }
 
+    // ── User listing ───────────────────────────────────────────────────────────
+
+    /** GET /api/admin/users — list all registered users (ADMIN only) */
+    @GetMapping("/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<java.util.List<com.constructionplatform.app.dto.UserSummaryDTO>> getAllUsers() {
+        return ResponseEntity.ok(adminUserService.getAllUsers());
+    }
+
     // ── Recommendation History management ──────────────────────────────────────
 
     /** GET /api/admin/recommendation-history — fetch all logged recommendation sessions */

@@ -114,4 +114,13 @@ public class AdminUserService {
                 .expiresIn(jwtUtil.getExpirationMs())
                 .build();
     }
+    /**
+     * Returns a lightweight summary of every registered user.
+     */
+    public java.util.List<com.constructionplatform.app.dto.UserSummaryDTO> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(u -> new com.constructionplatform.app.dto.UserSummaryDTO(
+                        u.getId(), u.getEmail(), u.getRole().name(), u.getCreatedAt()))
+                .collect(java.util.stream.Collectors.toList());
+    }
 }

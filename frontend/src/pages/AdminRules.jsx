@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ruleService from '../services/ruleService';
@@ -71,28 +72,26 @@ function Toast({ toast }) {
 // Delete Confirm Dialog
 // ─────────────────────────────────────────────────────────────────────────────
 function ConfirmDialog({ rule, onConfirm, onCancel }) {
-    return (
-        <div style={{
-            position: 'fixed', inset: 0, zIndex: 2000,
-            background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
-        }}>
-            <div style={{
-                background: 'var(--color-surface)', border: '2px solid #ef4444',
-                borderRadius: 14, padding: '2rem', maxWidth: 420, width: '100%',
-                boxShadow: '0 10px 40px rgba(239,68,68,0.2)'
-            }}>
+    // Lock background scroll while dialog is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = ''; };
+    }, []);
+
+    return createPortal(
+        <div className="admin-modal-overlay light-theme" style={{ zIndex: 2000 }}>
+            <div className="admin-modal-content" style={{ maxWidth: 420, borderColor: '#ef4444', boxShadow: '0 10px 40px rgba(239,68,68,0.2)' }}>
                 <p style={{ fontSize: '1.5rem', textAlign: 'center', marginBottom: '0.5rem' }}>🗑️</p>
-                <h3 style={{ fontWeight: 700, color: 'var(--color-text)', marginBottom: 8, textAlign: 'center' }}>
+                <h3 style={{ fontWeight: 700, color: '#1e1b4b', marginBottom: 8, textAlign: 'center' }}>
                     Delete Rule?
                 </h3>
-                <p style={{ color: 'var(--color-muted)', fontSize: '0.85rem', textAlign: 'center', marginBottom: '1.5rem' }}>
+                <p style={{ color: '#6b7280', fontSize: '0.85rem', textAlign: 'center', marginBottom: '1.5rem' }}>
                     Are you sure you want to permanently delete <strong style={{ color: '#f87171' }}>{rule.name}</strong>?
                     This cannot be undone.
                 </p>
                 <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
                     <button onClick={onCancel}
-                        style={{ padding: '9px 20px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', cursor: 'pointer', fontWeight: 600 }}>
+                        style={{ padding: '9px 20px', borderRadius: 8, background: '#f5f3ff', border: '1.5px solid #ddd6fe', color: '#6b7280', cursor: 'pointer', fontWeight: 600 }}>
                         Cancel
                     </button>
                     <button onClick={onConfirm}
@@ -101,7 +100,8 @@ function ConfirmDialog({ rule, onConfirm, onCancel }) {
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
@@ -110,6 +110,12 @@ function ConfirmDialog({ rule, onConfirm, onCancel }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
     const isEdit = Boolean(editingRule);
+
+    // Lock background scroll while modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = ''; };
+    }, []);
 
     const buildInitialForm = () => {
         if (isEdit) {
@@ -307,28 +313,19 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
 
     const inp = (field) => ({
         width: '100%', padding: '8px 12px', borderRadius: 8,
-        background: 'var(--color-surface-alt)',
-        border: errors[field] ? '2px solid #ef4444' : '2px solid #c4b5fd',
-        color: '#3b0764', fontSize: '0.85rem', outline: 'none', fontWeight: 500, boxSizing: 'border-box'
+        background: '#f5f3ff',
+        border: errors[field] ? '2px solid #ef4444' : '1.5px solid #c4b5fd',
+        color: '#1e1b4b', fontSize: '0.85rem', outline: 'none', fontWeight: 500, boxSizing: 'border-box'
     });
     const lbl = { display: 'block', color: '#4c1d95', fontSize: '0.8rem', marginBottom: 4, fontWeight: 700 };
 
     const availableEffects = isHardConstraint ? EFFECT_TYPES_HARD : EFFECT_TYPES_SOFT;
 
-    return (
-        <div style={{
-            position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.4)',
-            backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', padding: 20
-        }}>
-            <div className="glass" style={{
-                background: 'var(--color-surface)', border: '2px solid #a78bfa', borderRadius: 16,
-                padding: '2rem', width: '100%', maxWidth: 820,
-                maxHeight: '90vh', overflowY: 'auto',
-                boxShadow: '0 10px 40px rgba(139,92,246,0.15)'
-            }}>
+    return createPortal(
+        <div className="admin-modal-overlay light-theme">
+            <div className="admin-modal-content" style={{ maxWidth: 820 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2 style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--color-text)' }}>
+                    <h2 style={{ fontWeight: 700, fontSize: '1.2rem', color: '#1e1b4b' }}>
                         {isEdit ? `✏️ Edit Rule: ${editingRule.name}` : '➕ Create New Rule'}
                     </h2>
                     <button type="button" onClick={onClose}
@@ -479,9 +476,9 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
                                         display: 'grid',
                                         gridTemplateColumns: '1.2fr 1.5fr 1.2fr 1.5fr auto',
                                         gap: 8, alignItems: 'center',
-                                        background: 'var(--color-surface-alt)',
+                                        background: '#f5f3ff',
                                         padding: 10, borderRadius: 8,
-                                        border: '1px solid rgba(255,255,255,0.05)',
+                                        border: '1px solid #ede9fe',
                                         /* Use a high fixed z-index so dropdowns never get clipped */
                                         position: 'relative',
                                         zIndex: 500 - index
@@ -604,7 +601,7 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
                     {/* ─── Actions ─────────────────────────────────────────────── */}
                     <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 16 }}>
                         <button type="button" onClick={onClose}
-                            style={{ padding: '10px 22px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', cursor: 'pointer' }}>
+                            style={{ padding: '10px 22px', borderRadius: 8, background: '#f5f3ff', border: '1.5px solid #ddd6fe', color: '#6b7280', cursor: 'pointer', fontWeight: 500 }}>
                             Cancel
                         </button>
                         <button
@@ -624,7 +621,8 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
 
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
@@ -649,7 +647,7 @@ function EffectBadge({ effectType, effectValue }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Admin Rules Page
 // ─────────────────────────────────────────────────────────────────────────────
-export default function AdminRules() {
+export default function AdminRules({ embedded = false, externalShowToast } = {}) {
     const { isAdmin } = useAuth();
     const navigate = useNavigate();
 
@@ -661,10 +659,12 @@ export default function AdminRules() {
     const [deletingRule, setDeletingRule] = useState(null);
     const [toast, setToast] = useState({ msg: '', isError: false });
 
-    const showToast = useCallback((msg, isError = false) => {
+    const internalShowToast = useCallback((msg, isError = false) => {
         setToast({ msg, isError });
         setTimeout(() => setToast({ msg: '', isError: false }), 4000);
     }, []);
+
+    const showToast = embedded && externalShowToast ? externalShowToast : internalShowToast;
 
     // ── Separate fetches so a categories failure never hides existing rules ──
     useEffect(() => {
@@ -746,50 +746,51 @@ export default function AdminRules() {
         );
     }
 
-    return (
-        <div className="light-theme" style={{ minHeight: '100vh', background: 'var(--bg-color)', padding: '7rem 1.5rem 3rem', position: 'relative' }}>
-            <div style={{ maxWidth: 1300, margin: '0 auto' }}>
-                <Toast toast={toast} />
+    const content = (
+        <>
+            {!embedded && <Toast toast={toast} />}
 
-                {/* Confirm delete dialog */}
-                {deletingRule && (
-                    <ConfirmDialog rule={deletingRule} onConfirm={handleDelete} onCancel={cancelDelete} />
-                )}
+            {/* Confirm delete dialog */}
+            {deletingRule && (
+                <ConfirmDialog rule={deletingRule} onConfirm={handleDelete} onCancel={cancelDelete} />
+            )}
 
-                {/* Create / Edit modal */}
-                {showModal && (
-                    <RuleFormModal
-                        editingRule={editingRule}
-                        categories={categories}
-                        onClose={closeModal}
-                        onSuccess={handleFormSuccess}
-                    />
-                )}
+            {/* Create / Edit modal */}
+            {showModal && (
+                <RuleFormModal
+                    editingRule={editingRule}
+                    categories={categories}
+                    onClose={closeModal}
+                    onSuccess={handleFormSuccess}
+                />
+            )}
 
-                {/* Header */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: 16 }}>
-                    <div>
-                        <p style={{ color: '#38bdf8', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>
-                            Recommendation Engine
-                        </p>
-                        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', color: 'var(--color-text)', marginBottom: 4 }}>
-                            Manage Rules
-                        </h1>
-                        <p style={{ color: 'var(--color-muted)', fontSize: '0.85rem' }}>
-                            Define constraints and preferences affecting recommendation scoring.
-                        </p>
-                    </div>
-                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: 16 }}>
+                <div>
+                    <p style={{ color: embedded ? '#7c3aed' : '#38bdf8', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>
+                        Recommendation Engine
+                    </p>
+                    <h1 style={{ fontSize: embedded ? '1.9rem' : '2.2rem', fontWeight: 800, fontFamily: embedded ? 'Manrope, sans-serif' : 'Outfit, sans-serif', color: embedded ? '#1e1b4b' : 'var(--color-text)', marginBottom: 4 }}>
+                        ⚙️ Manage Rules
+                    </h1>
+                    <p style={{ color: embedded ? '#6b7280' : 'var(--color-muted)', fontSize: '0.85rem' }}>
+                        Define constraints and preferences affecting recommendation scoring.
+                    </p>
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    {!embedded && (
                         <button onClick={() => navigate('/admin')}
                             style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#64748b', cursor: 'pointer', fontSize: '0.9rem' }}>
                             ← Back to Dashboard
                         </button>
-                        <button onClick={openCreate}
-                            style={{ padding: '10px 22px', borderRadius: 10, background: 'linear-gradient(135deg, #0ea5e9, #3b82f6)', border: 'none', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
-                            + Create Rule
-                        </button>
-                    </div>
+                    )}
+                    <button onClick={openCreate}
+                        style={{ padding: '10px 22px', borderRadius: 10, background: embedded ? '#7c3aed' : 'linear-gradient(135deg, #0ea5e9, #3b82f6)', border: 'none', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem', boxShadow: embedded ? '0 4px 14px rgba(124,58,237,0.3)' : 'none' }}>
+                        + Create Rule
+                    </button>
                 </div>
+            </div>
 
                 {/* Rules Table */}
                 <div className="glass" style={{ overflow: 'hidden', borderRadius: 14, border: '2px solid #38bdf8', boxShadow: '0 4px 12px rgba(56,189,248,0.1)' }}>
@@ -929,6 +930,15 @@ export default function AdminRules() {
                         </div>
                     )}
                 </div>
+        </>
+    );
+
+    if (embedded) return <div className="admin-panel-enter">{content}</div>;
+
+    return (
+        <div className="light-theme" style={{ minHeight: '100vh', background: 'var(--bg-color)', padding: '7rem 1.5rem 3rem', position: 'relative' }}>
+            <div style={{ maxWidth: 1300, margin: '0 auto' }}>
+                {content}
             </div>
         </div>
     );
