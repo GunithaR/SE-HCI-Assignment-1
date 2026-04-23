@@ -72,7 +72,7 @@ function PriceRangeSlider({ min, max, low, high, onChange }) {
                 <input type="range" className="price-slider"
                     min={0} max={STEPS} step={1} value={lowStep}
                     onChange={handleMin}
-                    style={{ zIndex: lowStep >= STEPS - 1 ? 5 : 3 }} />
+                    style={{ zIndex: lowStep > STEPS / 2 ? 3 : 5 }} />
                 <input type="range" className="price-slider"
                     min={0} max={STEPS} step={1} value={highStep}
                     onChange={handleMax}
@@ -275,7 +275,7 @@ export default function Catalog() {
                     position: 'absolute', bottom: 0, left: 0, right: 0,
                     padding: '0 5% 40px',
                 }}>
-                    <p style={{ 
+                    <p style={{
                         color: '#c4b5fd', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', margin: '0 0 10px',
                         opacity: heroVisible ? 1 : 0, transform: heroVisible ? 'translateY(0)' : 'translateY(20px)', transition: 'all 0.6s ease 0.1s'
                     }}>
@@ -290,7 +290,7 @@ export default function Catalog() {
                     }}>
                         {hero?.title || 'Product Catalog'}
                     </h1>
-                    <p style={{ 
+                    <p style={{
                         color: 'rgba(255,255,255,0.82)', fontSize: '0.95rem', lineHeight: 1.7, margin: 0, maxWidth: 560,
                         opacity: heroVisible ? 1 : 0, transform: heroVisible ? 'translateY(0)' : 'translateY(20px)', transition: 'all 0.6s ease 0.3s'
                     }}>
@@ -443,10 +443,10 @@ export default function Catalog() {
                         )}
                     </div>
                 ) : (
-                    <div 
-                        key={activeCategoryId + pagination.page} 
+                    <div
+                        key={activeCategoryId + pagination.page}
                         className={gridVisible ? 'card-entrance' : ''}
-                        style={{ 
+                        style={{
                             display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.5rem',
                             opacity: gridVisible ? 1 : 0,
                             transition: 'opacity 0.3s ease'
