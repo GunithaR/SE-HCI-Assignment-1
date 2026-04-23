@@ -15,10 +15,11 @@ function Toast({ msg, isError }) {
 
 /* ── Navigation Items Config ─────────────────────────────────────────────── */
 const NAV_ITEMS = [
-    { id: 'analytics', icon: '📈', label: 'Analytics', sub: [{ id: 'history', icon: '📜', label: 'Rec. History' }] },
-    { id: 'products', icon: '📦', label: 'Product Management' },
-    { id: 'rules', icon: '⚙️', label: 'Rule Management' },
-    { id: 'users', icon: '👥', label: 'User Management' },
+    { id: 'analytics', icon: null, label: 'Analytics', sub: [{ id: 'history', icon: null, label: 'Rec. History' }] },
+    { id: 'products', icon: null, label: 'Product Management' },
+    { id: 'rules', icon: null, label: 'Rule Management' },
+    { id: 'users', icon: null, label: 'User Management' },
+    { id: 'catalog', icon: null, label: 'View Catalog' },
 ];
 
 /* ── Main Unified Dashboard ──────────────────────────────────────────────── */
@@ -47,6 +48,8 @@ export default function AdminDashboardUnified() {
         if (id === 'history') {
             setActiveSection('analytics');
             setAnalyticsTab('history');
+        } else if (id === 'catalog') {
+            navigate('/catalog');
         } else {
             setActiveSection(id);
             if (id === 'analytics') setAnalyticsTab('overview');
@@ -63,7 +66,7 @@ export default function AdminDashboardUnified() {
             <aside className="admin-sidebar">
                 {/* Brand */}
                 <div className="admin-sidebar-brand">
-                    <h2>🏠 L+ SIVILIMA</h2>
+                    <h2>L+ SIVILIMA</h2>
                     <p>Admin Dashboard</p>
                 </div>
 
@@ -75,7 +78,7 @@ export default function AdminDashboardUnified() {
                                 className={`admin-nav-item${activeSection === item.id ? ' active' : ''}`}
                                 onClick={() => handleNavClick(item.id)}
                             >
-                                <span className="nav-icon">{item.icon}</span>
+                                {item.icon ? <span className="nav-icon">{item.icon}</span> : null}
                                 {item.label}
                             </button>
                             {/* Sub items (e.g. Rec. History under Analytics) */}
@@ -87,7 +90,7 @@ export default function AdminDashboardUnified() {
                                             className={`admin-nav-item${analyticsTab === sub.id ? ' active' : ''}`}
                                             onClick={() => handleNavClick(sub.id)}
                                         >
-                                            <span className="nav-icon">{sub.icon}</span>
+                                            {sub.icon ? <span className="nav-icon">{sub.icon}</span> : null}
                                             {sub.label}
                                         </button>
                                     ))}
@@ -97,21 +100,7 @@ export default function AdminDashboardUnified() {
                     ))}
                 </nav>
 
-                {/* Footer */}
-                <div className="admin-sidebar-footer">
-                    <button className="catalog-link" onClick={() => navigate('/catalog')}>
-                        <span>🔗</span> View Catalog
-                    </button>
-                    <div className="admin-user-info">
-                        <div>
-                            <div className="user-email">{user?.email}</div>
-                            <span className={`user-role ${isFullAdmin ? 'role-admin' : 'role-sub-admin'}`}>
-                                {user?.role === 'SUB_ADMIN' ? 'Sub-Admin' : 'Admin'}
-                            </span>
-                        </div>
-                        <button className="logout-btn" onClick={handleLogout}>Logout</button>
-                    </div>
-                </div>
+                {/* Footer intentionally removed (no logout / user label in sidebar) */}
             </aside>
 
             {/* ── Content Area ─────────────────────────────────────────── */}

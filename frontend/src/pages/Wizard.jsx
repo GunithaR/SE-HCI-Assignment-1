@@ -122,12 +122,12 @@ function extractLabel(text, questionId) {
    STRATEGY DISPLAY NAMES
    ══════════════════════════════════════════════════════════════ */
 const STRATEGY_META = {
-  BUDGET: { label: 'Budget', icon: '💰' },
-  ENVIRONMENT: { label: 'Environment', icon: '🌍' },
-  PERFORMANCE: { label: 'Performance', icon: '⚡' },
-  STYLE: { label: 'Style', icon: '🎨' },
-  MAINTENANCE: { label: 'Maintenance', icon: '🔧' },
-  USAGE: { label: 'Usage', icon: '🏠' },
+  BUDGET: { label: 'Budget', icon: null },
+  ENVIRONMENT: { label: 'Environment', icon: null },
+  PERFORMANCE: { label: 'Performance', icon: null },
+  STYLE: { label: 'Style', icon: null },
+  MAINTENANCE: { label: 'Maintenance', icon: null },
+  USAGE: { label: 'Usage', icon: null },
 };
 
 const scoreColor = (s) => s >= 8 ? '#16a34a' : s >= 5 ? '#d97706' : '#dc2626';
@@ -204,10 +204,10 @@ function ResultCard({ product, rank, isSelected, onToggleSelect }) {
             }}
           />
         ) : (
-          <div className="image-placeholder">🏗️</div>
+          <div className="image-placeholder">No image</div>
         )}
         <div className={`result-rank-badge${isTop ? ' top' : ''}`}>
-          {isTop ? '⭐ #1 Top Pick' : `#${rank}`}
+          {isTop ? '#1 Top Pick' : `#${rank}`}
         </div>
       </div>
 
@@ -218,7 +218,7 @@ function ResultCard({ product, rank, isSelected, onToggleSelect }) {
             title="Select for comparison" />
         </div>
       ) : (
-        <div className="result-excluded-badge">⛔ Excluded</div>
+  <div className="result-excluded-badge">Excluded</div>
       )}
 
       {/* Content section */}
@@ -242,10 +242,10 @@ function ResultCard({ product, rank, isSelected, onToggleSelect }) {
             <ScoreRing score={totalScore} />
             <div className="score-pills">
               {strategyScores && Object.entries(strategyScores).map(([key, val]) => {
-                const meta = STRATEGY_META[key] || { label: key, icon: '📊' };
+        const meta = STRATEGY_META[key] || { label: key, icon: null };
                 return (
                   <div key={key} className="score-pill">
-                    <span className="pill-icon">{meta.icon}</span>
+          {meta.icon ? <span className="pill-icon">{meta.icon}</span> : null}
                     <span className="pill-label">{meta.label}</span>
                     <span className="pill-val" style={{ color: scoreColor(val) }}>{val.toFixed(1)}/10</span>
                   </div>
@@ -269,7 +269,7 @@ function ResultCard({ product, rank, isSelected, onToggleSelect }) {
         {/* Trade-offs */}
         {tradeOffs && tradeOffs.length > 0 && (
           <div className="result-tradeoffs">
-            <h4>⚠️ Trade-offs</h4>
+            <h4>Trade-offs</h4>
             {tradeOffs.map((t, i) => <p key={i}>{t}</p>)}
           </div>
         )}
@@ -277,7 +277,7 @@ function ResultCard({ product, rank, isSelected, onToggleSelect }) {
         {/* Rule adjustments */}
         {!excluded && appliedRuleNames && appliedRuleNames.length > 0 && (
           <div className="result-rules">
-            <h4>📋 Rule Adjustments</h4>
+            <h4>Rule Adjustments</h4>
             <div className="rule-adj" style={{ color: ruleAdjustment > 0 ? '#16a34a' : ruleAdjustment < 0 ? '#dc2626' : '#7c7589' }}>
               {ruleAdjustment > 0 ? '+' : ''}{ruleAdjustment?.toFixed(1)} pts
             </div>
@@ -288,7 +288,7 @@ function ResultCard({ product, rank, isSelected, onToggleSelect }) {
         {/* Excluded reasons */}
         {excluded && excludedByRules && excludedByRules.length > 0 && (
           <div className="result-tradeoffs">
-            <h4>⛔ Excluded Reasons</h4>
+            <h4>Excluded Reasons</h4>
             {excludedByRules.map((r, i) => <p key={i}>{r}</p>)}
           </div>
         )}
@@ -321,10 +321,10 @@ function ComparisonPanel({ data, onClose }) {
     <div className="comparison-overlay" onClick={onClose}>
       <div className="comparison-modal" onClick={e => e.stopPropagation()}>
         <div className="comparison-modal-header">
-          <h2>⚖️ Product Comparison</h2>
+          <h2>Product Comparison</h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {fallbackUsed && <span className="fallback-pill" style={{ background: '#fef3c7', color: '#92400e', padding: '4px 10px', borderRadius: '9999px', fontSize: '.75rem', fontWeight: 700 }}>⚠️ Fallback</span>}
-            <button className="modal-close" onClick={onClose}>✕</button>
+            {fallbackUsed && <span className="fallback-pill" style={{ background: '#fef3c7', color: '#92400e', padding: '4px 10px', borderRadius: '9999px', fontSize: '.75rem', fontWeight: 700 }}>Fallback</span>}
+            <button className="modal-close" onClick={onClose} aria-label="Close">Close</button>
           </div>
         </div>
         {comparativeNarrative && (
@@ -476,7 +476,7 @@ function ResultsView({ resultsData, answers, visibleQuestions, selectedCategory,
       {/* Compare banner */}
       {selectedIds.size === 0 && !showComparison && (
         <div className="compare-banner">
-          <span className="compare-banner-icon">⚖️</span>
+          <span className="compare-banner-icon">Compare</span>
           <div className="compare-banner-text">
             <h3>Compare Products</h3>
             <p>Select 2 or more products using the checkboxes to compare them side-by-side, including price, durability, maintenance, and more!</p>
@@ -508,14 +508,14 @@ function ResultsView({ resultsData, answers, visibleQuestions, selectedCategory,
       {selectedIds.size > 0 && !showComparison && (
         <div className="compare-toolbar">
           <div className="toolbar-info">
-            <span className="selected-count">✓ {selectedIds.size} product{selectedIds.size !== 1 ? 's' : ''} selected</span>
+            <span className="selected-count">{selectedIds.size} product{selectedIds.size !== 1 ? 's' : ''} selected</span>
           </div>
           <div className="toolbar-actions">
-            {compareError && <span className="toolbar-error">⚠️ {compareError}</span>}
+            {compareError && <span className="toolbar-error">{compareError}</span>}
             <button className="toolbar-btn primary" onClick={handleCompare} disabled={comparisonLoading}>
-              {comparisonLoading ? '⏳ Comparing...' : '⚖️ Compare Selected'}
+              {comparisonLoading ? 'Comparing...' : 'Compare Selected'}
             </button>
-            <button className="toolbar-btn secondary" onClick={clearSelection} disabled={comparisonLoading}>✕ Clear</button>
+            <button className="toolbar-btn secondary" onClick={clearSelection} disabled={comparisonLoading}>Clear</button>
           </div>
         </div>
       )}
@@ -524,7 +524,7 @@ function ResultsView({ resultsData, answers, visibleQuestions, selectedCategory,
       {additionalInsights.length > 0 && !showComparison && (
         <div className="results-insights">
           <div className="insights-head">
-            <h3>💡 Additional Insights</h3>
+            <h3>Additional Insights</h3>
             {augmentationFallbackUsed && <span className="fallback-pill">Rule-based fallback</span>}
           </div>
           {additionalInsights.map((ins, i) => (
@@ -861,7 +861,7 @@ export default function Wizard() {
         {/* Error */}
         {error && (
           <div className="wizard-error-box">
-            <span>⚠️</span> {error}
+            {error}
           </div>
         )}
 
@@ -1007,7 +1007,7 @@ export default function Wizard() {
                   className="mobile-sidebar-toggle"
                   onClick={() => setMobileSheetOpen(true)}
                 >
-                  📋 View Answers
+                  View Answers
                 </button>
 
                 <div
