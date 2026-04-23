@@ -40,7 +40,7 @@ function ProductRow({ title, products, loading, onViewAll }) {
                         onClick={onViewAll}
                         style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: '#7c3aed', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}
                     >
-                        View All <span style={{ fontSize: 13 }}>→</span>
+                        View All
                     </button>
                 </div>
             </div>
@@ -308,7 +308,7 @@ export default function Home() {
                                 onClick={() => { setActiveCatId(null); setSearch(''); }}
                                 style={{ background: '#ede9fe', border: 'none', color: '#7c3aed', cursor: 'pointer', fontWeight: 600, fontSize: 13, borderRadius: 20, padding: '6px 16px' }}
                             >
-                                ← Show All
+                                Show All
                             </button>
                         </div>
                         {loading ? (
