@@ -171,8 +171,18 @@ const WhyCheckIcon = () => (
 function ResultCard({ product, rank, isSelected, onToggleSelect }) {
   const {
     productName, brandName, basePrice, totalScore, strategyScores,
-    tradeOffs, excluded, ruleAdjustment, appliedRuleNames, excludedByRules, mainImageUrl,
+    tradeOffs, excluded, ruleAdjustment, appliedRuleNames, excludedByRules, imageUrl,
   } = product;
+
+  const BACKEND_ORIGIN = (import.meta?.env?.VITE_BACKEND_ORIGIN || 'http://localhost:8080').replace(/\/$/, '');
+  const toAbsoluteImageUrl = (url) => {
+    if (!url) return null;
+    if (/^https?:\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')) return url;
+    if (url.startsWith('/')) return `${BACKEND_ORIGIN}${url}`;
+    return `${BACKEND_ORIGIN}/${url}`;
+  };
+
+  const resolvedImageUrl = toAbsoluteImageUrl(imageUrl);
 
   // Split explanation into bullets
   const explanation = product.explanation || 'This product is recommended based on your preferences.';
@@ -184,8 +194,15 @@ function ResultCard({ product, rank, isSelected, onToggleSelect }) {
     <div className={`result-card${isTop ? ' top-pick' : ''}${excluded ? ' excluded' : ''}`}>
       {/* Image section */}
       <div className="result-card-image">
-        {mainImageUrl ? (
-          <img src={mainImageUrl} alt={productName} />
+        {resolvedImageUrl ? (
+          <img
+            src={resolvedImageUrl}
+            alt={productName}
+            onError={(e) => {
+              // If the upload route isn't publicly served, this will error and we fall back to placeholder.
+              e.currentTarget.style.display = 'none';
+            }}
+          />
         ) : (
           <div className="image-placeholder">🏗️</div>
         )}
