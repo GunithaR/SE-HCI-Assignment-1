@@ -66,7 +66,7 @@
 .wizard-step-circle.done {
   background: #630ed4;
   color: #fff;
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
 
 .wizard-step-circle.active {
@@ -307,13 +307,13 @@
   background: #630ed4;
   color: #fff;
   font-weight: 700;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
 .wizard-nav-btn.next-btn:hover:not(:disabled) {
   background: #7c3aed;
   transform: translateY(-2px);
-  box-shadow: 0 20px 30px -5px rgba(99,14,212,0.25);
+  box-shadow: 0 20px 30px -5px rgba(99, 14, 212, 0.25);
 }
 
 .wizard-nav-btn:disabled {
@@ -488,13 +488,23 @@
 }
 
 @keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* ── Review Screen (white theme) ─────────────────────────────── */
@@ -575,13 +585,17 @@
 .wizard-spinner-sm {
   width: 18px;
   height: 18px;
-  border: 2.5px solid rgba(255,255,255,0.3);
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .wizard-error-box {
   background: rgba(239, 68, 68, 0.08);
@@ -603,31 +617,98 @@
 }
 
 @keyframes wizFadeIn {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .wizard-sidebar { display: none; }
-  .mobile-sidebar-toggle { display: flex; align-items: center; gap: 8px; }
-  .wizard-options-grid.category-grid { grid-template-columns: repeat(2, 1fr); }
-  .wizard-steps { gap: 20px; overflow-x: auto; justify-content: flex-start; padding-bottom: 8px; }
-  .wizard-steps::before { left: 20px; right: 20px; }
-  .wizard-q-heading { font-size: 1.5rem; }
-  .wizard-question-panel { padding: 28px; border-radius: 32px; }
+  .wizard-sidebar {
+    display: none;
+  }
+
+  .mobile-sidebar-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .wizard-options-grid.category-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .wizard-steps {
+    gap: 20px;
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding-bottom: 8px;
+  }
+
+  .wizard-steps::before {
+    left: 20px;
+    right: 20px;
+  }
+
+  .wizard-q-heading {
+    font-size: 1.5rem;
+  }
+
+  .wizard-question-panel {
+    padding: 28px;
+    border-radius: 32px;
+  }
 }
 
 @media (max-width: 600px) {
-  .wizard-options-grid { grid-template-columns: 1fr; }
-  .wizard-options-grid.category-grid { grid-template-columns: 1fr; }
-  .wizard-question-panel { padding: 20px; border-radius: 24px; min-height: auto; }
-  .wizard-nav-btn { padding: 0 24px; height: 46px; font-size: 14px; }
-  .wizard-q-heading { font-size: 1.3rem; }
-  .wizard-steps { gap: 14px; }
-  .wizard-step-label { font-size: 9px; }
-  .wizard-step-circle { width: 32px; height: 32px; font-size: 12px; }
-  .wizard-step-circle.active { width: 40px; height: 40px; }
+  .wizard-options-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wizard-options-grid.category-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wizard-question-panel {
+    padding: 20px;
+    border-radius: 24px;
+    min-height: auto;
+  }
+
+  .wizard-nav-btn {
+    padding: 0 24px;
+    height: 46px;
+    font-size: 14px;
+  }
+
+  .wizard-q-heading {
+    font-size: 1.3rem;
+  }
+
+  .wizard-steps {
+    gap: 14px;
+  }
+
+  .wizard-step-label {
+    font-size: 9px;
+  }
+
+  .wizard-step-circle {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .wizard-step-circle.active {
+    width: 40px;
+    height: 40px;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1408,16 +1489,6 @@
   gap: 8px;
 }
 
-.results-footer .res-btn.outline {
-  background: transparent;
-  color: #630ed4;
-  border: 2px solid #630ed4;
-}
-
-.results-footer .res-btn.outline:hover {
-  background: rgba(99, 14, 212, 0.06);
-  transform: translateY(-2px);
-}
 
 .results-footer .res-btn.filled {
   background: linear-gradient(135deg, #630ed4, #7c3aed);
@@ -1444,32 +1515,40 @@
     flex-direction: column;
     min-height: auto;
   }
+
   .result-card-image {
     width: 100%;
     min-height: 200px;
     max-height: 260px;
   }
+
   .result-card-content {
     padding: 20px;
   }
+
   .results-answer-chips {
     border-radius: 24px;
     padding: 12px 16px;
   }
+
   .compare-banner {
     border-radius: 20px;
     padding: 16px 20px;
   }
+
   .results-page-header h1 {
     font-size: 2rem;
   }
+
   .result-scores {
     flex-direction: column;
     align-items: flex-start;
   }
+
   .comparison-modal {
     border-radius: 24px;
   }
+
   .comparison-modal-header,
   .comparison-table-wrap,
   .comparison-modal-footer {
@@ -1483,27 +1562,34 @@
     flex-direction: column;
     gap: 6px;
   }
+
   .result-card-price {
     text-align: left;
   }
+
   .result-card-name {
     font-size: 1.2rem;
   }
+
   .score-pills {
     gap: 6px;
   }
+
   .score-pill {
     font-size: 0.72rem;
     padding: 4px 10px;
   }
+
   .results-page-header h1 {
     font-size: 1.6rem;
     letter-spacing: -1px;
   }
+
   .results-footer {
     flex-direction: column;
     align-items: center;
   }
+
   .compare-toolbar {
     border-radius: 20px;
     flex-direction: column;
