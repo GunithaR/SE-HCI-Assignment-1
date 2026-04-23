@@ -49,10 +49,11 @@ public class BudgetStrategy implements RecommendationStrategy {
     }
 
     private String normalizeBudget(String answer) {
-        return switch (answer.toLowerCase()) {
-            case "economy", "low", "affordable", "cost", "budget" -> "LOW";
-            case "mid-range", "mid", "medium", "moderate" -> "MEDIUM";
-            case "premium", "high", "luxury" -> "HIGH";
+        // Answers are pre-normalised by AnswerNormalizationService;
+        // this is a safety net for edge cases.
+        String upper = answer.toUpperCase().trim();
+        return switch (upper) {
+            case "LOW", "MEDIUM", "HIGH" -> upper;
             default -> "MEDIUM";
         };
     }

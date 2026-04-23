@@ -1,5 +1,8 @@
 package com.constructionplatform.app.controller;
 
+import com.constructionplatform.app.dto.recommendation.ComparisonRequestDTO;
+import com.constructionplatform.app.dto.recommendation.ComparisonResponseDTO;
+import com.constructionplatform.app.dto.recommendation.HybridRecommendationResponseDTO;
 import com.constructionplatform.app.dto.recommendation.RecommendationRequestDTO;
 import com.constructionplatform.app.dto.recommendation.RecommendationResponseDTO;
 import com.constructionplatform.app.service.RecommendationService;
@@ -27,5 +30,22 @@ public class RecommendationController {
             @Valid @RequestBody RecommendationRequestDTO request) {
         List<RecommendationResponseDTO> recommendations = recommendationService.generateRecommendations(request);
         return ResponseEntity.ok(recommendations);
+    }
+
+    @PostMapping("/hybrid")
+    public ResponseEntity<HybridRecommendationResponseDTO> generateHybridRecommendations(
+            @Valid @RequestBody RecommendationRequestDTO request) {
+        HybridRecommendationResponseDTO recommendations = recommendationService.generateHybridRecommendations(request);
+        return ResponseEntity.ok(recommendations);
+    }
+
+    /**
+     * Compare two or more recommended products side-by-side.
+     */
+    @PostMapping("/compare")
+    public ResponseEntity<ComparisonResponseDTO> compareProducts(
+            @Valid @RequestBody ComparisonRequestDTO request) {
+        ComparisonResponseDTO comparison = recommendationService.compareRecommendations(request);
+        return ResponseEntity.ok(comparison);
     }
 }

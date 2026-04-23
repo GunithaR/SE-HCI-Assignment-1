@@ -1,22 +1,228 @@
 import { useState, useRef, useEffect } from 'react';
+import { sendChatMessages } from '../services/chatService';
+import ReactMarkdown from 'react-markdown';
 
-const SUGGESTIONS = [
-    { q: 'What is budget level?', a: 'Budget levels (LOW / MEDIUM / HIGH) reflect the overall cost range of a product. LOW is economy-friendly, HIGH is premium.' },
-    { q: 'What climates are supported?', a: 'We support TROPICAL, ARID, TEMPERATE, COLD, and ALL (universal). Choose the climate closest to your build location.' },
-    { q: 'How does the recommendation engine work?', a: 'Our rule-based engine filters active products that match your chosen budget and climate, then ranks them by durability rating (highest first).' },
-    { q: 'Can I compare products?', a: 'Yes! On any results page, check the boxes on product cards to add them to the comparison tray.' },
-    { q: 'How do I contact support?', a: 'Please email support@buildwise.com or use the live chat during business hours.' },
-];
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+const fmtTime = (d) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-/**
- * Floating Assistant Widget.
- * A minimalist chatbot bubble that answers common questions using a
- * keyword-match approach — no backend required for Sprint 1.
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// Chat Header — WhatsApp-style purple gradient
+// ─────────────────────────────────────────────────────────────────────────────
+const ChatHeader = ({ onClose }) => (
+    <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '14px 16px',
+        background: 'linear-gradient(135deg, #7c3aed, #6366f1)',
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+    }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* Avatar */}
+            <div style={{
+                position: 'relative', width: 38, height: 38,
+                borderRadius: '50%', background: 'rgba(255,255,255,0.18)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                backdropFilter: 'blur(4px)', flexShrink: 0,
+            }}>
+                <span style={{ fontSize: 18, lineHeight: 1 }}>🏗️</span>
+                <span style={{
+                    position: 'absolute', bottom: 0, right: 0,
+                    width: 10, height: 10, borderRadius: '50%',
+                    background: '#22c55e', border: '2px solid #6366f1',
+                }} />
+            </div>
+            {/* Title */}
+            <div>
+                <h3 style={{
+                    fontFamily: 'Manrope, sans-serif', fontWeight: 700,
+                    fontSize: '0.9rem', color: '#fff', margin: 0, letterSpacing: '-0.2px',
+                }}>L+ Sivilima Assistant</h3>
+                <p style={{
+                    fontSize: '0.68rem', color: 'rgba(255,255,255,0.75)',
+                    margin: 0, fontWeight: 500,
+                }}>Online · Typically replies instantly</p>
+            </div>
+        </div>
+        {/* Close */}
+        <button
+            onClick={onClose}
+            style={{
+                background: 'rgba(255,255,255,0.1)', border: 'none',
+                color: 'rgba(255,255,255,0.8)', cursor: 'pointer',
+                width: 30, height: 30, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '1.1rem', transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+        >✕</button>
+    </div>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Message List — WhatsApp chat area with wallpaper + tailed bubbles
+// ─────────────────────────────────────────────────────────────────────────────
+const ChatMessageList = ({ messages, typing, bottomRef }) => (
+    <div
+        className="flex-1 chat-scroll chat-wallpaper"
+        style={{
+            overflowY: 'auto', padding: '16px 12px 8px', minHeight: 0,
+            display: 'flex', flexDirection: 'column', gap: 6,
+        }}
+    >
+        {messages.map((msg, idx) => {
+            const isUser = msg.from === 'user';
+            const showAvatar = !isUser && (idx === 0 || messages[idx - 1]?.from === 'user');
+
+            return (
+                <div
+                    key={idx}
+                    className="msg-anim"
+                    style={{
+                        display: 'flex', flexDirection: 'column',
+                        alignItems: isUser ? 'flex-end' : 'flex-start',
+                        marginBottom: 2,
+                    }}
+                >
+                    {/* Bot avatar row */}
+                    {showAvatar && (
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            marginBottom: 4, marginLeft: 4,
+                        }}>
+                            <div style={{
+                                width: 20, height: 20, borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                flexShrink: 0,
+                            }}>
+                                <span style={{ fontSize: 9, color: '#fff', fontWeight: 800 }}>AI</span>
+                            </div>
+                            <span style={{ fontSize: '0.65rem', color: '#7c3aed', fontWeight: 600 }}>Assistant</span>
+                        </div>
+                    )}
+
+                    {/* Bubble */}
+                    <div
+                        className={isUser ? 'chat-bubble-user' : 'chat-bubble-bot'}
+                        style={{
+                            maxWidth: '82%',
+                            padding: '9px 12px 6px',
+                            color: isUser ? '#fff' : '#1e1b4b',
+                            fontSize: '0.84rem',
+                            lineHeight: 1.55,
+                            overflowWrap: 'anywhere',
+                            wordBreak: 'break-word',
+                        }}
+                    >
+                        {isUser ? (
+                            <div>{msg.text}</div>
+                        ) : (
+                            <div className="prose prose-sm max-w-none" style={{ color: '#1e1b4b' }}>
+                                <ReactMarkdown>{msg.text}</ReactMarkdown>
+                            </div>
+                        )}
+                        {/* Timestamp */}
+                        <div
+                            className="chat-timestamp"
+                            style={{
+                                textAlign: 'right',
+                                color: isUser ? 'rgba(255,255,255,0.65)' : '#9ca3af',
+                            }}
+                        >
+                            {fmtTime(msg.time || new Date())}
+                        </div>
+                    </div>
+                </div>
+            );
+        })}
+
+        {/* Typing indicator */}
+        {typing && (
+            <div className="msg-anim" style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
+                <div
+                    className="chat-bubble-bot"
+                    style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 3 }}
+                >
+                    <span className="typing-dot" />
+                    <span className="typing-dot" />
+                    <span className="typing-dot" />
+                </div>
+            </div>
+        )}
+        <div ref={bottomRef} />
+    </div>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Input Area — WhatsApp-style pill input with send button
+// ─────────────────────────────────────────────────────────────────────────────
+const ChatInputArea = ({ input, setInput, onSend }) => {
+    const handleKey = (e) => { if (e.key === 'Enter') onSend(); };
+
+    return (
+        <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 12px',
+            background: '#fff',
+            borderTop: '1px solid #ede9fe',
+        }}>
+            {/* Input pill */}
+            <div style={{
+                flex: 1, display: 'flex', alignItems: 'center',
+                background: '#f5f3ff', borderRadius: 24,
+                padding: '0 16px', border: '1px solid #ede9fe',
+                transition: 'border-color 0.2s, box-shadow 0.2s',
+            }}>
+                <input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKey}
+                    placeholder="Type a message..."
+                    style={{
+                        flex: 1, border: 'none', outline: 'none',
+                        background: 'transparent', color: '#1e1b4b',
+                        fontSize: '0.85rem', padding: '10px 0',
+                        fontFamily: 'Inter, sans-serif', fontWeight: 500,
+                    }}
+                />
+            </div>
+
+            {/* Send button */}
+            <button
+                onClick={onSend}
+                disabled={!input.trim()}
+                style={{
+                    width: 40, height: 40, borderRadius: '50%',
+                    background: input.trim()
+                        ? 'linear-gradient(135deg, #7c3aed, #6366f1)'
+                        : '#e5e7eb',
+                    border: 'none', cursor: input.trim() ? 'pointer' : 'default',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, transition: 'all 0.2s',
+                    boxShadow: input.trim() ? '0 4px 12px rgba(124,58,237,0.3)' : 'none',
+                }}
+            >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 2 }}>
+                    <path d="M22 2L11 13" /><path d="M22 2L15 22L11 13L2 9L22 2Z" />
+                </svg>
+            </button>
+        </div>
+    );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Floating Assistant Widget
+// ─────────────────────────────────────────────────────────────────────────────
 export default function AssistantWidget() {
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState([
-        { from: 'bot', text: 'Hi! I\'m your L+ SIVILIMA Assistant 👷 Ask me anything about construction materials or how this platform works.' },
+        {
+            from: 'bot',
+            text: "Hi! I'm your **L+ SIVILIMA Assistant** 👷\n\nAsk me anything about construction materials or how this platform works.",
+            time: new Date(),
+        },
     ]);
     const [input, setInput] = useState('');
     const [typing, setTyping] = useState(false);
@@ -27,136 +233,76 @@ export default function AssistantWidget() {
         if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, open]);
 
-    const findAnswer = (query) => {
-        const lower = query.toLowerCase();
-        const match = SUGGESTIONS.find(
-            (s) =>
-                s.q.toLowerCase().split(' ').some((word) => lower.includes(word)) ||
-                lower.includes(s.q.toLowerCase().slice(0, 12))
-        );
-        return match
-            ? match.a
-            : "I'm not sure about that yet! Try asking about budget levels, climates, or how recommendations work.";
-    };
-
-    const send = () => {
+    const send = async () => {
         const trimmed = input.trim();
         if (!trimmed) return;
 
-        setMessages((prev) => [...prev, { from: 'user', text: trimmed }]);
+        const newMsg = { from: 'user', text: trimmed, time: new Date() };
+        setMessages((prev) => [...prev, newMsg]);
         setInput('');
         setTyping(true);
 
-        setTimeout(() => {
-            setMessages((prev) => [...prev, { from: 'bot', text: findAnswer(trimmed) }]);
+        try {
+            const updatedHistory = [...messages, newMsg];
+            const botReply = await sendChatMessages(updatedHistory);
+            setMessages((prev) => [...prev, { from: 'bot', text: botReply, time: new Date() }]);
+        } catch (error) {
+            setMessages((prev) => [...prev, {
+                from: 'bot',
+                text: "I'm having trouble connecting right now. Please try again later.",
+                time: new Date(),
+            }]);
+        } finally {
             setTyping(false);
-        }, 700);
-    };
-
-    const handleKey = (e) => {
-        if (e.key === 'Enter') send();
+        }
     };
 
     return (
-        <>
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
             {/* Chat panel */}
             {open && (
                 <div
-                    id="assistant-panel"
-                    className="light-theme fixed bottom-24 right-6 z-50 w-80 glass shadow-2xl flex flex-col overflow-hidden fade-in-up"
-                    style={{ maxHeight: '420px', background: 'var(--color-surface)', border: '2px solid #a78bfa', boxShadow: '0 10px 40px rgba(139,92,246,0.15)', color: 'var(--color-text)' }}
+                    className="mb-4 fade-in-up"
+                    style={{
+                        width: 380,
+                        maxWidth: 'calc(100vw - 48px)',
+                        maxHeight: 520,
+                        borderRadius: 18,
+                        overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        background: '#fff',
+                        border: '1px solid #ede9fe',
+                        boxShadow: '0 12px 48px rgba(124, 58, 237, 0.18), 0 4px 12px rgba(0,0,0,0.08)',
+                    }}
                 >
-                    {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
-                        <div className="flex items-center gap-2">
-                            <span className="text-lg">🤖</span>
-                            <span className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>L+ SIVILIMA Assistant</span>
-                            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                        </div>
-                        <button
-                            id="assistant-close-btn"
-                            onClick={() => setOpen(false)}
-                            className="text-slate-400 hover:text-white transition-colors text-lg leading-none"
-                        >
-                            ×
-                        </button>
-                    </div>
-
-                    {/* Messages */}
-                    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" style={{ maxHeight: '280px' }}>
-                        {messages.map((msg, idx) => (
-                            <div
-                                key={idx}
-                                className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}
-                            >
-                                <div
-                                    className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${msg.from === 'user'
-                                        ? 'bg-violet-600 text-white rounded-br-sm'
-                                        : 'rounded-bl-sm'
-                                        }`}
-                                    style={msg.from !== 'user' ? { background: 'var(--color-surface-alt)', color: '#3b0764', border: '1px solid #c4b5fd', fontWeight: 500 } : {}}
-                                >
-                                    {msg.text}
-                                </div>
-                            </div>
-                        ))}
-                        {typing && (
-                            <div className="flex justify-start">
-                                <div className="px-4 py-2 rounded-2xl text-sm" style={{ background: 'var(--color-surface-alt)', color: 'var(--color-muted)', border: '1px solid var(--color-border)' }}>
-                                    <span className="animate-pulse">● ● ●</span>
-                                </div>
-                            </div>
-                        )}
-                        <div ref={bottomRef} />
-                    </div>
-
-                    {/* Quick suggestions */}
-                    <div className="px-4 pb-2 flex gap-2 overflow-x-auto">
-                        {['Budget levels', 'Climates', 'How it works'].map((hint) => (
-                            <button
-                                key={hint}
-                                onClick={() => { setInput(hint); }}
-                                className="text-xs whitespace-nowrap px-2 py-1 rounded-full border transition-colors"
-                                style={{ borderColor: 'var(--color-border)', color: 'var(--color-muted)' }}
-                                onMouseEnter={(e) => { e.target.style.borderColor = '#8b5cf6'; e.target.style.color = '#8b5cf6'; }}
-                                onMouseLeave={(e) => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.color = 'var(--color-muted)'; }}
-                            >
-                                {hint}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Input */}
-                    <div className="px-4 py-3 border-t flex gap-2" style={{ borderColor: 'var(--color-border)' }}>
-                        <input
-                            id="assistant-input"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={handleKey}
-                            placeholder="Ask a question…"
-                            className="input-field text-sm py-2"
-                            style={{ border: '2px solid #c4b5fd', color: '#3b0764', fontWeight: 500 }}
-                        />
-                        <button
-                            id="assistant-send-btn"
-                            onClick={send}
-                            className="btn-primary py-2 px-4 text-sm shrink-0"
-                        >
-                            ➤
-                        </button>
-                    </div>
+                    <ChatHeader onClose={() => setOpen(false)} />
+                    <ChatMessageList messages={messages} typing={typing} bottomRef={bottomRef} />
+                    <ChatInputArea input={input} setInput={setInput} onSend={send} />
                 </div>
             )}
 
-            {/* FAB toggle button */}
+            {/* Premium FAB toggle button */}
             <button
-                id="assistant-fab"
                 onClick={() => setOpen((o) => !o)}
-                className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full btn-primary flex items-center justify-center text-2xl shadow-2xl"
+                className={`relative w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-transform hover:scale-110 active:scale-95 z-50 ${
+                    open
+                        ? 'bg-slate-700 text-white shadow-xl'
+                        : 'bg-gradient-to-br from-violet-600 via-indigo-600 to-fuchsia-500 text-white shadow-[0_10px_30px_rgba(124,58,237,0.4)] fab-pulse'
+                }`}
                 aria-label="Toggle Assistant"
+                style={{ transitionDuration: '0.3s' }}
             >
-                {open ? '✕' : '💬'}
+                {open ? (
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                ) : (
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    </svg>
+                )}
             </button>
-        </>
+        </div>
     );
 }

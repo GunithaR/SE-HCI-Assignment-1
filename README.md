@@ -1,6 +1,6 @@
 # Multi-Brand House Construction Recommendation Platform
 
-A full-stack web application that helps users choose the right construction materials and brands, featuring role-based access control, AI-assisted product recommendation, and product image management.
+A full-stack web application that helps users choose the right construction materials and brands, featuring role-based access control, a **hybrid AI + rule-based recommendation engine**, product image management, and an admin rule management dashboard.
 
 ---
 
@@ -14,46 +14,72 @@ construction-platform/
 │   │   ├── config/
 │   │   │   ├── DataSeeder.java       ← Seeds default admin on first run
 │   │   │   ├── SecurityConfig.java   ← JWT filter chain, CORS, role rules
-│   │   │   └── WebConfig.java        ← Serves /uploads/** as static files (NEW)
+│   │   │   └── WebConfig.java        ← Serves /uploads/** as static files
 │   │   ├── controller/
 │   │   │   ├── AdminController.java  ← Protected admin endpoints
 │   │   │   ├── AuthController.java   ← /api/auth/register + /api/auth/login
-│   │   │   └── PublicCatalogController.java
-│   │   ├── dto/                      ← Request/response data transfer objects
+│   │   │   ├── PublicCatalogController.java
+│   │   │   ├── RecommendationController.java      ← Recommendation endpoints (NEW)
+│   │   │   └── RecommendationDebugController.java  ← Debug endpoints (NEW)
+│   │   ├── dto/
+│   │   │   └── recommendation/
+│   │   │       ├── HybridRecommendationResponseDTO.java  ← Combined response (NEW)
+│   │   │       ├── RecommendationInsightDTO.java          ← AI insight items (NEW)
+│   │   │       ├── RecommendationRequestDTO.java          ← Wizard input (NEW)
+│   │   │       └── RecommendationResponseDTO.java         ← Per-product scores (NEW)
+│   │   ├── engine/
+│   │   │   ├── ConditionMatcher.java      ← Evaluates rule conditions (NEW)
+│   │   │   ├── AdjustedProductScore.java  ← Score + rule adjustments (NEW)
+│   │   │   ├── RecommendationEngine.java  ← Strategy orchestrator (NEW)
+│   │   │   ├── RulePostProcessor.java     ← Post-processing rules (NEW)
+│   │   │   └── strategy/
+│   │   │       ├── RecommendationStrategy.java  ← Strategy interface (NEW)
+│   │   │       ├── BudgetStrategy.java           ← Budget scoring (NEW)
+│   │   │       ├── MaintenanceStrategy.java      ← Maintenance scoring (NEW)
+│   │   │       ├── PerformanceStrategy.java      ← Performance scoring (NEW)
+│   │   │       ├── StyleStrategy.java             ← Style scoring (NEW)
+│   │   │       └── UsageStrategy.java             ← Usage scoring (NEW)
 │   │   ├── entity/
-│   │   │   ├── Product.java          ← imageUrl field added (NEW)
+│   │   │   ├── Product.java
 │   │   │   ├── Brand.java
 │   │   │   ├── Category.java
-│   │   │   ├── Role.java             ← ADMIN | SUB_ADMIN | CUSTOMER (UPDATED)
-│   │   │   └── User.java
+│   │   │   ├── Role.java             ← ADMIN | SUB_ADMIN | CUSTOMER
+│   │   │   ├── User.java
+│   │   │   ├── Rule.java             ← Rule entity (NEW)
+│   │   │   └── RuleCondition.java    ← Condition entity (NEW)
 │   │   ├── service/
-│   │   │   ├── AdminUserService.java ← Sub-admin creation (UPDATED)
-│   │   │   ├── FileStorageService.java ← Disk-based image storage (NEW)
-│   │   │   └── ProductService.java   ← Image-aware create/update (UPDATED)
+│   │   │   ├── AdminUserService.java
+│   │   │   ├── FileStorageService.java
+│   │   │   ├── ProductService.java
+│   │   │   ├── RecommendationService.java               ← Hybrid pipeline (NEW)
+│   │   │   ├── AnswerNormalizationService.java           ← AI normalizer (NEW)
+│   │   │   ├── ExplanationAIService.java                 ← AI explanations (NEW)
+│   │   │   ├── RecommendationAugmentationService.java    ← AI insights (NEW)
+│   │   │   └── RecommendationInsightValidator.java       ← Insight validator (NEW)
 │   │   └── security/                 ← JWT utilities + filters
 │   └── src/main/resources/
-│       └── application.yml           ← DB config + multipart upload config
+│       └── application.yml           ← DB + Gemini AI config
 │
 ├── frontend/                         ← React + Vite SPA
 │   └── src/
 │       ├── components/
 │       │   ├── AssistantWidget.jsx   ← AI assistant chat widget
 │       │   ├── Navbar.jsx
-│       │   └── ProtectedRoute.jsx    ← AdminRoute allows ADMIN + SUB_ADMIN
+│       │   └── ProtectedRoute.jsx
 │       ├── context/
-│       │   └── AuthContext.jsx       ← isAdmin, isFullAdmin, isSubAdmin (UPDATED)
+│       │   └── AuthContext.jsx
 │       ├── pages/
-│       │   ├── AdminDashboard.jsx    ← Product image upload + sub-admin modal (UPDATED)
-│       │   ├── Catalog.jsx           ← Product image display (UPDATED)
-│       │   ├── Home.jsx              ← Product image display (UPDATED)
+│       │   ├── AdminDashboard.jsx
+│       │   ├── Catalog.jsx
+│       │   ├── Home.jsx
 │       │   ├── Login.jsx
 │       │   ├── Register.jsx
-│       │   ├── Results.jsx
+│       │   ├── Results.jsx           ← Score breakdown, rule vis, AI explanations (UPDATED)
 │       │   └── Wizard.jsx
 │       └── services/
-│           ├── apiClient.js
+│           ├── apiClient.js          ← 60s timeout for AI pipeline (UPDATED)
 │           ├── authService.js
-│           └── catalogService.js     ← FormData image upload (UPDATED)
+│           └── catalogService.js
 │
 ├── uploads/                          ← Created at runtime, stores product images
 ├── .gitignore
@@ -71,13 +97,19 @@ construction-platform/
 - User registration and login
 
 ### Customer
-- Guided material selection wizard
-- Personalised product results
+- Guided material selection wizard with dynamic questions
+- **Hybrid AI + Rule-based** personalised product recommendations
+- Score breakdown per strategy (Budget, Style, Performance, Maintenance, Usage)
+- AI-generated explanations for each product recommendation
+- AI-generated contextual insights and trade-off analysis
+- Product comparison with side-by-side attribute tables
+- Rule-based score adjustments and product exclusions (visually indicated)
 
 ### Sub-Admin
 - Full product catalog management (create, edit, delete)
 - Brand and category management
 - Upload/replace product images
+- Rule management (add/edit/deactivate scoring rules)
 
 ### Admin (Full)
 - Everything Sub-Admin can do
@@ -85,7 +117,99 @@ construction-platform/
 
 ---
 
+## 🧠 Hybrid Recommendation Architecture
+
+The recommendation engine uses a **3-step hybrid pipeline**:
+
+```
+User Answers → [1. AI Normalize] → [2. Strategy Scoring] → [3. Rule Post-Processing] → Results
+                    ↓                      ↓                        ↓
+              Gemini 2.5 Flash      5 Strategy engines        Rule engine applies
+              maps free-text to     score each product        ADD_SCORE, DEDUCT_SCORE,
+              system enums          0-10 per dimension        and FILTER_OUT rules
+```
+
+### Step 1 — AI Answer Normalization
+`AnswerNormalizationService` uses **Google Gemini** to map raw user input (e.g., "I want something cheap") to system enums (e.g., `LOW`). Falls back to deterministic identity mapping on failure.
+
+### Step 2 — Strategy Scoring
+Five `RecommendationStrategy` implementations score each product independently:
+
+| Strategy | Evaluates |
+|----------|-----------|
+| `BudgetStrategy` | Price alignment with budget preference |
+| `StyleStrategy` | Visual/aesthetic match |
+| `PerformanceStrategy` | Durability and slip resistance |
+| `MaintenanceStrategy` | Maintenance level preference |
+| `UsageStrategy` | Suitability for intended area/traffic |
+
+### Step 3 — Rule Post-Processing
+`RulePostProcessor` applies admin-configured rules via the `ConditionMatcher`:
+- **ADD_SCORE** — Bonus points for products meeting conditions
+- **DEDUCT_SCORE** — Penalty for products meeting conditions
+- **FILTER_OUT** — Exclude product entirely (shown grayed out in UI)
+
+### AI Augmentation Layer
+After scoring, two additional Gemini calls enhance the response:
+- **Batch Explanations** — A single Gemini call generates AI explanations for all 5 products simultaneously
+- **Contextual Insights** — AI generates trade-off analysis and tips for the Additional Insights card
+
+> All AI calls include retry with backoff for 429 rate limiting. Deterministic fallbacks ensure the system works without AI.
+
+---
+
+## 🔧 AI Configuration
+
+The platform uses **Google Gemini API** (free tier). Configure in `application.yml`:
+
+```yaml
+ai:
+  gemini:
+    api-key: "YOUR_GEMINI_API_KEY"
+    url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
+```
+
+### Free Tier Limits
+| Model | Daily Requests | RPM |
+|-------|---------------|-----|
+| gemini-2.5-flash-lite | ~500 | 15 |
+| gemini-2.5-flash | 20 | 10 |
+| gemini-2.0-flash | 1,500 | 15 |
+
+> Each wizard run makes **3 Gemini calls** (normalize + batch explain + augment) with 2-second delays between calls.
+
+---
+
 ## 🆕 What Was Built / Updated
+
+### Hybrid Recommendation Engine
+| Component | Description |
+|-----------|-------------|
+| `RecommendationEngine` | Orchestrates strategy-based scoring |
+| `RecommendationStrategy` (×5) | Budget, Style, Performance, Maintenance, Usage scoring |
+| `RulePostProcessor` | Applies admin rules as post-processing adjustments |
+| `ConditionMatcher` | Evaluates rule conditions against answers & product attributes |
+| `AdjustedProductScore` | Holds final score with rule adjustment metadata |
+| `AnswerNormalizationService` | AI-powered answer normalization (Gemini + fallback) |
+| `ExplanationAIService` | AI explanation generation per product |
+| `RecommendationAugmentationService` | AI contextual insights with validation |
+| `RecommendationInsightValidator` | Sanitises AI insights against ranked results |
+
+### Frontend Results Page (`Results.jsx`)
+| Feature | Description |
+|---------|-------------|
+| Score Breakdown | Animated bars per strategy dimension (Budget, Style, etc.) |
+| Rule Adjustments | Shows applied rule names and score delta (±pts) |
+| Excluded Products | Grayed-out cards with "⛔ Excluded by Rule" badge |
+| AI Explanations | Server-generated explanations displayed per card |
+| Additional Insights | AI-generated trade-off analysis and tips |
+| Product Comparison | Side-by-side attribute table with AI narrative |
+
+### Debug Endpoints
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /api/public/debug/normalize` | Inspect raw vs AI-normalized answers |
+| `POST /api/public/debug/rule-impact` | Compare strategy-only vs rule-adjusted scores |
 
 ### Role System — `SUB_ADMIN`
 - Added `SUB_ADMIN` to the `Role` enum alongside `ADMIN` and `CUSTOMER`
@@ -99,19 +223,11 @@ construction-platform/
 ### Product Image Upload
 | Layer | Change |
 |-------|--------|
-| `Product.java` | Added nullable `image_url VARCHAR(500)` column (Hibernate auto-creates on first run) |
-| `ProductResponseDTO.java` | Added `imageUrl` field populated in `from()` factory |
-| `FileStorageService.java` | **NEW** — saves files to `uploads/products/{UUID}.ext`, returns public path, deletes old files on replace |
-| `WebConfig.java` | **NEW** — registers `/uploads/**` as a static resource handler pointing to the `uploads/` directory |
-| `SecurityConfig.java` | Permits `/uploads/**` without authentication |
-| `AdminController.java` | Create/update product endpoints use `multipart/form-data` with `@RequestPart("data")` (JSON) + optional `@RequestPart("image")` |
-| `ProductService.java` | `createProduct` and `updateProduct` accept a nullable `MultipartFile`; old image deleted on replace |
-| `application.yml` | Multipart enabled, max file size 10 MB, max request 12 MB |
-| `catalogService.js` | `createProduct`/`updateProduct` build `FormData` with a JSON Blob part |
-| `vite.config.js` | Added `/uploads` proxy to backend so images load in dev |
-| `AdminDashboard.jsx` | Product form has styled image picker (hidden input inside `<label>`), live preview, remove button, "current image kept" hint for edits |
-| `Home.jsx` | `ProductCard` shows 180 px cover image at the top when `imageUrl` is present |
-| `Catalog.jsx` | `ProductCard` shows 180 px cover image at the top when `imageUrl` is present |
+| `Product.java` | Added nullable `image_url VARCHAR(500)` column |
+| `FileStorageService.java` | Saves files to `uploads/products/{UUID}.ext` |
+| `WebConfig.java` | Registers `/uploads/**` as a static resource handler |
+| `AdminController.java` | Create/update use `multipart/form-data` |
+| `AdminDashboard.jsx` | Styled image picker with live preview |
 
 > **Backward compatible** — existing products with no image are unaffected; all image fields are nullable.
 
@@ -141,14 +257,19 @@ The app auto-creates all tables on first run (`ddl-auto: update`).
 
 > Default credentials: **`root` / `root`**. To change them edit `backend/src/main/resources/application.yml`.
 
-Copy the example config if `application.yml` is not tracked:
+### 3 — Configure Gemini AI (Optional)
 
-```bash
-cp backend/src/main/resources/application.yml.example \
-   backend/src/main/resources/application.yml
+Get a free API key from [Google AI Studio](https://aistudio.google.com/apikey) and set it in `application.yml`:
+
+```yaml
+ai:
+  gemini:
+    api-key: "YOUR_API_KEY"
 ```
 
-### 3 — Run the Backend
+> The recommendation engine works without AI — it falls back to deterministic scoring and explanations.
+
+### 4 — Run the Backend
 
 ```bash
 cd backend
@@ -157,7 +278,7 @@ mvn spring-boot:run
 
 API available at **http://localhost:8080**
 
-### 4 — Run the Frontend
+### 5 — Run the Frontend
 
 Open a new terminal:
 
@@ -189,6 +310,11 @@ App available at **http://localhost:5173**
 | GET | `/api/public/products` | Public | List products (paginated, filterable) |
 | GET | `/api/public/categories` | Public | List all categories |
 | GET | `/api/public/brands` | Public | List all brands |
+| GET | `/api/public/questions/{category}` | Public | Get wizard questions for category |
+| POST | `/api/public/recommendations` | Public | Get ranked recommendations |
+| POST | `/api/public/recommendations/hybrid` | Public | Get AI-augmented recommendations |
+| POST | `/api/public/recommendations/explain` | Public | Get AI explanation for a product |
+| POST | `/api/public/recommendations/compare` | Public | Compare selected products |
 | POST | `/api/admin/products` | ADMIN / SUB_ADMIN | Create product (multipart) |
 | PUT | `/api/admin/products/{id}` | ADMIN / SUB_ADMIN | Update product (multipart) |
 | DELETE | `/api/admin/products/{id}` | ADMIN / SUB_ADMIN | Delete product |
@@ -204,13 +330,14 @@ App available at **http://localhost:5173**
 - **Spring Security + JWT (JJWT 0.12.5)** — Stateless authentication
 - **Spring Data JPA + Hibernate** — ORM, auto DDL
 - **MySQL 8** — Relational database
+- **Google Gemini API** — AI normalization, explanations, insights
 - **Maven** — Build & dependency management
 
 ### Frontend
 - **React 18** — UI library
 - **Vite** — Dev server & bundler
 - **React Router v6** — Client-side routing
-- **Axios** — HTTP client
+- **Axios** — HTTP client (60s timeout for AI pipeline)
 
 ---
 
@@ -218,6 +345,9 @@ App available at **http://localhost:5173**
 
 - `application.yml` **is committed** — clone and run immediately with default credentials (`root`/`root` MySQL, `admin@platform.com`/`Admin@1234`)
 - To use different MySQL credentials, edit `backend/src/main/resources/application.yml` (lines 11–12)
-- `application.yml.example` is a reference template; the committed `application.yml` is the working config
+- Gemini API key is configured in `application.yml` under `ai.gemini.api-key`
+- The recommendation engine works fully without AI (deterministic fallback). AI enhances explanations and insights only.
+- Each wizard run makes 3 Gemini API calls — be mindful of free tier daily limits
 - Uploaded images are stored in `uploads/products/` relative to where the backend is run — this folder is gitignored and created automatically on first image upload
 - JWT tokens expire after 24 hours (configurable in `application.yml` under `jwt.expiration-ms`)
+- The Vite proxy has a 120s timeout (`proxyTimeout`) for the AI pipeline — do not reduce this

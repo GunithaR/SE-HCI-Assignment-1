@@ -138,10 +138,11 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
     const [errors, setErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
     // Image state
-    const [imageFile, setImageFile] = useState(null);
-    const [imagePreview, setImagePreview] = useState(
-        isEdit && editingProduct.imageUrl ? editingProduct.imageUrl : null
+    const [imageFiles, setImageFiles] = useState([]);
+    const [imagePreviews, setImagePreviews] = useState(
+        isEdit && editingProduct.imageUrls ? editingProduct.imageUrls : []
     );
+    const [mainImageIndex, setMainImageIndex] = useState(0);
 
     const set = (field) => (e) => {
         const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -149,19 +150,22 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
     };
 
     const handleImageChange = (e) => {
-        const file = e.target.files?.[0] || null;
-        setImageFile(file);
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (ev) => setImagePreview(ev.target.result);
-            reader.readAsDataURL(file);
+        const files = Array.from(e.target.files || []);
+        setImageFiles(files);
+        setMainImageIndex(0);
+        
+        if (files.length > 0) {
+            const urls = files.map(file => URL.createObjectURL(file));
+            setImagePreviews(urls);
+        } else {
+            setImagePreviews([]);
         }
     };
 
     const clearImage = () => {
-        setImageFile(null);
-        // If editing and had an existing image, restore its preview
-        setImagePreview(isEdit && editingProduct.imageUrl ? editingProduct.imageUrl : null);
+        setImageFiles([]);
+        setMainImageIndex(0);
+        setImagePreviews(isEdit && editingProduct.imageUrls ? editingProduct.imageUrls : []);
     };
 
     const handleSubmit = async (e) => {
@@ -175,13 +179,14 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
             basePrice: parseFloat(form.basePrice),
             durabilityRating: parseInt(form.durabilityRating, 10),
             isActive: form.isActive,
+            mainImageIndex: mainImageIndex,
         };
         try {
             let result;
             if (isEdit) {
-                result = await catalogService.updateProduct(editingProduct.id, payload, imageFile || undefined);
+                result = await catalogService.updateProduct(editingProduct.id, payload, imageFiles);
             } else {
-                result = await catalogService.createProduct(payload, imageFile || undefined);
+                result = await catalogService.createProduct(payload, imageFiles);
             }
             onSuccess(`Product "${result.name}" ${isEdit ? 'updated' : 'created'} successfully! ✅`, result);
             onClose();
@@ -333,47 +338,67 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                     {/* ── Image Upload ───────────────────────────────────────── */}
                     <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
                         <p style={{ color: '#a78bfa', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.75rem' }}>
-                            🖼️ Product Image <span style={{ color: '#475569', fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>(optional)</span>
+                            🖼️ Product Images <span style={{ color: '#475569', fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>(optional, up to 5)</span>
                         </p>
-                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                            {/* Preview box */}
-                            <div style={{
-                                width: 90, height: 90, borderRadius: 10, flexShrink: 0,
-                                border: imagePreview ? '1px solid rgba(139,92,246,0.4)' : '2px dashed rgba(255,255,255,0.12)',
-                                background: 'rgba(255,255,255,0.03)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-                            }}>
-                                {imagePreview
-                                    ? <img src={imagePreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    : <span style={{ fontSize: '2rem', opacity: 0.2 }}>📷</span>}
-                            </div>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                             {/* Upload controls */}
-                            <div style={{ flex: 1 }}>
+                            <div style={{ flex: 1, minWidth: '250px' }}>
                                 <label style={{
                                     display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px',
                                     borderRadius: 8, cursor: 'pointer', fontSize: '0.82rem', fontWeight: 500,
                                     background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.35)', color: '#a78bfa',
                                 }}>
-                                    📁 {imageFile ? 'Change image' : (isEdit && editingProduct?.imageUrl ? 'Replace image' : 'Choose image')}
+                                    📁 {imageFiles.length > 0 ? `Change ${imageFiles.length} images` : (isEdit && editingProduct?.imageUrls?.length > 0 ? 'Replace images' : 'Choose images')}
                                     <input
                                         type="file"
                                         accept="image/jpeg,image/png,image/webp,image/gif"
+                                        multiple
                                         onChange={handleImageChange}
                                         style={{ display: 'none' }}
                                     />
                                 </label>
                                 <p style={{ color: '#475569', fontSize: '0.73rem', marginTop: 6 }}>
-                                    {imageFile
-                                        ? `Selected: ${imageFile.name}`
-                                        : isEdit && editingProduct?.imageUrl
-                                            ? 'Current image kept — choose a file to replace it'
-                                            : 'JPG, PNG or WebP — max 10 MB'}
+                                    {imageFiles.length > 0
+                                        ? `Selected: ${imageFiles.length} files`
+                                        : isEdit && editingProduct?.imageUrls?.length > 0
+                                            ? `Current images kept (${editingProduct.imageUrls.length}) — choose files to replace`
+                                            : 'JPG, PNG or WebP — select multiple files'}
                                 </p>
-                                {imageFile && (
+                                {imageFiles.length > 0 && (
                                     <button type="button" onClick={clearImage}
                                         style={{ marginTop: 4, padding: '4px 12px', borderRadius: 7, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171', fontSize: '0.73rem', cursor: 'pointer' }}>
-                                        ✕ Remove
+                                        ✕ Remove New Images
                                     </button>
+                                )}
+                            </div>
+                            
+                            {/* Preview strip */}
+                            <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', maxWidth: '350px' }}>
+                                {imagePreviews.length > 0 ? (
+                                    imagePreviews.map((url, idx) => (
+                                        <div key={idx} 
+                                            onClick={() => setMainImageIndex(idx)}
+                                            style={{
+                                                width: 70, height: 70, borderRadius: 10, flexShrink: 0,
+                                                border: mainImageIndex === idx ? '3px solid #8b5cf6' : '1px solid rgba(139,92,246,0.3)', 
+                                                background: 'rgba(255,255,255,0.03)',
+                                                overflow: 'hidden', position: 'relative', cursor: 'pointer',
+                                                transition: 'all 0.2s'
+                                            }}>
+                                            <img src={url} alt={`preview ${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: mainImageIndex === idx ? 1 : 0.7 }} />
+                                            {mainImageIndex === idx && (
+                                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#8b5cf6', color: '#fff', fontSize: '9px', fontWeight: 800, textAlign: 'center', padding: '2px 0' }}>MAIN</div>
+                                            )}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div style={{
+                                        width: 70, height: 70, borderRadius: 10, flexShrink: 0,
+                                        border: '2px dashed rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    }}>
+                                        <span style={{ fontSize: '1.5rem', opacity: 0.2 }}>📷</span>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -556,15 +581,23 @@ export default function AdminDashboard() {
                             style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.35)', color: '#0ea5e9', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
                             ⚙️ Manage Rules
                         </button>
+                        <button onClick={() => navigate('/admin/history')}
+                            style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.35)', color: '#22c55e', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
+                            📜 Rec. History
+                        </button>
+                        <button onClick={() => navigate('/admin/analytics')}
+                            style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.35)', color: '#6366f1', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
+                            📈 Analytics
+                        </button>
                         {isFullAdmin && (
                             <button onClick={() => setShowSubAdminModal(true)}
                                 style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', color: '#f59e0b', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
                                 + Add Sub-Admin
                             </button>
                         )}
-                        <button onClick={handleLogout}
-                            style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', cursor: 'pointer', fontSize: '0.9rem' }}>
-                            Logout
+                        <button onClick={() => navigate('/catalog')}
+                            style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.35)', color: '#6366f1', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
+                            View Catalog
                         </button>
                     </div>
                 </div>
@@ -633,8 +666,8 @@ export default function AdminDashboard() {
                                             <td style={{ padding: '10px 16px', color: 'var(--color-text)', fontWeight: 500 }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                                     <div style={{ width: 36, height: 36, borderRadius: 7, overflow: 'hidden', flexShrink: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                        {p.imageUrl
-                                                            ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        {p.imageUrls && p.imageUrls.length > 0
+                                                            ? <img src={p.imageUrls[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                             : <span style={{ fontSize: '1rem', opacity: 0.25 }}>🖼️</span>}
                                                     </div>
                                                     {p.name}

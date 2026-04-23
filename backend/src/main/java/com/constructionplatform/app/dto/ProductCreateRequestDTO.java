@@ -59,6 +59,7 @@ public class ProductCreateRequestDTO {
     private ProductSize size;
 
     private Material material;
+    private Integer mainImageIndex;
 
     // ── Getters ───────────────────────────────────────────────────────────────
 
@@ -110,6 +111,10 @@ public class ProductCreateRequestDTO {
         return material;
     }
 
+    public Integer getMainImageIndex() {
+        return mainImageIndex;
+    }
+
     // ── Setters ───────────────────────────────────────────────────────────────
 
     public void setCategoryId(Long categoryId) {
@@ -158,5 +163,9 @@ public class ProductCreateRequestDTO {
 
     public void setMaterial(Material material) {
         this.material = material;
+    }
+
+    public void setMainImageIndex(Integer mainImageIndex) {
+        this.mainImageIndex = mainImageIndex;
     }
 }

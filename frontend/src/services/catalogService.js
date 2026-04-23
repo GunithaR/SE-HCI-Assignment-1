@@ -19,6 +19,10 @@ const catalogService = {
 
     getAttributeOptions: () => apiClient.get('/public/attributes/options').then((r) => r.data),
 
+    getReviews: (productId, page = 0, size = 10) => apiClient.get(`/products/${productId}/reviews`, { params: { page, size } }).then((r) => r.data),
+
+    addReview: (productId, score, comment) => apiClient.post(`/products/${productId}/reviews`, { score, comment }).then((r) => r.data),
+
     /**
      * GET /api/public/products — all in-stock products across every category.
      * No authentication required — used by the public home page.
@@ -33,6 +37,33 @@ const catalogService = {
     getRecommendations: (payload) =>
         apiClient
             .post('/public/recommendations', payload)
+            .then((r) => r.data),
+
+    /**
+     * Hybrid recommendation endpoint used by the wizard.
+     * POST /api/public/recommendations/hybrid
+     */
+    getHybridRecommendations: (payload) =>
+        apiClient
+            .post('/public/recommendations/hybrid', payload)
+            .then((r) => r.data),
+
+    /**
+     * Generates a narrative explanation for a specific recommendation
+     * POST /api/public/explanations
+     */
+    getExplanation: (payload) =>
+        apiClient
+            .post('/public/explanations', payload)
+            .then((r) => r.data),
+
+    /**
+     * Compare two or more recommended products side-by-side.
+     * POST /api/public/recommendations/compare
+     */
+    compareRecommendations: (payload) =>
+        apiClient
+            .post('/public/recommendations/compare', payload)
             .then((r) => r.data),
 
     /**
@@ -56,19 +87,23 @@ const catalogService = {
     getAdminAllProducts: (page = 0, size = 200) =>
         apiClient.get('/admin/products', { params: { page, size } }).then((r) => r.data),
 
-    /** POST /api/admin/products — create a new product (multipart: data + optional image) */
-    createProduct: (data, imageFile) => {
+    /** POST /api/admin/products — create a new product (multipart: data + optional images array) */
+    createProduct: (data, imagesArray) => {
         const form = new FormData();
         form.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
-        if (imageFile) form.append('image', imageFile);
+        if (imagesArray && imagesArray.length > 0) {
+            imagesArray.forEach(img => form.append('images', img));
+        }
         return apiClient.post('/admin/products', form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data);
     },
 
-    /** PUT /api/admin/products/{id} — fully replace an existing product (multipart: data + optional image) */
-    updateProduct: (id, data, imageFile) => {
+    /** PUT /api/admin/products/{id} — fully replace an existing product (multipart: data + optional images array) */
+    updateProduct: (id, data, imagesArray) => {
         const form = new FormData();
         form.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
-        if (imageFile) form.append('image', imageFile);
+        if (imagesArray && imagesArray.length > 0) {
+            imagesArray.forEach(img => form.append('images', img));
+        }
         return apiClient.put(`/admin/products/${id}`, form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data);
     },
 
@@ -84,6 +119,33 @@ const catalogService = {
 
     /** POST /api/admin/sub-admins */
     createSubAdminUser: (data) => apiClient.post('/admin/sub-admins', data).then((r) => r.data),
+
+    /** GET /api/admin/recommendation-history */
+    getRecommendationHistory: () => apiClient.get('/admin/recommendation-history').then((r) => r.data),
+
+    /** GET /api/admin/analytics/visits */
+    getAnalyticsVisits: () => apiClient.get('/admin/analytics/visits').then((r) => r.data),
+
+    /** GET /api/admin/analytics/users */
+    getAnalyticsUsers: () => apiClient.get('/admin/analytics/users').then((r) => r.data),
+
+    /** GET /api/admin/analytics/sessions */
+    getAnalyticsSessions: () => apiClient.get('/admin/analytics/sessions').then((r) => r.data),
+
+    /** GET /api/admin/analytics/rules/active */
+    getAnalyticsActiveRules: () => apiClient.get('/admin/analytics/rules/active').then((r) => r.data),
+
+    /** GET /api/admin/analytics/rules/usage */
+    getAnalyticsRuleUsage: () => apiClient.get('/admin/analytics/rules/usage').then((r) => r.data),
+
+    /** GET /api/admin/analytics/products/top */
+    getAnalyticsTopProducts: () => apiClient.get('/admin/analytics/products/top').then((r) => r.data),
+
+    /** GET /api/admin/users — list all registered users (ADMIN only) */
+    getAllUsers: () => apiClient.get('/admin/users').then((r) => r.data),
+
+    /** POST /api/public/analytics/visit */
+    recordVisit: () => apiClient.post('/public/analytics/visit').then((r) => r.data),
 };
 
 export default catalogService;

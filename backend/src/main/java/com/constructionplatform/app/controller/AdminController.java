@@ -7,6 +7,8 @@ import com.constructionplatform.app.dto.BrandDTO;
 import com.constructionplatform.app.dto.ProductCreateRequestDTO;
 import com.constructionplatform.app.dto.ProductResponseDTO;
 import com.constructionplatform.app.dto.ProductUpdateRequestDTO;
+import com.constructionplatform.app.entity.RecommendationHistory;
+import com.constructionplatform.app.repository.RecommendationHistoryRepository;
 import com.constructionplatform.app.service.AdminUserService;
 import com.constructionplatform.app.service.BrandService;
 import com.constructionplatform.app.service.ProductService;
@@ -32,13 +34,16 @@ public class AdminController {
     private final ProductService productService;
     private final AdminUserService adminUserService;
     private final BrandService brandService;
+    private final RecommendationHistoryRepository recommendationHistoryRepository;
 
     public AdminController(ProductService productService,
             AdminUserService adminUserService,
-            BrandService brandService) {
+            BrandService brandService,
+            RecommendationHistoryRepository recommendationHistoryRepository) {
         this.productService = productService;
         this.adminUserService = adminUserService;
         this.brandService = brandService;
+        this.recommendationHistoryRepository = recommendationHistoryRepository;
     }
 
     // ── Product management ────────────────────────────────────────────────────
@@ -54,24 +59,24 @@ public class AdminController {
         return ResponseEntity.ok(productService.findAll(pageable));
     }
 
-    /** POST /api/admin/products — create a new product with optional image */
+    /** POST /api/admin/products — create a new product with optional images */
     @PostMapping(value = "/products", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponseDTO> createProduct(
             @RequestPart("data") @Valid ProductCreateRequestDTO request,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(request, image));
+            @RequestPart(value = "images", required = false) java.util.List<MultipartFile> images) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(request, images));
     }
 
     /**
      * PUT /api/admin/products/{id} — fully replace all fields of an existing product.
-     * Optionally supply a new image to replace the old one.
+     * Optionally supply new images to replace the old ones.
      */
     @PutMapping(value = "/products/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponseDTO> updateProduct(
             @PathVariable Long id,
             @RequestPart("data") @Valid ProductUpdateRequestDTO request,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        return ResponseEntity.ok(productService.updateProduct(id, request, image));
+            @RequestPart(value = "images", required = false) java.util.List<MultipartFile> images) {
+        return ResponseEntity.ok(productService.updateProduct(id, request, images));
     }
 
     /**
@@ -112,5 +117,22 @@ public class AdminController {
     public ResponseEntity<AuthResponse> createSubAdminUser(
             @Valid @RequestBody AdminUserCreateRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(adminUserService.createSubAdminUser(request));
+    }
+
+    // ── User listing ───────────────────────────────────────────────────────────
+
+    /** GET /api/admin/users — list all registered users (ADMIN only) */
+    @GetMapping("/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<java.util.List<com.constructionplatform.app.dto.UserSummaryDTO>> getAllUsers() {
+        return ResponseEntity.ok(adminUserService.getAllUsers());
+    }
+
+    // ── Recommendation History management ──────────────────────────────────────
+
+    /** GET /api/admin/recommendation-history — fetch all logged recommendation sessions */
+    @GetMapping("/recommendation-history")
+    public ResponseEntity<java.util.List<RecommendationHistory>> getRecommendationHistory() {
+        return ResponseEntity.ok(recommendationHistoryRepository.findAllByOrderByStartedAtDesc());
     }
 }
