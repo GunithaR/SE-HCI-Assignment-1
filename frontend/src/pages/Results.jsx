@@ -46,6 +46,37 @@ export default function Results() {
 
   const { products, category, answers, additionalInsights = [], augmentationFallbackUsed = false } = state;
 
+  // Some endpoints return image paths like "/uploads/...". When rendered on the frontend
+  // those become requests against the Vite dev server, not the Spring Boot server.
+  // Product details work because they likely load via API and/or already return absolute URLs.
+  // Here we normalize recommendation records into the shape the shared `components/ProductCard`
+  // expects, and we also expand relative upload paths into a full backend URL.
+  const BACKEND_ORIGIN = (import.meta?.env?.VITE_BACKEND_ORIGIN || 'http://localhost:8080').replace(/\/$/, '');
+
+  const toAbsoluteImageUrl = (url) => {
+    if (!url) return null;
+    if (/^https?:\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')) return url;
+    if (url.startsWith('/')) return `${BACKEND_ORIGIN}${url}`;
+    // If backend stores "uploads/foo.jpg" without leading slash
+    return `${BACKEND_ORIGIN}/${url}`;
+  };
+
+  const normalizedProducts = (products || []).map((p) => {
+    const imageUrl = toAbsoluteImageUrl(p.imageUrl);
+    const imageUrls = Array.isArray(p.imageUrls) ? p.imageUrls.map(toAbsoluteImageUrl).filter(Boolean) : undefined;
+    return {
+      ...p,
+      // Make it compatible with shared ProductCard (expects `id` + `name` + `imageUrl|imageUrls`)
+      id: p.id ?? p.productId,
+      name: p.name ?? p.productName,
+      brandName: p.brandName,
+      categoryName: p.categoryName,
+      basePrice: p.basePrice,
+      imageUrl,
+      imageUrls: imageUrls ?? (imageUrl ? [imageUrl] : p.imageUrls),
+    };
+  });
+
   const toggleProductSelection = (productId) => {
     const updated = new Set(selectedProductIds);
     if (updated.has(productId)) {
@@ -155,7 +186,7 @@ export default function Results() {
 
         {/* ── Rankings ────────────────────────────────── */}
         <div className="results-grid">
-          {products.map((product, idx) => (
+          {normalizedProducts.map((product, idx) => (
             <ProductCard 
               key={product.productId} 
               product={product} 
