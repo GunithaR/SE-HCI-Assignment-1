@@ -4,12 +4,12 @@ import catalogService from '../services/catalogService';
 
 /* ───────────────── Strategy display names & colors ─────────────────────── */
 const STRATEGY_META = {
-  BUDGET: { label: 'Budget', color: '#22c55e', icon: '💰' },
-  ENVIRONMENT: { label: 'Environment', color: '#3b82f6', icon: '🌍' },
-  PERFORMANCE: { label: 'Performance', color: '#f59e0b', icon: '⚡' },
-  STYLE: { label: 'Style', color: '#ec4899', icon: '🎨' },
-  MAINTENANCE: { label: 'Maintenance', color: '#8b5cf6', icon: '🔧' },
-  USAGE: { label: 'Usage', color: '#14b8a6', icon: '🏠' },
+  BUDGET: { label: 'Budget', color: '#22c55e', icon: null },
+  ENVIRONMENT: { label: 'Environment', color: '#3b82f6', icon: null },
+  PERFORMANCE: { label: 'Performance', color: '#f59e0b', icon: null },
+  STYLE: { label: 'Style', color: '#ec4899', icon: null },
+  MAINTENANCE: { label: 'Maintenance', color: '#8b5cf6', icon: null },
+  USAGE: { label: 'Usage', color: '#14b8a6', icon: null },
 };
 
 const scoreColor = (score) => {
@@ -36,7 +36,7 @@ export default function Results() {
           <h2>No Results Found</h2>
           <p>Try adjusting your preferences for better matches.</p>
           <Link to="/wizard" className="results-btn primary">
-            ← Back to Wizard
+            Back to Wizard
           </Link>
         </div>
         <ResultsStyles />
@@ -45,6 +45,37 @@ export default function Results() {
   }
 
   const { products, category, answers, additionalInsights = [], augmentationFallbackUsed = false } = state;
+
+  // Some endpoints return image paths like "/uploads/...". When rendered on the frontend
+  // those become requests against the Vite dev server, not the Spring Boot server.
+  // Product details work because they likely load via API and/or already return absolute URLs.
+  // Here we normalize recommendation records into the shape the shared `components/ProductCard`
+  // expects, and we also expand relative upload paths into a full backend URL.
+  const BACKEND_ORIGIN = (import.meta?.env?.VITE_BACKEND_ORIGIN || 'http://localhost:8080').replace(/\/$/, '');
+
+  const toAbsoluteImageUrl = (url) => {
+    if (!url) return null;
+    if (/^https?:\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')) return url;
+    if (url.startsWith('/')) return `${BACKEND_ORIGIN}${url}`;
+    // If backend stores "uploads/foo.jpg" without leading slash
+    return `${BACKEND_ORIGIN}/${url}`;
+  };
+
+  const normalizedProducts = (products || []).map((p) => {
+    const imageUrl = toAbsoluteImageUrl(p.imageUrl);
+    const imageUrls = Array.isArray(p.imageUrls) ? p.imageUrls.map(toAbsoluteImageUrl).filter(Boolean) : undefined;
+    return {
+      ...p,
+      // Make it compatible with shared ProductCard (expects `id` + `name` + `imageUrl|imageUrls`)
+      id: p.id ?? p.productId,
+      name: p.name ?? p.productName,
+      brandName: p.brandName,
+      categoryName: p.categoryName,
+      basePrice: p.basePrice,
+      imageUrl,
+      imageUrls: imageUrls ?? (imageUrl ? [imageUrl] : p.imageUrls),
+    };
+  });
 
   const toggleProductSelection = (productId) => {
     const updated = new Set(selectedProductIds);
@@ -96,7 +127,7 @@ export default function Results() {
       <div className="results-content">
         {/* ── Header ──────────────────────────────────── */}
         <div className="results-header">
-          <h1>🏆 Your Top Recommendations</h1>
+          <h1>Your Top Recommendations</h1>
           <p className="results-subtitle">
             {category} — {products.length} products ranked by our AI scoring engine
           </p>
@@ -106,7 +137,7 @@ export default function Results() {
         {selectedProductIds.size === 0 && !showComparison && (
           <div className="comparison-info-banner">
             <div className="banner-content">
-              <span className="banner-icon">⚖️</span>
+              <span className="banner-icon">Compare</span>
               <div className="banner-text">
                 <h3>Compare Products</h3>
                 <p>Select 2 or more products using the checkboxes to compare them side-by-side, including price, durability, maintenance, climate suitability, and more!</p>
@@ -128,26 +159,26 @@ export default function Results() {
           <div className="comparison-toolbar">
             <div className="toolbar-info">
               <span className="selected-count">
-                ✓ {selectedProductIds.size} product{selectedProductIds.size !== 1 ? 's' : ''} selected
+                {selectedProductIds.size} product{selectedProductIds.size !== 1 ? 's' : ''} selected
               </span>
             </div>
             <div className="toolbar-actions">
               {compareError && (
-                <span className="toolbar-error">⚠️ {compareError}</span>
+                <span className="toolbar-error">{compareError}</span>
               )}
               <button 
                 className="toolbar-btn primary"
                 onClick={handleCompare}
                 disabled={comparisonLoading}
               >
-                {comparisonLoading ? '⏳ Comparing...' : '⚖️ Compare Selected'}
+                {comparisonLoading ? 'Comparing...' : 'Compare Selected'}
               </button>
               <button 
                 className="toolbar-btn secondary"
                 onClick={handleClearSelection}
                 disabled={comparisonLoading}
               >
-                ✕ Clear
+                Clear
               </button>
             </div>
           </div>
@@ -155,7 +186,7 @@ export default function Results() {
 
         {/* ── Rankings ────────────────────────────────── */}
         <div className="results-grid">
-          {products.map((product, idx) => (
+          {normalizedProducts.map((product, idx) => (
             <ProductCard 
               key={product.productId} 
               product={product} 
@@ -189,7 +220,7 @@ export default function Results() {
         {/* ── Answer Summary ──────────────────────────── */}
         {answers && Object.keys(answers).length > 0 && !showComparison && (
           <div className="answers-summary">
-            <h3>📝 Your Selections</h3>
+            <h3>Your Selections</h3>
             <div className="answers-grid">
               {Object.entries(answers).map(([key, val]) => (
                 <div key={key} className="answer-chip">
@@ -238,7 +269,7 @@ function ProductCard({ product, rank, isSelected, onToggleSelect }) {
 
   return (
     <div className={`product-card${rank === 1 && !excluded ? ' top-pick' : ''}${excluded ? ' excluded-card' : ''}`}>
-      {excluded && <div className="excluded-badge">⛔ Excluded by Rule</div>}
+  {excluded && <div className="excluded-badge">Excluded by Rule</div>}
       {rank === 1 && !excluded && <div className="top-badge">⭐ Top Pick</div>}
 
       {/* Header with checkbox inline */}
@@ -274,7 +305,7 @@ function ProductCard({ product, rank, isSelected, onToggleSelect }) {
         <div className="score-breakdown">
           <h4>Score Breakdown</h4>
           {Object.entries(strategyScores).map(([key, val]) => {
-            const meta = STRATEGY_META[key] || { label: key, color: '#999', icon: '📊' };
+            const meta = STRATEGY_META[key] || { label: key, color: '#999', icon: null };
             const pct = (val / maxScore) * 100;
             return (
               <div key={key} className="score-row">
@@ -299,7 +330,7 @@ function ProductCard({ product, rank, isSelected, onToggleSelect }) {
       {/* Trade-offs */}
       {tradeOffs && tradeOffs.length > 0 && (
         <div className="trade-offs">
-          <h4>⚠️ Trade-offs</h4>
+          <h4>Trade-offs</h4>
           {tradeOffs.map((t, i) => (
             <p key={i} className="trade-off-item">{t}</p>
           ))}
@@ -309,7 +340,7 @@ function ProductCard({ product, rank, isSelected, onToggleSelect }) {
       {/* Rule adjustments */}
       {!excluded && appliedRuleNames && appliedRuleNames.length > 0 && (
         <div className="rule-adjustments">
-          <h4>📋 Rule Adjustments</h4>
+          <h4>Rule Adjustments</h4>
           <div className="rule-adjustment-badge" style={{
             color: ruleAdjustment > 0 ? '#22c55e' : ruleAdjustment < 0 ? '#ef4444' : 'rgba(255,255,255,.5)'
           }}>
@@ -324,7 +355,7 @@ function ProductCard({ product, rank, isSelected, onToggleSelect }) {
       {/* Excluded product reasons */}
       {excluded && excludedByRules && excludedByRules.length > 0 && (
         <div className="excluded-reason">
-          <h4>⛔ Excluded Reasons</h4>
+          <h4>Excluded Reasons</h4>
           {excludedByRules.map((rule, i) => (
             <p key={i} className="excluded-rule-name">{rule}</p>
           ))}
@@ -333,7 +364,7 @@ function ProductCard({ product, rank, isSelected, onToggleSelect }) {
 
       {/* Explanation — served directly from backend (AI batch or deterministic) */}
       <div className="card-explanation-box">
-        <p className="card-explanation">✨ {product.explanation || "This product is recommended based on your preferences."}</p>
+  <p className="card-explanation">{product.explanation || "This product is recommended based on your preferences."}</p>
       </div>
     </div>
   );
@@ -377,9 +408,9 @@ function ComparisonPanel({ data, onClose }) {
         <div className="comparison-header">
           <h2>Product Comparison</h2>
           {fallbackUsed && (
-            <span className="fallback-badge">⚠️ Fallback summary used</span>
+            <span className="fallback-badge">Fallback summary used</span>
           )}
-          <button className="close-btn" onClick={onClose}>✕</button>
+          <button className="close-btn" onClick={onClose}>Close</button>
         </div>
 
         {/* Narrative */}

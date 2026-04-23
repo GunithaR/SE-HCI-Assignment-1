@@ -25,7 +25,7 @@ const ChatHeader = ({ onClose }) => (
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 backdropFilter: 'blur(4px)', flexShrink: 0,
             }}>
-                <span style={{ fontSize: 18, lineHeight: 1 }}>🏗️</span>
+                <span style={{ fontSize: 18, lineHeight: 1, fontWeight: 800, color: '#fff' }}>AI</span>
                 <span style={{
                     position: 'absolute', bottom: 0, right: 0,
                     width: 10, height: 10, borderRadius: '50%',
@@ -56,7 +56,7 @@ const ChatHeader = ({ onClose }) => (
             }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-        >✕</button>
+    >Close</button>
     </div>
 );
 
@@ -220,7 +220,7 @@ export default function AssistantWidget() {
     const [messages, setMessages] = useState([
         {
             from: 'bot',
-            text: "Hi! I'm your **L+ SIVILIMA Assistant** 👷\n\nAsk me anything about construction materials or how this platform works.",
+            text: "Hi! I'm your **L+ SIVILIMA Assistant**.\n\nAsk me anything about construction materials or how this platform works.",
             time: new Date(),
         },
     ]);
