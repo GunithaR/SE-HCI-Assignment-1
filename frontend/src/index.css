@@ -570,13 +570,25 @@ input[type=range].price-slider::-moz-range-thumb {
 
 /* ── Modal & Lightbox Animations ────────────────────────────────────────── */
 @keyframes modalFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modalZoomIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .animate-modal-fade {
@@ -589,9 +601,17 @@ input[type=range].price-slider::-moz-range-thumb {
 
 /* ── Skeleton Pulse ──────────────────────────────────────────────────────── */
 @keyframes skeletonPulse {
-  0% { background-color: #f3f0ff; }
-  50% { background-color: #ede9fe; }
-  100% { background-color: #f3f0ff; }
+  0% {
+    background-color: #f3f0ff;
+  }
+
+  50% {
+    background-color: #ede9fe;
+  }
+
+  100% {
+    background-color: #f3f0ff;
+  }
 }
 
 .skeleton {
@@ -600,13 +620,14 @@ input[type=range].price-slider::-moz-range-thumb {
 
 /* ── Staggered Entrance ──────────────────────────────────────────────────── */
 @keyframes cardEntrance {
-  from { 
-    opacity: 0; 
-    transform: translateY(20px) scale(0.98); 
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
   }
-  to { 
-    opacity: 1; 
-    transform: translateY(0) scale(1); 
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
