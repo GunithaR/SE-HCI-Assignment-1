@@ -57,13 +57,20 @@
     max-width: 500px;
 }
 
-.login-image {
+.login-image-container {
     width: 100%;
     max-width: 500px;
-    height: auto;
-    max-height: 320px;
+    height: 320px;
     border-radius: 1.5rem;
     box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.login-image {
+    width: 100%;
+    height: 100%;
     display: block;
     object-fit: cover;
 }
