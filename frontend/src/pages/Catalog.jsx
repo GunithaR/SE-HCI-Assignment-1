@@ -250,7 +250,7 @@ export default function Catalog() {
 
             {/* ── HERO — full-bleed behind fixed navbar ─────────────────── */}
             <div style={{
-                position: 'relative', width: '100%', height: 540,
+                position: 'relative', width: '100%', height: 660,
                 overflow: 'hidden',
                 opacity: heroVisible ? 1 : 0,
                 transition: 'opacity 0.26s ease',
