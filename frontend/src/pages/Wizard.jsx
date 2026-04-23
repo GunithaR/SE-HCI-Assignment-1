@@ -19,6 +19,13 @@ import imgWall from '../assets/wall.png';
 import imgCeiling from '../assets/ceiling.png';
 import imgAccessories from '../assets/accessories.png';
 
+/* ── Helper: Remove Emojis ───────────────────────────────────── */
+const stripEmojis = (str) => {
+  if (typeof str !== 'string') return str;
+  // This regex covers most common emoji ranges
+  return str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E6}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F3FB}-\u{1F3FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}]/gu, '').trim();
+};
+
 const BG_IMAGES = [bgQ1, bgQ2, bgQ3, bgQ4, bgQ5];
 
 /* ── Category metadata ───────────────────────────────────────── */
@@ -185,7 +192,8 @@ function ResultCard({ product, rank, isSelected, onToggleSelect }) {
   const resolvedImageUrl = toAbsoluteImageUrl(imageUrl);
 
   // Split explanation into bullets
-  const explanation = product.explanation || 'This product is recommended based on your preferences.';
+  const rawExplanation = product.explanation || 'This product is recommended based on your preferences.';
+  const explanation = stripEmojis(rawExplanation);
   const bullets = explanation.split(/(?<=\.)\s+/).filter(s => s.trim().length > 3).slice(0, 4);
 
   const isTop = rank === 1 && !excluded;
@@ -226,8 +234,8 @@ function ResultCard({ product, rank, isSelected, onToggleSelect }) {
         {/* Name + Price */}
         <div className="result-card-top">
           <div>
-            <h3 className="result-card-name">{productName}</h3>
-            {brandName && <div className="result-card-brand">{brandName}</div>}
+            <h3 className="result-card-name">{stripEmojis(productName)}</h3>
+            {brandName && <div className="result-card-brand">{stripEmojis(brandName)}</div>}
           </div>
           {basePrice && (
             <div className="result-card-price">
@@ -328,14 +336,14 @@ function ComparisonPanel({ data, onClose }) {
           </div>
         </div>
         {comparativeNarrative && (
-          <div className="comparison-narrative"><p>{comparativeNarrative}</p></div>
+          <div className="comparison-narrative"><p>{stripEmojis(comparativeNarrative)}</p></div>
         )}
         <div className="comparison-table-wrap">
           <table className="comparison-table">
             <thead>
               <tr>
                 <th className="attr-col">Attribute</th>
-                {products.map((p, i) => <th key={i} className="product-col">{p.productName}</th>)}
+                {products.map((p, i) => <th key={i} className="product-col">{stripEmojis(p.productName)}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -384,7 +392,7 @@ function AnswerChips({ answers, visibleQuestions, selectedCategory }) {
         return (
           <div key={q.id} className="answer-chip-pill">
             <span className="chip-key">{label}</span>
-            <span className="chip-val">{val}</span>
+            <span className="chip-val">{stripEmojis(val)}</span>
           </div>
         );
       })}
@@ -529,8 +537,8 @@ function ResultsView({ resultsData, answers, visibleQuestions, selectedCategory,
           </div>
           {additionalInsights.map((ins, i) => (
             <div key={i} className="insight-row">
-              <p className="insight-title">{ins.title}</p>
-              <p className="insight-detail">{ins.detail}</p>
+              <p className="insight-title">{stripEmojis(ins.title)}</p>
+              <p className="insight-detail">{stripEmojis(ins.detail)}</p>
             </div>
           ))}
         </div>
@@ -615,8 +623,8 @@ function OptionCard({ option, selected, onClick, index }) {
     <button className={`wizard-opt-card${selected ? ' selected' : ''}`} onClick={onClick}>
       {selected && <div className="opt-check"><CheckSvg /></div>}
       <div className="opt-icon-bg">{IconFn(iconColor)}</div>
-      <div className="opt-title">{option.label}</div>
-      {option.desc && <div className="opt-desc">{option.desc}</div>}
+      <div className="opt-title">{stripEmojis(option.label)}</div>
+      {option.desc && <div className="opt-desc">{stripEmojis(option.desc)}</div>}
     </button>
   );
 }
@@ -651,7 +659,7 @@ function AnswersSidebar({ visibleQuestions, answers, onEdit, selectedCategory })
               <div key={q.id} className="sidebar-item-answered">
                 <div className="si-left">
                   <CategoryIcon color="#630ed4" />
-                  <span className="si-label">{label}: {ansText}</span>
+                  <span className="si-label">{label}: {stripEmojis(ansText)}</span>
                 </div>
                 <button className="si-edit" onClick={() => onEdit(q.id)}>Edit</button>
               </div>
@@ -881,8 +889,8 @@ export default function Wizard() {
                       onClick={() => selectCategory(cat)}
                     >
                       {meta.img && <img className="cat-img" src={meta.img} alt={cat} />}
-                      <div className="opt-title">{cat}</div>
-                      {meta.desc && <div className="opt-desc">{meta.desc}</div>}
+                      <div className="opt-title">{stripEmojis(cat)}</div>
+                      {meta.desc && <div className="opt-desc">{stripEmojis(meta.desc)}</div>}
                     </button>
                   );
                 })}
@@ -929,8 +937,8 @@ export default function Wizard() {
                 {/* ── Active Question ──────────────────── */}
                 {currentQ && !isReviewStep && (
                   <div className="wizard-fade-in" key={currentQ.id}>
-                    <h1 className="wizard-q-heading">{currentQ.question}</h1>
-                    {currentQ.subtext && <p className="wizard-q-subtext">{currentQ.subtext}</p>}
+                    <h1 className="wizard-q-heading">{stripEmojis(currentQ.question)}</h1>
+                    {currentQ.subtext && <p className="wizard-q-subtext">{stripEmojis(currentQ.subtext)}</p>}
                     <div className="wizard-options-grid">
                       {currentQ.options.map((opt, idx) => (
                         <OptionCard
@@ -957,8 +965,8 @@ export default function Wizard() {
                         return (
                           <div key={q.id} className="wizard-review-item">
                             <div>
-                              <div className="wizard-review-q">{q.question}</div>
-                              <div className="wizard-review-a">{ansLabel}</div>
+                              <div className="wizard-review-q">{stripEmojis(q.question)}</div>
+                              <div className="wizard-review-a">{stripEmojis(ansLabel)}</div>
                             </div>
                             <button
                               className="wizard-review-edit"

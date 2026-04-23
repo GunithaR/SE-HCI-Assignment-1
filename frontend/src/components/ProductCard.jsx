@@ -44,7 +44,7 @@ function Pill({ icon, label, color = '#7c3aed', bg = 'rgba(124,58,237,0.09)', bo
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, index = 0 }) {
     // Unified field resolution — handles both Home & Catalog data shapes
     const imageToDisplay = product.imageUrl || product.imageUrls?.[0] || null;
     const rating = product.averageRating != null
@@ -60,6 +60,7 @@ export default function ProductCard({ product }) {
     return (
         <Link to={`/product/${product.id}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
             <div
+                className="card-entrance"
                 style={{
                     background: '#fff',
                     border: '1.5px solid #ede9fe',
@@ -70,6 +71,7 @@ export default function ProductCard({ product }) {
                     transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
                     boxShadow: '0 2px 16px rgba(124,58,237,0.08)',
                     cursor: 'pointer',
+                    animationDelay: `${index * 0.06}s`,
                 }}
                 onMouseEnter={e => {
                     e.currentTarget.style.transform = 'translateY(-6px)';
