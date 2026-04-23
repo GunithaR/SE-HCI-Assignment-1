@@ -48,15 +48,21 @@ const ChatHeader = ({ onClose }) => (
         <button
             onClick={onClose}
             style={{
-                background: 'rgba(255,255,255,0.1)', border: 'none',
-                color: 'rgba(255,255,255,0.8)', cursor: 'pointer',
+                background: 'rgba(255,255,255,0.15)', border: 'none',
+                color: '#fff', cursor: 'pointer',
                 width: 30, height: 30, borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '1.1rem', transition: 'background 0.2s',
+                transition: 'all 0.2s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-    >Close</button>
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.25)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.transform = 'scale(1)'; }}
+            aria-label="Close Chat"
+        >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
     </div>
 );
 
@@ -285,23 +291,43 @@ export default function AssistantWidget() {
             {/* Premium FAB toggle button */}
             <button
                 onClick={() => setOpen((o) => !o)}
-                className={`relative w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-transform hover:scale-110 active:scale-95 z-50 ${
-                    open
-                        ? 'bg-slate-700 text-white shadow-xl'
-                        : 'bg-gradient-to-br from-violet-600 via-indigo-600 to-fuchsia-500 text-white shadow-[0_10px_30px_rgba(124,58,237,0.4)] fab-pulse'
-                }`}
                 aria-label="Toggle Assistant"
-                style={{ transitionDuration: '0.3s' }}
+                style={{
+                    position: 'relative',
+                    width: 56, height: 56,
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    zIndex: 60,
+                    border: 'none',
+                    color: '#fff',
+                    background: open 
+                        ? '#1e293b' 
+                        : 'linear-gradient(135deg, #7c3aed, #6366f1, #d946ef)',
+                    boxShadow: open
+                        ? '0 10px 25px rgba(0,0,0,0.2)'
+                        : '0 10px 30px rgba(124,58,237,0.4)',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1) rotate(5deg)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1) rotate(0deg)'; }}
             >
-                {open ? (
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                ) : (
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                    </svg>
-                )}
+                <div style={{
+                    transition: 'transform 0.4s ease',
+                    transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                    {open ? (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    ) : (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    )}
+                </div>
             </button>
         </div>
     );

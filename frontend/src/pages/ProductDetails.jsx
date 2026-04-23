@@ -3,25 +3,44 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import catalogService from '../services/catalogService';
 import { useAuth } from '../context/AuthContext';
+import { 
+    Shield, 
+    Banknote, 
+    CloudSun, 
+    Wrench, 
+    Palette, 
+    CheckCircle2, 
+    XCircle, 
+    ArrowLeft, 
+    MessageSquare,
+    AlertCircle,
+    Package,
+    Star,
+    StarHalf,
+    X,
+    Maximize2
+} from 'lucide-react';
 
 const BUDGET_CONFIG = {
-    LOW:    { label: 'Budget-Friendly', icon: '💰', color: '#16a34a', bg: 'rgba(22,163,74,0.12)',  border: 'rgba(22,163,74,0.35)' },
-    MEDIUM: { label: 'Mid-Range',       icon: '💎', color: '#7c3aed', bg: 'rgba(124,58,237,0.12)', border: 'rgba(124,58,237,0.35)' },
-    HIGH:   { label: 'Premium',         icon: '👑', color: '#b45309', bg: 'rgba(180,83,9,0.12)',   border: 'rgba(180,83,9,0.35)' },
+    LOW: { label: 'Budget-Friendly', color: '#16a34a', bg: 'rgba(22,163,74,0.12)', border: 'rgba(22,163,74,0.35)', Icon: Banknote },
+    MEDIUM: { label: 'Mid-Range', color: '#7c3aed', bg: 'rgba(124,58,237,0.12)', border: 'rgba(124,58,237,0.35)', Icon: Banknote },
+    HIGH: { label: 'Premium', color: '#b45309', bg: 'rgba(180,83,9,0.12)', border: 'rgba(180,83,9,0.35)', Icon: Banknote },
 };
 
 function StarRow({ rating, size = '1.1rem' }) {
-    const full  = Math.floor(rating);
-    const half  = rating - full >= 0.5;
+    const full = Math.floor(rating);
+    const half = rating - full >= 0.5;
     const empty = 5 - full - (half ? 1 : 0);
     return (
-        <span style={{ color: '#f59e0b', fontSize: size, letterSpacing: 2 }}>
-            {'★'.repeat(full)}{half ? '⯨' : ''}<span style={{ color: '#ddd6fe' }}>{'★'.repeat(empty)}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: '#f59e0b' }}>
+            {[...Array(full)].map((_, i) => <Star key={`f-${i}`} size={size} fill="currentColor" />)}
+            {half && <StarHalf size={size} fill="currentColor" />}
+            {[...Array(empty)].map((_, i) => <Star key={`e-${i}`} size={size} style={{ color: '#ddd6fe' }} />)}
         </span>
     );
 }
 
-function SpecCard({ icon, label, value }) {
+function SpecCard({ Icon, label, value }) {
     return (
         <div style={{
             display: 'flex', alignItems: 'flex-start', gap: 12,
@@ -32,7 +51,11 @@ function SpecCard({ icon, label, value }) {
             onMouseEnter={e => { e.currentTarget.style.borderColor = '#a78bfa'; e.currentTarget.style.boxShadow = '0 4px 18px rgba(124,58,237,0.12)'; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = '#ede9fe'; e.currentTarget.style.boxShadow = 'none'; }}
         >
-            <span style={{ fontSize: '1.4rem', lineHeight: 1, marginTop: 2 }}>{icon}</span>
+            {Icon && (
+                <div style={{ color: '#7c3aed', marginTop: 2 }}>
+                    <Icon size={20} strokeWidth={2.5} />
+                </div>
+            )}
             <div>
                 <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>{label}</div>
                 <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e1b4b' }}>{value}</div>
@@ -44,17 +67,19 @@ function SpecCard({ icon, label, value }) {
 export default function ProductDetails() {
     const { id } = useParams();
     const { user } = useAuth();
-    const [product, setProduct]             = useState(null);
-    const [reviews, setReviews]             = useState([]);
-    const [loading, setLoading]             = useState(true);
-    const [error, setError]                 = useState('');
-    const [activeImg, setActiveImg]         = useState(0);
-    const [score, setScore]                 = useState(5);
-    const [hoverScore, setHoverScore]       = useState(0);
-    const [comment, setComment]             = useState('');
-    const [submitting, setSubmitting]       = useState(false);
-    const [reviewError, setReviewError]     = useState('');
+    const [product, setProduct] = useState(null);
+    const [reviews, setReviews] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [activeImg, setActiveImg] = useState(0);
+    const [score, setScore] = useState(5);
+    const [hoverScore, setHoverScore] = useState(0);
+    const [comment, setComment] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [reviewError, setReviewError] = useState('');
     const [reviewSuccess, setReviewSuccess] = useState(false);
+    const [showLightbox, setShowLightbox] = useState(false);
+    const [isHoveringImage, setIsHoveringImage] = useState(false);
 
     useEffect(() => {
         setLoading(true);
@@ -68,7 +93,7 @@ export default function ProductDetails() {
     const fetchReviews = () => {
         catalogService.getReviews(id)
             .then(data => setReviews(data.content || []))
-            .catch(() => {});
+            .catch(() => { });
     };
 
     const handleReviewSubmit = async (e) => {
@@ -93,22 +118,26 @@ export default function ProductDetails() {
 
     if (error || !product) return (
         <div style={{ minHeight: '100vh', padding: '8rem 1.5rem', background: '#fbf8ff', textAlign: 'center' }}>
-            <p style={{ fontSize: '3rem' }}>😕</p>
+            <div style={{ color: '#dc2626', marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
+                <AlertCircle size={64} strokeWidth={1.5} />
+            </div>
             <h2 style={{ color: '#dc2626', fontWeight: 700 }}>{error || 'Product not found'}</h2>
-            <Link to="/catalog" style={{ color: '#7c3aed', textDecoration: 'none', fontWeight: 600, marginTop: '1rem', display: 'inline-block' }}>← Back to Catalog</Link>
+            <Link to="/catalog" style={{ color: '#7c3aed', textDecoration: 'none', fontWeight: 600, marginTop: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <ArrowLeft size={18} /> Back to Catalog
+            </Link>
         </div>
     );
 
     const { name, description, basePrice, brandName, categoryName, budgetLevel,
-            durabilityRating, climateSuitability, maintenanceLevel, style: pStyle,
-            imageUrls, averageRating, reviewCount, isActive } = product;
+        durabilityRating, climateSuitability, maintenanceLevel, style: pStyle,
+        imageUrls, averageRating, reviewCount, isActive } = product;
 
-    const budget  = BUDGET_CONFIG[budgetLevel];
+    const budget = BUDGET_CONFIG[budgetLevel];
     const inStock = isActive !== false;
-    const imgs    = imageUrls && imageUrls.length > 0 ? imageUrls : [];
+    const imgs = imageUrls && imageUrls.length > 0 ? imageUrls : [];
 
     const avgScore = reviews.length > 0 ? (reviews.reduce((s, r) => s + r.score, 0) / reviews.length) : 0;
-    const distrib  = [5,4,3,2,1].map(s => ({ star: s, count: reviews.filter(r => r.score === s).length }));
+    const distrib = [5, 4, 3, 2, 1].map(s => ({ star: s, count: reviews.filter(r => r.score === s).length }));
 
     return (
         <div style={{ minHeight: '100vh', background: '#fbf8ff', paddingTop: '6rem', paddingBottom: '5rem', fontFamily: "'Manrope', 'Inter', sans-serif" }}>
@@ -117,7 +146,7 @@ export default function ProductDetails() {
                 {/* Breadcrumb */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '2rem', fontSize: '0.82rem', color: '#9ca3af' }}>
                     <Link to="/catalog" style={{ color: '#7c3aed', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        ← Catalog
+                        <ArrowLeft size={14} strokeWidth={2.5} /> Catalog
                     </Link>
                     <span>/</span>
                     {categoryName && <span style={{ color: '#9ca3af' }}>{categoryName}</span>}
@@ -136,15 +165,49 @@ export default function ProductDetails() {
                             borderRadius: 20, overflow: 'hidden',
                             background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)',
                             border: '2px solid #ddd6fe',
-                            boxShadow: '0 8px 40px rgba(124,58,237,0.13)',
+                            boxShadow: isHoveringImage ? '0 12px 50px rgba(124,58,237,0.2)' : '0 8px 40px rgba(124,58,237,0.13)',
                             display: 'flex', justifyContent: 'center', alignItems: 'center',
                             position: 'relative',
-                        }}>
+                            cursor: imgs.length > 0 ? 'zoom-in' : 'default',
+                            transition: 'all 0.3s ease',
+                        }}
+                            onClick={() => imgs.length > 0 && setShowLightbox(true)}
+                            onMouseEnter={() => setIsHoveringImage(true)}
+                            onMouseLeave={() => setIsHoveringImage(false)}
+                        >
                             {imgs.length > 0 ? (
                                 <img src={imgs[activeImg]} alt={name}
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.3s' }} />
+                                    style={{ 
+                                        width: '100%', height: '100%', objectFit: 'cover', 
+                                        transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        transform: isHoveringImage ? 'scale(1.08)' : 'scale(1)',
+                                    }} />
                             ) : (
-                                <span style={{ fontSize: '4rem', opacity: 0.4 }}>🏗️</span>
+                                <div style={{ width: '100%', height: '100%', background: '#ede9fe', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#a78bfa' }}>
+                                    <Package size={64} strokeWidth={1} />
+                                </div>
+                            )}
+
+                            {/* Hover Overlay */}
+                            {imgs.length > 0 && (
+                                <div style={{
+                                    position: 'absolute', inset: 0,
+                                    background: 'rgba(124, 58, 237, 0.05)',
+                                    display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                    opacity: isHoveringImage ? 1 : 0,
+                                    transition: 'opacity 0.3s',
+                                    pointerEvents: 'none',
+                                }}>
+                                    <div style={{
+                                        background: 'rgba(255,255,255,0.9)',
+                                        padding: 12, borderRadius: '50%',
+                                        boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+                                        transform: isHoveringImage ? 'scale(1)' : 'scale(0.8)',
+                                        transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                    }}>
+                                        <Maximize2 size={24} color="#7c3aed" />
+                                    </div>
+                                </div>
                             )}
                             {/* Budget badge overlay */}
                             {budget && (
@@ -154,7 +217,10 @@ export default function ProductDetails() {
                                     borderRadius: 9999, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 700,
                                     backdropFilter: 'blur(10px)', boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
                                     display: 'flex', alignItems: 'center', gap: 5,
-                                }}>{budget.icon} {budget.label}</span>
+                                }}>
+                                    <budget.Icon size={14} strokeWidth={2.5} />
+                                    {budget.label}
+                                </span>
                             )}
                             {/* Stock badge overlay */}
                             <span style={{
@@ -164,7 +230,11 @@ export default function ProductDetails() {
                                 color: inStock ? '#16a34a' : '#dc2626',
                                 borderRadius: 9999, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 700,
                                 backdropFilter: 'blur(10px)',
-                            }}>{inStock ? '✅ In Stock' : '❌ Out of Stock'}</span>
+                                display: 'flex', alignItems: 'center', gap: 5,
+                            }}>
+                                {inStock ? <CheckCircle2 size={14} strokeWidth={2.5} /> : <XCircle size={14} strokeWidth={2.5} />}
+                                {inStock ? 'In Stock' : 'Out of Stock'}
+                            </span>
                         </div>
 
                         {/* Thumbnails */}
@@ -241,11 +311,11 @@ export default function ProductDetails() {
                         <div>
                             <h3 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 12px' }}>Specifications</h3>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10 }}>
-                                {budgetLevel       && <SpecCard icon="💰" label="Budget Level"    value={budgetLevel} />}
-                                {durabilityRating  && <SpecCard icon="🛡️" label="Durability"       value={`${durabilityRating} / 10`} />}
-                                {climateSuitability && <SpecCard icon="🌤" label="Climate"         value={climateSuitability} />}
-                                {maintenanceLevel  && <SpecCard icon="🔧" label="Maintenance"      value={maintenanceLevel} />}
-                                {pStyle            && <SpecCard icon="🎨" label="Style"            value={pStyle} />}
+                                {budgetLevel && <SpecCard Icon={Banknote} label="Budget Level" value={budgetLevel} />}
+                                {durabilityRating && <SpecCard Icon={Shield} label="Durability" value={`${durabilityRating} / 10`} />}
+                                {climateSuitability && <SpecCard Icon={CloudSun} label="Climate" value={climateSuitability} />}
+                                {maintenanceLevel && <SpecCard Icon={Wrench} label="Maintenance" value={maintenanceLevel} />}
+                                {pStyle && <SpecCard Icon={Palette} label="Style" value={pStyle} />}
                             </div>
                         </div>
                     </div>
@@ -256,8 +326,8 @@ export default function ProductDetails() {
                     {/* Divider */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: '2.5rem' }}>
                         <div style={{ flex: 1, height: 1, background: '#ede9fe' }} />
-                        <h2 style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 900, fontSize: '1.5rem', color: '#1e1b4b', margin: 0, whiteSpace: 'nowrap' }}>
-                            ⭐ Customer Reviews
+                        <h2 style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 900, fontSize: '1.5rem', color: '#1e1b4b', margin: 0, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <MessageSquare size={24} color="#7c3aed" /> Customer Reviews
                         </h2>
                         <div style={{ flex: 1, height: 1, background: '#ede9fe' }} />
                     </div>
@@ -297,7 +367,9 @@ export default function ProductDetails() {
                         <div style={{ flex: '1 1 320px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             {reviews.length === 0 ? (
                                 <div style={{ background: '#fff', border: '1.5px solid #ede9fe', borderRadius: 20, padding: '2.5rem', textAlign: 'center' }}>
-                                    <p style={{ fontSize: '2.5rem', margin: '0 0 8px' }}>💬</p>
+                                    <div style={{ color: '#ddd6fe', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+                                        <MessageSquare size={48} strokeWidth={1} />
+                                    </div>
                                     <p style={{ color: '#9ca3af', fontWeight: 500, margin: 0 }}>No reviews yet. Be the first!</p>
                                 </div>
                             ) : (
@@ -309,8 +381,10 @@ export default function ProductDetails() {
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                                             <div>
                                                 <div style={{ fontWeight: 700, color: '#1e1b4b', fontSize: '0.88rem' }}>{r.userEmail || 'Anonymous'}</div>
-                                                <div style={{ color: '#f59e0b', fontSize: '0.95rem', marginTop: 2 }}>
-                                                    {'★'.repeat(r.score)}<span style={{ color: '#ddd6fe' }}>{'★'.repeat(5 - r.score)}</span>
+                                                <div style={{ color: '#f59e0b', display: 'flex', gap: 2, marginTop: 4 }}>
+                                                    {[...Array(5)].map((_, i) => (
+                                                        <Star key={i} size={14} fill={i < r.score ? "currentColor" : "none"} style={{ color: i < r.score ? '#f59e0b' : '#ddd6fe' }} />
+                                                    ))}
                                                 </div>
                                             </div>
                                             <span style={{ color: '#9ca3af', fontSize: '0.72rem', background: '#f5f3ff', padding: '3px 10px', borderRadius: 9999 }}>
@@ -331,7 +405,7 @@ export default function ProductDetails() {
                                 position: 'sticky', top: 90,
                             }}>
                                 <h3 style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: '1.1rem', color: '#1e1b4b', margin: '0 0 1.2rem' }}>
-                                    ✍️ Write a Review
+                                    Write a Review
                                 </h3>
                                 {!user ? (
                                     <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
@@ -346,7 +420,7 @@ export default function ProductDetails() {
                                         )}
                                         {reviewSuccess && (
                                             <div style={{ background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.25)', color: '#16a34a', borderRadius: 10, padding: '10px 12px', fontSize: '0.82rem' }}>
-                                                ✅ Review submitted!
+                                                Review submitted!
                                             </div>
                                         )}
 
@@ -354,18 +428,20 @@ export default function ProductDetails() {
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Your Rating</label>
                                             <div style={{ display: 'flex', gap: 6 }}>
-                                                {[1,2,3,4,5].map(s => (
+                                                {[1, 2, 3, 4, 5].map(s => (
                                                     <button type="button" key={s}
                                                         onClick={() => setScore(s)}
                                                         onMouseEnter={() => setHoverScore(s)}
                                                         onMouseLeave={() => setHoverScore(0)}
                                                         style={{
                                                             background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                                                            fontSize: '2rem', lineHeight: 1,
+                                                            lineHeight: 1,
                                                             color: s <= (hoverScore || score) ? '#f59e0b' : '#ddd6fe',
-                                                            transition: 'color 0.15s, transform 0.15s',
+                                                            transition: 'all 0.15s',
                                                             transform: s <= (hoverScore || score) ? 'scale(1.15)' : 'scale(1)',
-                                                        }}>★</button>
+                                                        }}>
+                                                        <Star size={32} fill={s <= (hoverScore || score) ? "currentColor" : "none"} strokeWidth={1.5} />
+                                                    </button>
                                                 ))}
                                             </div>
                                         </div>
@@ -406,6 +482,80 @@ export default function ProductDetails() {
                         </div>
                     </div>
                 </div>
+
+                {/* ── LIGHTBOX POPUP ──────────────────────────────────────── */}
+                {showLightbox && (
+                    <div style={{
+                        position: 'fixed', inset: 0, zIndex: 3000,
+                        background: 'linear-gradient(135deg, rgba(88, 28, 135, 0.5) 0%, rgba(26, 12, 58, 0.7) 100%)',
+                        backdropFilter: 'blur(20px) saturate(180%)',
+                        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                        padding: '1.5rem',
+                        cursor: 'zoom-out',
+                        animation: 'modalFadeIn 0.3s ease-out forwards',
+                    }}
+                        onClick={() => setShowLightbox(false)}
+                    >
+                        {/* Close button */}
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); setShowLightbox(false); }}
+                            style={{
+                                position: 'absolute', top: '1.5rem', right: '1.5rem',
+                                background: 'rgba(255,255,255,0.1)', border: 'none',
+                                borderRadius: '50%', width: 44, height: 44,
+                                display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                color: '#fff', cursor: 'pointer', transition: 'all 0.3s',
+                                zIndex: 10,
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'scale(1.1) rotate(90deg)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'scale(1) rotate(0deg)'; }}
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <div 
+                            style={{ 
+                                maxWidth: '95vw', maxHeight: '85vh', position: 'relative',
+                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem',
+                                cursor: 'default',
+                                animation: 'modalZoomIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+                            }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div style={{ 
+                                position: 'relative',
+                                boxShadow: '0 30px 100px rgba(0,0,0,0.6)',
+                                borderRadius: 16, overflow: 'hidden',
+                                background: '#000',
+                            }}>
+                                <img 
+                                    src={imgs[activeImg]} 
+                                    alt={name} 
+                                    style={{ 
+                                        display: 'block',
+                                        maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain', 
+                                    }} 
+                                />
+                            </div>
+                            
+                            {/* Caption */}
+                            <div style={{ 
+                                background: 'rgba(255,255,255,0.1)',
+                                backdropFilter: 'blur(10px)',
+                                padding: '8px 20px',
+                                borderRadius: 50,
+                                color: '#fff',
+                                fontSize: '0.9rem',
+                                fontWeight: 600,
+                                letterSpacing: '0.02em',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                            }}>
+                                {name}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
             </div>
         </div>

@@ -55,16 +55,16 @@ function ProductRow({ title, products, loading, onViewAll }) {
             >
                 {loading ? (
                     Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} style={{ width: 280, minHeight: 420, borderRadius: 20, background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)', flexShrink: 0, animation: 'pulse 1.5s infinite' }} />
+                        <div key={i} className="skeleton" style={{ width: 280, minHeight: 420, borderRadius: 20, flexShrink: 0 }} />
                     ))
                 ) : products.length === 0 ? (
                     <div style={{ padding: '3rem 2rem', color: '#9ca3af', textAlign: 'center', width: '100%' }}>
                         No products available.
                     </div>
                 ) : (
-                    products.map(p => (
+                    products.map((p, i) => (
                         <div key={p.id} style={{ width: 280, flexShrink: 0 }}>
-                            <ProductCard product={p} />
+                            <ProductCard product={p} index={i} />
                         </div>
                     ))
                 )}
@@ -83,6 +83,7 @@ export default function Home() {
     const [allProducts, setAllProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [gridVisible, setGridVisible] = useState(true);
     const categoryRef = useRef(null);
 
     useEffect(() => {
@@ -122,9 +123,10 @@ export default function Home() {
             {/* ── HERO SECTION ─────────────────────────────────────────────── */}
             <div style={{ position: 'relative', width: '100%', height: '100vh', minHeight: 600, overflow: 'hidden', flexShrink: 0 }}>
                 <img
+                    className="ken-burns"
                     src="/store-bg.jpg"
                     alt=""
-                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', filter: 'blur(4px)', transform: 'scale(1.05)' }}
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', filter: 'blur(4px)' }}
                     onError={e => { e.currentTarget.style.display = 'none'; }}
                 />
                 {/* Dark purple gradient overlay */}
@@ -157,11 +159,15 @@ export default function Home() {
                             color: '#ffffff',
                             textShadow: '0 4px 40px rgba(99,14,212,0.5)',
                             transform: 'rotate(0.12deg)', margin: 0,
+                            animation: 'cardEntrance 0.8s cubic-bezier(0.2, 1, 0.3, 1) both',
                         }}>
                             <span style={{ display: 'block', fontSize: 'clamp(4rem, 9vw, 8.5rem)', marginBottom: '0.4em' }}>L+</span>
                             <span style={{ display: 'block', fontSize: 'clamp(3.5rem, 8.5vw, 8rem)' }}>සිවිලිම</span>
                         </h1>
-                        <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '1.1rem', fontWeight: 500, marginTop: 12, letterSpacing: '-0.3px' }}>
+                        <p style={{ 
+                            color: 'rgba(255,255,255,0.75)', fontSize: '1.1rem', fontWeight: 500, marginTop: 12, letterSpacing: '-0.3px',
+                            animation: 'cardEntrance 0.8s cubic-bezier(0.2, 1, 0.3, 1) both 0.2s',
+                        }}>
                             Your trusted construction materials platform
                         </p>
                     </div>
@@ -175,6 +181,7 @@ export default function Home() {
                         borderRadius: 9999, padding: 8,
                         display: 'flex', alignItems: 'center',
                         boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+                        animation: 'cardEntrance 0.8s cubic-bezier(0.2, 1, 0.3, 1) both 0.4s',
                     }}>
                         <input
                             placeholder="Search roofing, flooring, ceiling materials…"
@@ -203,7 +210,10 @@ export default function Home() {
                     </div>
 
                     {/* CTA buttons */}
-                    <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <div style={{ 
+                        display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center',
+                        animation: 'cardEntrance 0.8s cubic-bezier(0.2, 1, 0.3, 1) both 0.6s',
+                    }}>
                         <button
                             onClick={scrollToCategories}
                             style={{
@@ -277,7 +287,17 @@ export default function Home() {
                 {categories.map(cat => (
                     <button
                         key={cat.id}
-                        onClick={() => setActiveCatId(prev => prev === cat.id ? null : cat.id)}
+                        onClick={() => {
+                            if (activeCatId === cat.id) {
+                                setActiveCatId(null);
+                            } else {
+                                setGridVisible(false);
+                                setTimeout(() => {
+                                    setActiveCatId(cat.id);
+                                    setGridVisible(true);
+                                }, 300);
+                            }
+                        }}
                         style={{
                             background: activeCatId === cat.id ? '#7c3aed' : '#ede9fe',
                             color: activeCatId === cat.id ? '#fff' : '#4c1d95',
@@ -314,12 +334,20 @@ export default function Home() {
                         {loading ? (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 28 }}>
                                 {Array.from({ length: 8 }).map((_, i) => (
-                                    <div key={i} style={{ height: 420, borderRadius: 20, background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)', animation: 'pulse 1.5s infinite' }} />
+                                    <div key={i} className="skeleton" style={{ height: 420, borderRadius: 20 }} />
                                 ))}
                             </div>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 28 }}>
-                                {filtered.map(p => <ProductCard key={p.id} product={p} />)}
+                            <div 
+                                key={activeCatId || 'all'}
+                                className={gridVisible ? 'card-entrance' : ''}
+                                style={{ 
+                                    display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 28,
+                                    opacity: gridVisible ? 1 : 0,
+                                    transition: 'opacity 0.3s ease'
+                                }}
+                            >
+                                {filtered.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
                                 {filtered.length === 0 && (
                                     <p style={{ color: '#9ca3af', gridColumn: '1/-1', textAlign: 'center', padding: '3rem' }}>
                                         No products found.
