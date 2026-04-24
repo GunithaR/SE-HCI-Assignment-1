@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Package, Settings, Users, Eye, History } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import AdminAnalyticsPanel from './AdminAnalyticsPanel';
 import AdminProductPanel from './AdminProductPanel';
@@ -15,11 +16,11 @@ function Toast({ msg, isError }) {
 
 /* ── Navigation Items Config ─────────────────────────────────────────────── */
 const NAV_ITEMS = [
-    { id: 'analytics', icon: null, label: 'Analytics', sub: [{ id: 'history', icon: null, label: 'Rec. History' }] },
-    { id: 'products', icon: null, label: 'Product Management' },
-    { id: 'rules', icon: null, label: 'Rule Management' },
-    { id: 'users', icon: null, label: 'User Management' },
-    { id: 'catalog', icon: null, label: 'View Catalog' },
+    { id: 'analytics', icon: <LayoutDashboard size={18} />, label: 'Analytics', sub: [{ id: 'history', icon: <History size={16} />, label: 'Rec. History' }] },
+    { id: 'products', icon: <Package size={18} />, label: 'Product Management' },
+    { id: 'rules', icon: <Settings size={18} />, label: 'Rule Management' },
+    { id: 'users', icon: <Users size={18} />, label: 'User Management' },
+    { id: 'catalog', icon: <Eye size={18} />, label: 'View Catalog' },
 ];
 
 /* ── Main Unified Dashboard ──────────────────────────────────────────────── */
