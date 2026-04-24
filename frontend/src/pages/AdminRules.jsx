@@ -1,9 +1,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { 
+    Zap, Settings, Plus, X, Pencil, Trash2, 
+    Lightbulb, Scale, CheckCircle, XCircle, 
+    AlertTriangle, ArrowLeft, TrendingUp, History
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ruleService from '../services/ruleService';
 import catalogService from '../services/catalogService';
+import './AdminDashboardUnified.css';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -18,9 +24,8 @@ const EMPTY_RULE_FORM = {
     combinationType: 'ALL',
     dynamicAttribute: 'budget',
     priority: 10,
-    weight: 10,
+    weightAdjustment: 10,
     effectType: 'ADD_SCORE',
-    effectValue: 10,
     conditions: []
 };
 
@@ -72,7 +77,6 @@ function Toast({ toast }) {
 // Delete Confirm Dialog
 // ─────────────────────────────────────────────────────────────────────────────
 function ConfirmDialog({ rule, onConfirm, onCancel }) {
-    // Lock background scroll while dialog is open
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => { document.body.style.overflow = ''; };
@@ -81,7 +85,11 @@ function ConfirmDialog({ rule, onConfirm, onCancel }) {
     return createPortal(
         <div className="admin-modal-overlay light-theme" style={{ zIndex: 2000 }}>
             <div className="admin-modal-content" style={{ maxWidth: 420, borderColor: '#ef4444', boxShadow: '0 10px 40px rgba(239,68,68,0.2)' }}>
-                <p style={{ fontSize: '1.5rem', textAlign: 'center', marginBottom: '0.5rem' }}>🗑️</p>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                    <div style={{ background: 'rgba(239,68,68,0.1)', padding: '1rem', borderRadius: '50%' }}>
+                        <Trash2 size={48} color="#ef4444" />
+                    </div>
+                </div>
                 <h3 style={{ fontWeight: 700, color: '#1e1b4b', marginBottom: 8, textAlign: 'center' }}>
                     Delete Rule?
                 </h3>
@@ -111,7 +119,6 @@ function ConfirmDialog({ rule, onConfirm, onCancel }) {
 function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
     const isEdit = Boolean(editingRule);
 
-    // Lock background scroll while modal is open
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => { document.body.style.overflow = ''; };
@@ -121,10 +128,7 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
         if (isEdit) {
             return {
                 ...editingRule,
-                // Ensure effectType & effectValue are correctly set
                 effectType: editingRule.effectType || (editingRule.ruleType === 'HARD_CONSTRAINT' ? 'FILTER_OUT' : 'ADD_SCORE'),
-                effectValue: editingRule.effectValue ?? 10,
-                // Deep-copy conditions so edits don't mutate the original rule object
                 conditions: editingRule.conditions
                     ? editingRule.conditions.map(c => ({ ...c }))
                     : []
@@ -143,37 +147,20 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
     const isHardConstraint = form.ruleType === 'HARD_CONSTRAINT';
     const isFilterOut = form.effectType === 'FILTER_OUT';
 
-    // ── When ruleType changes, auto-adjust effect fields ───────────────────
     const handleRuleTypeChange = (e) => {
         const newType = e.target.value;
         setForm(f => {
             const updates = { ...f, ruleType: newType };
             if (newType === 'HARD_CONSTRAINT') {
                 updates.effectType = 'FILTER_OUT';
-                updates.effectValue = null;
-                updates.weight = 0;
+                updates.weightAdjustment = 0;
             } else {
                 if (f.effectType === 'FILTER_OUT') {
                     updates.effectType = 'ADD_SCORE';
                 }
-                if (!f.weight || f.weight === 0) {
-                    updates.weight = 10;
-                }
-                if (!f.effectValue) {
-                    updates.effectValue = 10;
-                }
             }
             return updates;
         });
-    };
-
-    const handleEffectTypeChange = (e) => {
-        const val = e.target.value;
-        setForm(f => ({
-            ...f,
-            effectType: val,
-            effectValue: val === 'FILTER_OUT' ? null : (f.effectValue || 10)
-        }));
     };
 
     const set = (field) => (e) => {
@@ -192,7 +179,6 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
         setForm(f => {
             const newCond = [...f.conditions];
             newCond[index] = { ...newCond[index], [field]: value };
-            // Reset attributeName when source changes so stale values don't bleed through
             if (field === 'operandSource') {
                 newCond[index].attributeName = '';
             }
@@ -208,77 +194,23 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
         e.preventDefault();
         setErrors({});
 
-        // ── Client-side validation ─────────────────────────────────────────
         if (!form.name.trim()) {
             setErrors({ name: 'Rule name is required' }); return;
-        }
-        if (form.targetScope === 'CATEGORY' && !form.targetCategoryName) {
-            setErrors({ targetCategoryName: 'Target category is required when scope is CATEGORY.' }); return;
-        }
-        if (form.combinationType !== 'NONE' && form.conditions.length === 0) {
-            setErrors({ _general: 'At least one condition is required.' }); return;
-        }
-        // Validate each condition's fields
-        if (form.combinationType !== 'NONE') {
-            for (let i = 0; i < form.conditions.length; i++) {
-                const c = form.conditions[i];
-                if (!c.attributeName || !c.attributeName.trim()) {
-                    setErrors({ _general: `Condition ${i + 1}: please select an attribute.` }); return;
-                }
-                if (!c.expectedValue || !c.expectedValue.trim()) {
-                    setErrors({ _general: `Condition ${i + 1}: expected value is required.` }); return;
-                }
-            }
-        }
-        if (!isHardConstraint && !isFilterOut && (!form.effectValue || Number(form.effectValue) <= 0)) {
-            setErrors({ effectValue: 'Effect value must be a positive number.' }); return;
-        }
-        // Weight must be positive for soft preference rules
-        if (!isHardConstraint) {
-            const w = Number(form.weight);
-            if (!w || w <= 0) {
-                setErrors({ _general: 'Weight must be a positive number for soft preference rules.' }); return;
-            }
         }
 
         setSubmitting(true);
         try {
             const payload = { ...form };
-
-            // Clear category name for non-category scopes
-            if (payload.targetScope !== 'CATEGORY') {
-                payload.targetCategoryName = null;
-            }
-
-            // Hard constraint always uses FILTER_OUT with no value
+            if (payload.targetScope !== 'CATEGORY') payload.targetCategoryName = null;
             if (payload.ruleType === 'HARD_CONSTRAINT') {
-                payload.weight = 0;
+                payload.weightAdjustment = 0;
                 payload.effectType = 'FILTER_OUT';
-                payload.effectValue = null;
             }
+            if (payload.combinationType === 'NONE') payload.conditions = [];
+            else payload.dynamicAttribute = null;
 
-            // FILTER_OUT never needs an effect value
-            if (payload.effectType === 'FILTER_OUT') {
-                payload.effectValue = null;
-            }
-
-            // NONE combination type uses dynamic attribute — no explicit conditions
-            if (payload.combinationType === 'NONE') {
-                payload.conditions = [];
-            } else {
-                payload.dynamicAttribute = null;
-            }
-
-            // Coerce effectValue to number for ADD_SCORE / DEDUCT_SCORE
-            if (payload.effectValue !== null && payload.effectValue !== undefined) {
-                payload.effectValue = Number(payload.effectValue);
-            }
-
-            // Coerce priority and weight to numbers (they come from text inputs as strings)
             payload.priority = Number(payload.priority);
-            if (payload.weight !== null && payload.weight !== undefined) {
-                payload.weight = Number(payload.weight);
-            }
+            payload.weightAdjustment = Number(payload.weightAdjustment);
 
             let result;
             if (isEdit) {
@@ -287,24 +219,11 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
                 result = await ruleService.createRule(payload);
             }
 
-            onSuccess(`Rule "${result.name}" ${isEdit ? 'updated' : 'created'} successfully! ✅`, result, isEdit, editingRule?.id);
+            onSuccess(`Rule "${result.name}" ${isEdit ? 'updated' : 'created'} successfully!`, result, isEdit, editingRule?.id);
             onClose();
         } catch (err) {
-            // Backend may return ApiErrorResponse {message} OR Map<field, message> from @Valid
             const data = err?.response?.data;
-            let msg;
-            if (data?.message) {
-                msg = data.message;
-            } else if (data && typeof data === 'object') {
-                // Field-level validation errors: join them all
-                msg = Object.entries(data)
-                    .map(([field, value]) => `${field}: ${value}`)
-                    .join(' | ');
-            } else if (typeof data === 'string') {
-                msg = data;
-            } else {
-                msg = `Failed to ${isEdit ? 'update' : 'create'} rule.`;
-            }
+            const msg = data?.message || typeof data === 'string' ? data : `Failed to ${isEdit ? 'update' : 'create'} rule.`;
             setErrors({ _general: msg });
         } finally {
             setSubmitting(false);
@@ -319,45 +238,39 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
     });
     const lbl = { display: 'block', color: '#4c1d95', fontSize: '0.8rem', marginBottom: 4, fontWeight: 700 };
 
-    const availableEffects = isHardConstraint ? EFFECT_TYPES_HARD : EFFECT_TYPES_SOFT;
-
     return createPortal(
-        <div className="admin-modal-overlay light-theme">
+        <div className="admin-modal-overlay light-theme" onClick={(e) => e.target === e.currentTarget && onClose()}>
             <div className="admin-modal-content" style={{ maxWidth: 820 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2 style={{ fontWeight: 700, fontSize: '1.2rem', color: '#1e1b4b' }}>
-                        {isEdit ? `✏️ Edit Rule: ${editingRule.name}` : '➕ Create New Rule'}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '2px solid #ede9fe', paddingBottom: '1rem' }}>
+                    <h2 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#1e1b4b', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {isEdit ? <Pencil size={20} color="#7c3aed" /> : <Plus size={20} color="#7c3aed" />}
+                        {isEdit ? `Edit Rule: ${editingRule.name}` : 'Create New Rule'}
                     </h2>
                     <button type="button" onClick={onClose}
-                        style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1.4rem' }}>✕</button>
+                        style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', display: 'flex' }}><X size={24} /></button>
                 </div>
 
                 {errors._general && (
-                    <div style={{
-                        background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
-                        borderRadius: 8, padding: '10px 14px', color: '#f87171',
-                        fontSize: '0.85rem', marginBottom: '1rem'
-                    }}>
-                        ⚠ {errors._general}
+                    <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', color: '#f87171', fontSize: '0.85rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <AlertTriangle size={16} /> {errors._general}
                     </div>
                 )}
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-
-                    {/* ─── Basic Info ──────────────────────────────────────────── */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>
                             <label style={lbl}>Rule Name *</label>
                             <input value={form.name} onChange={set('name')} style={inp('name')} placeholder="e.g. Budget Strict Match" />
-                            {errors.name && <p style={{ fontSize: '0.7rem', color: '#ef4444', marginTop: 4 }}>{errors.name}</p>}
                         </div>
                         <div>
                             <label style={lbl}>Description</label>
-                            <input value={form.description || ''} onChange={set('description')} style={inp('description')} placeholder="Explains what this rule does" />
+                            <textarea value={form.description || ''} onChange={set('description')} rows={1} style={{ ...inp('description'), resize: 'none' }} placeholder="What does this rule do?" />
+                            <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Lightbulb size={12} /> Make it clear for other admins.
+                            </p>
                         </div>
                     </div>
 
-                    {/* ─── Rule Type / Status / Priority / Weight ─────────────── */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem' }}>
                         <div>
                             <label style={lbl}>Rule Type *</label>
@@ -367,32 +280,25 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
                             </select>
                         </div>
                         <div>
+                            <label style={lbl}>Weight Adjustment</label>
+                            <input type="number" step="0.1" value={form.weightAdjustment} onChange={set('weightAdjustment')} style={inp('weightAdjustment')} placeholder="e.g. 2.0" />
+                            <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Scale size={12} /> Boost or Penalty
+                            </p>
+                        </div>
+                        <div>
+                            <label style={lbl}>Priority</label>
+                            <input type="number" value={form.priority} onChange={set('priority')} style={inp('priority')} />
+                        </div>
+                        <div>
                             <label style={lbl}>Status</label>
                             <select value={form.ruleStatus} onChange={set('ruleStatus')} style={inp('ruleStatus')}>
                                 <option value="ACTIVE">ACTIVE</option>
                                 <option value="INACTIVE">INACTIVE</option>
                             </select>
                         </div>
-                        <div>
-                            <label style={lbl}>Priority (higher = runs first) *</label>
-                            <input type="number" value={form.priority} onChange={set('priority')} style={inp('priority')} />
-                        </div>
-                        <div>
-                            <label style={lbl}>Weight (soft prefs only)</label>
-                            <input
-                                type="number" step="0.1" min="0"
-                                disabled={isHardConstraint}
-                                value={isHardConstraint ? 0 : (form.weight ?? 10)}
-                                onChange={set('weight')}
-                                style={{ ...inp('weight'), opacity: isHardConstraint ? 0.4 : 1, cursor: isHardConstraint ? 'not-allowed' : 'text' }}
-                            />
-                            {isHardConstraint && (
-                                <p style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: 4, fontStyle: 'italic' }}>Disabled for hard constraints</p>
-                            )}
-                        </div>
                     </div>
 
-                    {/* ─── Scope / Category / Combination ─────────────────────── */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                         <div>
                             <label style={lbl}>Target Scope *</label>
@@ -402,223 +308,63 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
                             </select>
                         </div>
                         <div>
-                            <label style={lbl}>Target Category {form.targetScope === 'CATEGORY' ? '*' : ''}</label>
+                            <label style={lbl}>Target Category</label>
                             <select
                                 disabled={form.targetScope !== 'CATEGORY'}
                                 value={form.targetCategoryName || ''}
                                 onChange={set('targetCategoryName')}
-                                style={{
-                                    ...inp('targetCategoryName'),
-                                    opacity: form.targetScope !== 'CATEGORY' ? 0.4 : 1,
-                                    borderColor: errors.targetCategoryName ? '#ef4444' : '#c4b5fd'
-                                }}
+                                style={{ ...inp('targetCategoryName'), opacity: form.targetScope !== 'CATEGORY' ? 0.5 : 1 }}
                             >
                                 <option value="">Select category...</option>
                                 {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                             </select>
-                            {errors.targetCategoryName && (
-                                <p style={{ fontSize: '0.7rem', color: '#ef4444', marginTop: 4 }}>{errors.targetCategoryName}</p>
-                            )}
                         </div>
                         <div>
                             <label style={lbl}>Combination Type *</label>
                             <select value={form.combinationType} onChange={set('combinationType')} style={inp('combinationType')}>
-                                <option value="ALL">ALL (All conditions match)</option>
-                                <option value="ANY">ANY (Any one condition matches)</option>
-                                <option value="NONE">NONE (Dynamic Attribute)</option>
+                                <option value="ALL">ALL (All match)</option>
+                                <option value="ANY">ANY (Any match)</option>
+                                <option value="NONE">NONE (Dynamic)</option>
                             </select>
                         </div>
                     </div>
 
-                    {/* ─── Dynamic Target Attribute (Visible only if NONE) ───── */}
-                    {form.combinationType === 'NONE' && (
-                        <div style={{
-                            background: 'rgba(56,189,248,0.1)', padding: 16, borderRadius: 12,
-                            border: '1px solid rgba(56,189,248,0.3)', marginTop: 4
-                        }}>
-                            <label style={lbl}>Dynamic Target Attribute *</label>
-                            <p style={{ fontSize: '0.75rem', color: '#6290A0', marginBottom: 10 }}>
-                                This rule dynamically matches user input against the product's corresponding attribute.
-                            </p>
-                            <select
-                                value={form.dynamicAttribute || 'budget'}
-                                onChange={set('dynamicAttribute')}
-                                style={inp('dynamicAttribute')}
-                            >
-                                {USER_INPUT_ATTRIBUTES.map(attr => <option key={attr} value={attr}>{attr}</option>)}
-                            </select>
-                        </div>
-                    )}
-
-                    {/* ─── Conditions Builder (Hidden if NONE) ────────────────── */}
                     {form.combinationType !== 'NONE' && (
                         <div style={{ marginTop: '0.5rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                 <label style={{ ...lbl, margin: 0 }}>Conditions *</label>
-                                <button type="button" onClick={addCondition} style={{
-                                    padding: '4px 10px', fontSize: '0.75rem', borderRadius: 6,
-                                    background: 'rgba(139,92,246,0.15)', color: '#8b5cf6',
-                                    border: '1px solid rgba(139,92,246,0.3)', cursor: 'pointer', fontWeight: 600
-                                }}>
-                                    + Add Condition
-                                </button>
+                                <button type="button" onClick={addCondition} style={{ padding: '4px 10px', fontSize: '0.75rem', borderRadius: 6, background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.3)', cursor: 'pointer', fontWeight: 600 }}>+ Add</button>
                             </div>
-
-                            {form.conditions.length === 0 && (
-                                <div style={{ fontSize: '0.8rem', color: '#ef4444', padding: '10px', background: 'rgba(239,68,68,0.1)', borderRadius: 8 }}>
-                                    At least one condition is required.
-                                </div>
-                            )}
-
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                 {form.conditions.map((cond, index) => (
-                                    <div key={index} style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: '1.2fr 1.5fr 1.2fr 1.5fr auto',
-                                        gap: 8, alignItems: 'center',
-                                        background: '#f5f3ff',
-                                        padding: 10, borderRadius: 8,
-                                        border: '1px solid #ede9fe',
-                                        /* Use a high fixed z-index so dropdowns never get clipped */
-                                        position: 'relative',
-                                        zIndex: 500 - index
-                                    }}>
-                                        {/* Source */}
-                                        <div style={{ position: 'relative', zIndex: 10 }}>
-                                            <select
-                                                value={cond.operandSource}
-                                                onChange={(e) => updateCondition(index, 'operandSource', e.target.value)}
-                                                style={inp(`cond_${index}_source`)}
-                                            >
-                                                <option value="PRODUCT">PRODUCT</option>
-                                                <option value="USER_INPUT">USER_INPUT</option>
-                                            </select>
-                                        </div>
-
-                                        {/* Attribute — list changes dynamically based on source */}
-                                        <div style={{ position: 'relative', zIndex: 10 }}>
-                                            <select
-                                                value={cond.attributeName}
-                                                onChange={(e) => updateCondition(index, 'attributeName', e.target.value)}
-                                                style={{
-                                                    ...inp(`cond_${index}_attr`),
-                                                    borderColor: cond.attributeName ? '#c4b5fd' : '#ef4444'
-                                                }}
-                                            >
-                                                <option value="">Select Attribute...</option>
-                                                {(cond.operandSource === 'USER_INPUT' ? USER_INPUT_ATTRIBUTES : PRODUCT_ATTRIBUTES).map(attr => (
-                                                    <option key={attr} value={attr}>{attr}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        {/* Operator */}
-                                        <div style={{ position: 'relative', zIndex: 10 }}>
-                                            <select
-                                                value={cond.operator}
-                                                onChange={(e) => updateCondition(index, 'operator', e.target.value)}
-                                                style={inp(`cond_${index}_op`)}
-                                            >
-                                                {OPERATORS.map(op => <option key={op} value={op}>{op}</option>)}
-                                            </select>
-                                        </div>
-
-                                        {/* Expected Value */}
-                                        <input
-                                            value={cond.expectedValue}
-                                            onChange={(e) => updateCondition(index, 'expectedValue', e.target.value)}
-                                            style={inp(`cond_${index}_val`)}
-                                            placeholder="Expected Value"
-                                        />
-
-                                        {/* Remove */}
-                                        <button
-                                            type="button"
-                                            onClick={() => removeCondition(index)}
-                                            style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '1.2rem', padding: '0 4px' }}
-                                            title="Remove condition"
-                                        >✕</button>
+                                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1.2fr 1.5fr auto', gap: 8, alignItems: 'center', background: '#f5f3ff', padding: 10, borderRadius: 8, position: 'relative', zIndex: 500 - index }}>
+                                        <select value={cond.operandSource} onChange={(e) => updateCondition(index, 'operandSource', e.target.value)} style={inp()}>
+                                            <option value="PRODUCT">PRODUCT</option>
+                                            <option value="USER_INPUT">USER_INPUT</option>
+                                        </select>
+                                        <select value={cond.attributeName} onChange={(e) => updateCondition(index, 'attributeName', e.target.value)} style={inp()}>
+                                            <option value="">Attribute...</option>
+                                            {(cond.operandSource === 'USER_INPUT' ? USER_INPUT_ATTRIBUTES : PRODUCT_ATTRIBUTES).map(attr => (
+                                                <option key={attr} value={attr}>{attr}</option>
+                                            ))}
+                                        </select>
+                                        <select value={cond.operator} onChange={(e) => updateCondition(index, 'operator', e.target.value)} style={inp()}>
+                                            {OPERATORS.map(op => <option key={op} value={op}>{op}</option>)}
+                                        </select>
+                                        <input value={cond.expectedValue} onChange={(e) => updateCondition(index, 'expectedValue', e.target.value)} style={inp()} placeholder="Value" />
+                                        <button type="button" onClick={() => removeCondition(index)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }}><X size={16} /></button>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    {/* ─── Rule Effect Section ────────────────────────────────── */}
-                    <div style={{
-                        background: isHardConstraint ? 'rgba(239,68,68,0.06)' : 'rgba(139,92,246,0.08)',
-                        padding: 16, borderRadius: 12, marginTop: '0.5rem',
-                        border: `1px solid ${isHardConstraint ? 'rgba(239,68,68,0.2)' : 'rgba(139,92,246,0.25)'}`
-                    }}>
-                        <label style={{ ...lbl, fontSize: '0.9rem', marginBottom: 2 }}>⚡ Rule Effect</label>
-                        <p style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: 12, fontStyle: 'italic' }}>
-                            Defines how this rule affects product scoring when conditions match.
-                        </p>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: isFilterOut || isHardConstraint ? '1fr' : '1fr 1fr', gap: '1rem' }}>
-                            <div>
-                                <label style={lbl}>Effect Type *</label>
-                                <select
-                                    value={form.effectType}
-                                    onChange={handleEffectTypeChange}
-                                    style={inp('effectType')}
-                                    disabled={isHardConstraint}
-                                >
-                                    {availableEffects.map(opt => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))}
-                                </select>
-                                {isHardConstraint && (
-                                    <p style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: 4, fontStyle: 'italic' }}>
-                                        Hard constraints always use FILTER_OUT
-                                    </p>
-                                )}
-                            </div>
-
-                            {!isFilterOut && !isHardConstraint && (
-                                <div>
-                                    <label style={lbl}>Effect Value *</label>
-                                    <input
-                                        type="number" min="1"
-                                        value={form.effectValue || ''}
-                                        onChange={set('effectValue')}
-                                        style={inp('effectValue')}
-                                        placeholder="e.g. 10"
-                                    />
-                                    {errors.effectValue && (
-                                        <p style={{ fontSize: '0.7rem', color: '#ef4444', marginTop: 4 }}>
-                                            {errors.effectValue}
-                                        </p>
-                                    )}
-                                    <p style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: 4 }}>
-                                        Score impact = Value × Weight = {Number(form.effectValue || 0) * Number(form.weight || 0)}
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* ─── Actions ─────────────────────────────────────────────── */}
                     <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 16 }}>
-                        <button type="button" onClick={onClose}
-                            style={{ padding: '10px 22px', borderRadius: 8, background: '#f5f3ff', border: '1.5px solid #ddd6fe', color: '#6b7280', cursor: 'pointer', fontWeight: 500 }}>
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={submitting || (form.combinationType !== 'NONE' && form.conditions.length === 0)}
-                            style={{
-                                padding: '10px 28px', borderRadius: 8,
-                                background: 'linear-gradient(135deg, #6c63ff, #a855f7)',
-                                border: 'none', color: '#fff', fontWeight: 600,
-                                cursor: (submitting || (form.combinationType !== 'NONE' && form.conditions.length === 0)) ? 'not-allowed' : 'pointer',
-                                opacity: (submitting || (form.combinationType !== 'NONE' && form.conditions.length === 0)) ? 0.7 : 1
-                            }}
-                        >
+                        <button type="button" onClick={onClose} style={{ padding: '10px 22px', borderRadius: 8, background: '#f5f3ff', border: '1.5px solid #ddd6fe', color: '#6b7280', cursor: 'pointer', fontWeight: 500 }}>Cancel</button>
+                        <button type="submit" disabled={submitting} style={{ padding: '10px 28px', borderRadius: 8, background: 'linear-gradient(135deg, #6c63ff, #a855f7)', border: 'none', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
                             {submitting ? 'Saving...' : (isEdit ? 'Update Rule' : 'Create Rule')}
                         </button>
                     </div>
-
                 </form>
             </div>
         </div>,
@@ -626,27 +372,15 @@ function RuleFormModal({ editingRule, categories, onClose, onSuccess }) {
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Effect Badge (for the table)
-// ─────────────────────────────────────────────────────────────────────────────
-function EffectBadge({ effectType, effectValue }) {
+function EffectBadge({ effectType }) {
     if (!effectType) return <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>—</span>;
-    const colors = {
-        ADD_SCORE: { bg: 'rgba(34,197,94,0.12)', text: '#4ade80', icon: '➕' },
-        DEDUCT_SCORE: { bg: 'rgba(251,191,36,0.12)', text: '#fbbf24', icon: '➖' },
-        FILTER_OUT: { bg: 'rgba(239,68,68,0.12)', text: '#f87171', icon: '🚫' }
-    };
-    const c = colors[effectType] || colors.FILTER_OUT;
     return (
-        <span style={{ padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 600, background: c.bg, color: c.text, whiteSpace: 'nowrap' }}>
-            {c.icon} {effectType}{effectValue ? ` (${effectValue})` : ''}
+        <span style={{ padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 600, background: 'rgba(124,58,237,0.1)', color: '#7c3aed' }}>
+            {effectType}
         </span>
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Admin Rules Page
-// ─────────────────────────────────────────────────────────────────────────────
 export default function AdminRules({ embedded = false, externalShowToast } = {}) {
     const { isAdmin } = useAuth();
     const navigate = useNavigate();
@@ -666,270 +400,156 @@ export default function AdminRules({ embedded = false, externalShowToast } = {})
 
     const showToast = embedded && externalShowToast ? externalShowToast : internalShowToast;
 
-    // ── Separate fetches so a categories failure never hides existing rules ──
-    useEffect(() => {
-        if (!isAdmin) {
-            navigate('/login');
-            return;
-        }
-
-        let cancelled = false;
-        setLoading(true);
-
-        // Fetch rules — primary data, must succeed
-        ruleService.getAllRules()
-            .then(data => { if (!cancelled) setRules(Array.isArray(data) ? data : []); })
-            .catch(err => {
-                console.error('Could not load rules:', err);
-                if (!cancelled) showToast('Failed to load rules from server.', true);
-            })
-            .finally(() => { if (!cancelled) setLoading(false); });
-
-        // Fetch categories — secondary data, failure is non-fatal
-        catalogService.getCategories()
-            .then(data => { if (!cancelled) setCategories(Array.isArray(data) ? data : []); })
-            .catch(err => console.warn('Could not load categories (non-fatal):', err));
-
-        return () => { cancelled = true; };
-    }, [isAdmin, navigate, showToast]);
-
     const openCreate = () => { setEditingRule(null); setShowModal(true); };
     const openEdit = (rule) => { setEditingRule(rule); setShowModal(true); };
     const closeModal = () => { setShowModal(false); setEditingRule(null); };
 
-    // isEdit and ruleId are passed from the modal so the closure is stable
+    useEffect(() => {
+        if (!isAdmin) { navigate('/login'); return; }
+        let cancelled = false;
+        ruleService.getAllRules().then(data => { if (!cancelled) setRules(Array.isArray(data) ? data : []); }).finally(() => setLoading(false));
+        catalogService.getCategories().then(data => { if (!cancelled) setCategories(Array.isArray(data) ? data : []); });
+        return () => { cancelled = true; };
+    }, [isAdmin, navigate]);
+
     const handleFormSuccess = useCallback((msg, updatedRule, isEdit, ruleId) => {
         showToast(msg);
-        if (isEdit) {
-            setRules(prev => prev.map(r => r.id === ruleId ? updatedRule : r));
-        } else {
-            setRules(prev => [...prev, updatedRule]);
-        }
+        if (isEdit) setRules(prev => prev.map(r => r.id === ruleId ? updatedRule : r));
+        else setRules(prev => [...prev, updatedRule]);
     }, [showToast]);
 
-    const handleToggleStatus = async (rule) => {
+    const handleToggle = async (rule) => {
         const newStatus = rule.ruleStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
         try {
-            const updated = await ruleService.toggleRuleStatus(rule.id, newStatus);
-            showToast(`Rule "${updated.name}" is now ${newStatus}`);
+            const updated = await ruleService.updateRule(rule.id, { ...rule, ruleStatus: newStatus });
             setRules(prev => prev.map(r => r.id === updated.id ? updated : r));
-        } catch {
-            showToast('Failed to toggle rule status.', true);
-        }
+        } catch { showToast('Failed to toggle status.', true); }
     };
 
-    const confirmDelete = (rule) => setDeletingRule(rule);
-    const cancelDelete = () => setDeletingRule(null);
+    const handleDelete = async (rule) => {
+        setDeletingRule(rule);
+    };
 
-    const handleDelete = async () => {
-        if (!deletingRule) return;
+    const confirmDelete = async () => {
         const target = deletingRule;
         setDeletingRule(null);
-        // Optimistic removal
-        setRules(prev => prev.filter(r => r.id !== target.id));
         try {
             await ruleService.deleteRule(target.id);
-            showToast(`Rule "${target.name}" deleted successfully.`);
-        } catch (err) {
-            // Roll back on failure
-            setRules(prev => [...prev, target].sort((a, b) => b.priority - a.priority));
-            showToast(`Failed to delete rule "${target.name}".`, true);
-        }
+            setRules(prev => prev.filter(r => r.id !== target.id));
+            showToast('Rule deleted successfully.');
+        } catch { showToast('Failed to delete.', true); }
     };
-
-    if (loading) {
-        return (
-            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div className="spinner" />
-                <p style={{ color: '#64748b', marginLeft: 16 }}>Loading rules...</p>
-            </div>
-        );
-    }
 
     const content = (
         <>
             {!embedded && <Toast toast={toast} />}
+            {deletingRule && <ConfirmDialog rule={deletingRule} onConfirm={confirmDelete} onCancel={() => setDeletingRule(null)} />}
+            {showModal && <RuleFormModal editingRule={editingRule} categories={categories} onClose={closeModal} onSuccess={handleFormSuccess} />}
 
-            {/* Confirm delete dialog */}
-            {deletingRule && (
-                <ConfirmDialog rule={deletingRule} onConfirm={handleDelete} onCancel={cancelDelete} />
-            )}
-
-            {/* Create / Edit modal */}
-            {showModal && (
-                <RuleFormModal
-                    editingRule={editingRule}
-                    categories={categories}
-                    onClose={closeModal}
-                    onSuccess={handleFormSuccess}
-                />
-            )}
-
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: 16 }}>
-                <div>
-                    <p style={{ color: embedded ? '#7c3aed' : '#38bdf8', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>
-                        Recommendation Engine
-                    </p>
-                    <h1 style={{ fontSize: embedded ? '1.9rem' : '2.2rem', fontWeight: 800, fontFamily: embedded ? 'Manrope, sans-serif' : 'Outfit, sans-serif', color: embedded ? '#1e1b4b' : 'var(--color-text)', marginBottom: 4 }}>
-                        ⚙️ Manage Rules
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
+                <div className="panel-header" style={{ marginBottom: 0 }}>
+                    <p className="panel-label">Recommendation Logic</p>
+                    <h1 style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <Zap size={32} color="#7c3aed" /> Rule Management
                     </h1>
-                    <p style={{ color: embedded ? '#6b7280' : 'var(--color-muted)', fontSize: '0.85rem' }}>
-                        Define constraints and preferences affecting recommendation scoring.
-                    </p>
+                    <p className="panel-desc">Configure dynamic boosting and filtering logic for the engine.</p>
                 </div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 10 }}>
                     {!embedded && (
-                        <button onClick={() => navigate('/admin')}
-                            style={{ padding: '10px 18px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#64748b', cursor: 'pointer', fontSize: '0.9rem' }}>
-                            ← Back to Dashboard
+                        <button className="admin-btn-secondary" onClick={() => navigate('/admin/history')} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <History size={16} /> Rec. History
                         </button>
                     )}
-                    <button onClick={openCreate}
-                        style={{ padding: '10px 22px', borderRadius: 10, background: embedded ? '#7c3aed' : 'linear-gradient(135deg, #0ea5e9, #3b82f6)', border: 'none', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem', boxShadow: embedded ? '0 4px 14px rgba(124,58,237,0.3)' : 'none' }}>
-                        + Create Rule
+                    <button className="admin-btn-primary" onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Plus size={18} /> Add New Rule
                     </button>
                 </div>
             </div>
 
-                {/* Rules Table */}
-                <div className="glass" style={{ overflow: 'hidden', borderRadius: 14, border: '2px solid #38bdf8', boxShadow: '0 4px 12px rgba(56,189,248,0.1)' }}>
-                    <div style={{ padding: '1rem 1.5rem', borderBottom: '2px solid #38bdf8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-surface)' }}>
-                        <h2 style={{ fontWeight: 600, color: 'var(--color-text)', fontSize: '0.95rem' }}>Engine Rules</h2>
-                        <span style={{ color: 'var(--color-muted)', fontSize: '0.78rem' }}>{rules.length} total</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20, marginBottom: 32 }}>
+                {[
+                    { icon: <Zap size={24} />, label: 'Active Rules', value: rules.filter(r => r.ruleStatus === 'ACTIVE').length, color: '#7c3aed' },
+                    { icon: <Settings size={24} />, label: 'Total Defined', value: rules.length, color: '#6b7280' },
+                    { icon: <AlertTriangle size={24} />, label: 'Critical Filters', value: rules.filter(r => r.ruleType === 'HARD_CONSTRAINT').length, color: '#dc2626' },
+                ].map(s => (
+                    <div key={s.label} className="admin-card stat-card" style={{ padding: '1.25rem' }}>
+                        <div className="stat-accent-bar" style={{ background: s.color }} />
+                        <div style={{ color: s.color, marginBottom: 8, opacity: 0.8 }}>{s.icon}</div>
+                        <div className="stat-value" style={{ color: s.color, fontSize: '1.8rem' }}>{loading ? '—' : s.value}</div>
+                        <div className="stat-label">{s.label}</div>
                     </div>
+                ))}
+            </div>
 
-                    {rules.length === 0 ? (
-                        <div style={{ padding: '4rem', textAlign: 'center', color: '#475569' }}>
-                            <p style={{ fontSize: '2.5rem', marginBottom: 12 }}>🧩</p>
-                            <p style={{ color: '#64748b' }}>No rules created yet.</p>
-                            <p style={{ fontSize: '0.78rem', marginTop: 8 }}>
-                                Click <strong style={{ color: '#38bdf8' }}>+ Create Rule</strong> to begin configuring the matching logic.
-                            </p>
-                        </div>
-                    ) : (
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', background: 'var(--color-surface)' }}>
-                                <thead>
-                                    <tr style={{ color: 'var(--color-muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.08em', borderBottom: '1px solid var(--color-border)' }}>
-                                        <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Rule Name</th>
-                                        <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Type</th>
-                                        <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Effect</th>
-                                        <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Scope</th>
-                                        <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Conditions</th>
-                                        <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Priority</th>
-                                        <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Status</th>
-                                        <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600 }}>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {[...rules].sort((a, b) => b.priority - a.priority).map((r) => (
-                                        <tr key={r.id}
-                                            style={{ borderBottom: '1px solid var(--color-border)', transition: 'background 0.15s' }}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-alt)'}
-                                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                        >
-                                            {/* Name + description */}
-                                            <td style={{ padding: '14px 16px', color: 'var(--color-text)', fontWeight: 500 }}>
-                                                {r.name}
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)', marginTop: 4, fontWeight: 400 }}>
-                                                    {r.description && <span>{r.description}</span>}
-                                                    {r.combinationType === 'NONE' && r.dynamicAttribute && (
-                                                        <span style={{ display: 'block', color: '#0ea5e9', marginTop: 2 }}>🔗 Dynamic: {r.dynamicAttribute}</span>
-                                                    )}
-                                                </div>
-                                            </td>
-
-                                            {/* Type badge */}
-                                            <td style={{ padding: '14px 16px' }}>
-                                                <span style={{
-                                                    padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700,
-                                                    background: r.ruleType === 'HARD_CONSTRAINT' ? 'rgba(239,68,68,0.1)' : 'rgba(168,85,247,0.1)',
-                                                    color: r.ruleType === 'HARD_CONSTRAINT' ? '#ef4444' : '#a855f7'
-                                                }}>
-                                                    {r.ruleType === 'HARD_CONSTRAINT' ? 'CONSTRAINT' : `PREFERENCE (×${r.weight ?? 0})`}
-                                                </span>
-                                            </td>
-
-                                            {/* Effect */}
-                                            <td style={{ padding: '14px 16px' }}>
-                                                <EffectBadge effectType={r.effectType} effectValue={r.effectValue} />
-                                            </td>
-
-                                            {/* Scope */}
-                                            <td style={{ padding: '14px 16px', color: 'var(--color-muted)', fontSize: '0.8rem' }}>
-                                                {r.targetScope === 'GLOBAL'
-                                                    ? '🌍 GLOBAL'
-                                                    : `🏷️ ${r.targetCategoryName || 'CATEGORY'}`
-                                                }
-                                            </td>
-
-                                            {/* Condition count */}
-                                            <td style={{ padding: '14px 16px', color: 'var(--color-muted)', fontSize: '0.8rem' }}>
-                                                {r.combinationType === 'NONE'
-                                                    ? <span style={{ color: '#0ea5e9' }}>Dynamic</span>
-                                                    : <span>{r.conditions?.length ?? 0} cond. ({r.combinationType})</span>
-                                                }
-                                            </td>
-
-                                            {/* Priority */}
-                                            <td style={{ padding: '14px 16px', color: 'var(--color-text)', fontWeight: 600 }}>
-                                                {r.priority}
-                                            </td>
-
-                                            {/* Status toggle */}
-                                            <td style={{ padding: '14px 16px' }}>
-                                                <button
-                                                    onClick={() => handleToggleStatus(r)}
-                                                    title="Click to toggle status"
-                                                    style={{
-                                                        padding: '4px 12px', borderRadius: 9999, fontSize: '0.72rem', fontWeight: 600,
-                                                        cursor: 'pointer', border: 'none',
-                                                        background: r.ruleStatus === 'ACTIVE' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-                                                        color: r.ruleStatus === 'ACTIVE' ? '#4ade80' : '#f87171',
-                                                        transition: 'all 0.2s',
-                                                    }}
-                                                >
-                                                    {r.ruleStatus === 'ACTIVE' ? '🟢 Active' : '⚪ Inactive'}
-                                                </button>
-                                            </td>
-
-                                            {/* Actions */}
-                                            <td style={{ padding: '14px 16px' }}>
-                                                <div style={{ display: 'flex', gap: 6 }}>
-                                                    <button
-                                                        onClick={() => openEdit(r)}
-                                                        style={{
-                                                            padding: '5px 12px', borderRadius: 8, cursor: 'pointer', fontSize: '0.78rem',
-                                                            fontWeight: 500, background: 'rgba(56,189,248,0.12)',
-                                                            border: '1px solid rgba(56,189,248,0.3)', color: '#38bdf8', transition: 'all 0.2s'
-                                                        }}
-                                                        onMouseEnter={(e) => e.target.style.background = 'rgba(56,189,248,0.25)'}
-                                                        onMouseLeave={(e) => e.target.style.background = 'rgba(56,189,248,0.12)'}
-                                                    >
-                                                        ✏️ Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => confirmDelete(r)}
-                                                        style={{
-                                                            padding: '5px 12px', borderRadius: 8, cursor: 'pointer', fontSize: '0.78rem',
-                                                            fontWeight: 500, background: 'rgba(239,68,68,0.1)',
-                                                            border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', transition: 'all 0.2s'
-                                                        }}
-                                                        onMouseEnter={(e) => e.target.style.background = 'rgba(239,68,68,0.25)'}
-                                                        onMouseLeave={(e) => e.target.style.background = 'rgba(239,68,68,0.1)'}
-                                                    >
-                                                        🗑️ Delete
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
+            <div className="admin-card" style={{ overflow: 'hidden' }}>
+                <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #ede9fe', background: '#fcfaff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h2 style={{ fontWeight: 700, color: '#1e1b4b', fontSize: '1rem' }}>Active Rules</h2>
+                    <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>{rules.length} total</span>
                 </div>
+
+                {loading ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><div className="spinner" /></div>
+                ) : rules.length === 0 ? (
+                    <div style={{ padding: '4rem', textAlign: 'center', color: '#9ca3af' }}>
+                        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+                            <Settings size={48} color="#ddd6fe" />
+                        </div>
+                        <p style={{ fontWeight: 600, color: '#64748b' }}>No rules created yet.</p>
+                    </div>
+                ) : (
+                    <div style={{ overflowX: 'auto' }}>
+                        <table className="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Rule Name</th>
+                                    <th>Type</th>
+                                    <th>Effect</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {[...rules].sort((a, b) => b.priority - a.priority).map((r) => (
+                                    <tr key={r.id}>
+                                        <td style={{ fontWeight: 600, color: '#1e1b4b' }}>
+                                            {r.name}
+                                            <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 400, marginTop: 4 }}>
+                                                {r.description}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span className="admin-badge" style={{ background: r.ruleType === 'HARD_CONSTRAINT' ? 'rgba(220,38,38,0.1)' : 'rgba(124,58,237,0.1)', color: r.ruleType === 'HARD_CONSTRAINT' ? '#dc2626' : '#7c3aed' }}>
+                                                {r.ruleType === 'HARD_CONSTRAINT' ? 'CONSTRAINT' : `PREF (×${r.weightAdjustment})`}
+                                            </span>
+                                        </td>
+                                        <td><EffectBadge effectType={r.effectType} /></td>
+                                        <td style={{ fontWeight: 700, color: '#6b7280' }}>{r.priority}</td>
+                                        <td>
+                                            <button onClick={() => handleToggle(r)} title="Toggle status"
+                                                style={{
+                                                    padding: '4px 10px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', border: 'none',
+                                                    background: r.ruleStatus === 'ACTIVE' ? 'rgba(5,150,105,0.1)' : 'rgba(220,38,38,0.1)',
+                                                    color: r.ruleStatus === 'ACTIVE' ? '#059669' : '#dc2626',
+                                                    display: 'flex', alignItems: 'center', gap: 4
+                                                }}>
+                                                {r.ruleStatus === 'ACTIVE' ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                                                {r.ruleStatus === 'ACTIVE' ? 'Active' : 'Disabled'}
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', gap: 8 }}>
+                                                <button onClick={() => openEdit(r)} title="Edit Rule" style={{ padding: '6px', borderRadius: 8, cursor: 'pointer', background: 'rgba(124,58,237,0.1)', border: '1.5px solid rgba(124,58,237,0.2)', color: '#7c3aed', display: 'flex' }}><Pencil size={16} /></button>
+                                                <button onClick={() => handleDelete(r)} title="Delete Rule" style={{ padding: '6px', borderRadius: 8, cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1.5px solid rgba(239,68,68,0.2)', color: '#ef4444', display: 'flex' }}><Trash2 size={16} /></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
         </>
     );
 
