@@ -1,6 +1,10 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { 
+    Plus, Pencil, Trash2, CheckCircle, XCircle, 
+    Image as ImageIcon, Upload, X, Package 
+} from 'lucide-react';
 import catalogService from '../services/catalogService';
 import './AdminDashboardUnified.css';
 
@@ -61,11 +65,14 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
     const errS = { color: '#f87171', fontSize: '0.72rem', marginTop: 3, fontWeight: 600 };
 
     return createPortal(
-        <div className="admin-modal-overlay light-theme" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="admin-modal-content" style={{ maxWidth: 680 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2 style={{ fontWeight: 700, fontSize: '1.2rem', color: '#1e1b4b' }}>{isEdit ? `✏️ Edit: ${editingProduct.name}` : '➕ Add New Product'}</h2>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1.4rem' }}>✕</button>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+            <div className="admin-modal-content" style={{ maxWidth: 680, maxHeight: '90vh', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '2px solid #ede9fe', paddingBottom: '1rem' }}>
+                    <h2 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#1e1b4b', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {isEdit ? <Pencil size={20} color="#7c3aed" /> : <Plus size={20} color="#7c3aed" />}
+                        {isEdit ? `Edit: ${editingProduct.name}` : 'Add New Product'}
+                    </h2>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', display: 'flex' }}><X size={24} /></button>
                 </div>
                 {errors._general && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', color: '#f87171', fontSize: '0.85rem', marginBottom: '1rem' }}>⚠ {errors._general}</div>}
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -92,23 +99,43 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                         <div>
                             <label style={lbl}>Stock Status</label>
                             <div style={{ display: 'flex', gap: 10 }}>
-                                {[{ v: true, label: '✅ In Stock', color: '#15803d' }, { v: false, label: '⛔ Out of Stock', color: '#b91c1c' }].map(({ v, label, color }) => (
-                                    <button key={String(v)} type="button" onClick={() => setForm(f => ({ ...f, isActive: v }))} style={{ flex: 1, padding: '9px 8px', borderRadius: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, background: form.isActive === v ? `${color}22` : 'var(--color-surface-alt)', border: `2px solid ${form.isActive === v ? color : '#c4b5fd'}`, color: form.isActive === v ? color : '#4c1d95', transition: 'all 0.2s' }}>{label}</button>
+                                {[{ v: true, label: 'In Stock', icon: <CheckCircle size={16} />, color: '#059669' }, { v: false, label: 'Out of Stock', icon: <XCircle size={16} />, color: '#dc2626' }].map(({ v, label, icon, color }) => (
+                                    <button key={String(v)} type="button" onClick={() => setForm((f) => ({ ...f, isActive: v }))}
+                                        style={{
+                                            flex: 1, padding: '9px 8px', borderRadius: 10, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+                                            background: form.isActive === v ? `${color}12` : '#f5f3ff',
+                                            border: `1.5px solid ${form.isActive === v ? color : '#ddd6fe'}`,
+                                            color: form.isActive === v ? color : '#6b7280',
+                                            transition: 'all 0.2s',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+                                        }}>
+                                        {icon} {label}
+                                    </button>
                                 ))}
                             </div>
                         </div>
                     </div>
                     {/* Images */}
-                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
-                        <p style={{ color: '#a78bfa', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.75rem' }}>🖼️ Product Images <span style={{ color: '#475569', fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>(optional, up to 5)</span></p>
+                    <div style={{ borderTop: '1px solid #ede9fe', paddingTop: '1rem' }}>
+                        <p style={{ color: '#7c3aed', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <ImageIcon size={16} /> Product Images <span style={{ color: '#94a3b8', fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>(optional, up to 5)</span>
+                        </p>
                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                            <div style={{ flex: 1, minWidth: 250 }}>
-                                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontSize: '0.82rem', fontWeight: 500, background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.35)', color: '#a78bfa' }}>
-                                    📁 {imageFiles.length > 0 ? `Change ${imageFiles.length} images` : (isEdit && editingProduct?.imageUrls?.length > 0 ? 'Replace images' : 'Choose images')}
-                                    <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={handleImageChange} style={{ display: 'none' }} />
+                            <div style={{ flex: 1, minWidth: '250px' }}>
+                                <label style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px',
+                                    borderRadius: 10, cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600,
+                                    background: 'rgba(124,58,237,0.1)', border: '1.5px solid rgba(124,58,237,0.2)', color: '#7c3aed',
+                                }}>
+                                    <Upload size={16} /> {imageFiles.length > 0 ? `Change ${imageFiles.length} images` : (isEdit && editingProduct?.imageUrls?.length > 0 ? 'Replace images' : 'Choose images')}
+                                    <input type="file" accept="image/*" multiple onChange={handleImageChange} style={{ display: 'none' }} />
                                 </label>
-                                <p style={{ color: '#6b7280', fontSize: '0.73rem', marginTop: 6 }}>{imageFiles.length > 0 ? `Selected: ${imageFiles.length} files` : isEdit && editingProduct?.imageUrls?.length > 0 ? `Current images kept (${editingProduct.imageUrls.length})` : 'JPG, PNG or WebP'}</p>
-                                {imageFiles.length > 0 && <button type="button" onClick={clearImage} style={{ marginTop: 4, padding: '4px 12px', borderRadius: 7, background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: '0.73rem', cursor: 'pointer' }}>✕ Remove</button>}
+                                {imageFiles.length > 0 && (
+                                    <button type="button" onClick={clearImage}
+                                        style={{ marginLeft: 8, padding: '8px 12px', borderRadius: 10, background: 'rgba(239,68,68,0.08)', border: '1.5px solid rgba(239,68,68,0.2)', color: '#ef4444', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 600 }}>
+                                        <X size={14} />
+                                    </button>
+                                )}
                             </div>
                             <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', maxWidth: 350 }}>
                                 {imagePreviews.length > 0 ? imagePreviews.map((url, idx) => (
@@ -116,7 +143,13 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                                         <img src={url} alt={`preview ${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: mainImageIndex === idx ? 1 : 0.7 }} />
                                         {mainImageIndex === idx && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#8b5cf6', color: '#fff', fontSize: '9px', fontWeight: 800, textAlign: 'center', padding: '2px 0' }}>MAIN</div>}
                                     </div>
-                                )) : <div style={{ width: 70, height: 70, borderRadius: 10, border: '2px dashed #ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: '1.5rem', opacity: 0.2 }}>📷</span></div>}
+                                )) : <div style={{
+                                    width: 70, height: 70, borderRadius: 10, flexShrink: 0,
+                                    border: '2px dashed #ddd6fe', background: '#f5f3ff',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                }}>
+                                    <ImageIcon size={24} color="#ddd6fe" />
+                                </div>}
                             </div>
                         </div>
                     </div>
@@ -209,13 +242,17 @@ export default function AdminProductPanel({ showToast }) {
         <div className="admin-panel-enter">
             {showModal && <ProductFormModal editingProduct={editingProduct} categories={categories} brands={brands} options={options} onClose={closeModal} onSuccess={handleFormSuccess} />}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
                 <div className="panel-header" style={{ marginBottom: 0 }}>
                     <p className="panel-label">Inventory</p>
-                    <h1>📦 Product Management</h1>
-                    <p className="panel-desc">Manage your product catalog across all categories.</p>
+                    <h1 style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <Package size={32} color="#7c3aed" /> Product Management
+                    </h1>
+                    <p className="panel-desc">Add, edit, and manage products in the system catalog.</p>
                 </div>
-                <button className="admin-btn-primary" onClick={openCreate}>+ Add Product</button>
+                <button className="admin-btn-primary" onClick={openCreate}>
+                    <Plus size={18} /> Add Product
+                </button>
             </div>
 
             {/* Stat cards */}
@@ -252,10 +289,12 @@ export default function AdminProductPanel({ showToast }) {
                 {loadingProds ? (
                     <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><div className="spinner" /></div>
                 ) : products.length === 0 ? (
-                    <div style={{ padding: '4rem', textAlign: 'center' }}>
-                        <p style={{ fontSize: '2.5rem', marginBottom: 12 }}>📭</p>
-                        <p style={{ color: '#6b7280' }}>No products here yet.</p>
-                        <p style={{ fontSize: '0.78rem', marginTop: 8, color: '#9ca3af' }}>Click <strong style={{ color: '#7c3aed' }}>+ Add Product</strong> to create the first one.</p>
+                    <div style={{ padding: '4rem', textAlign: 'center', color: '#9ca3af' }}>
+                        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+                            <Package size={48} color="#ddd6fe" />
+                        </div>
+                        <p style={{ fontWeight: 600, color: '#64748b' }}>No products found.</p>
+                        <p style={{ fontSize: '0.82rem', marginTop: 4 }}>Try adjusting your search or filters.</p>
                     </div>
                 ) : (
                     <div style={{ overflowX: 'auto' }}>
@@ -272,8 +311,10 @@ export default function AdminProductPanel({ showToast }) {
                                     <tr key={p.id}>
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#f5f3ff', border: '1px solid #ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    {p.imageUrls?.length > 0 ? <img src={p.imageUrls[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '1rem', opacity: 0.25 }}>🖼️</span>}
+                                                <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#f5f3ff', border: '1.5px solid #ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    {p.imageUrls && p.imageUrls.length > 0
+                                                        ? <img src={p.imageUrls[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        : <ImageIcon size={18} color="#ddd6fe" />}
                                                 </div>
                                                 <span style={{ fontWeight: 600, color: '#1e1b4b' }}>{p.name}</span>
                                             </div>
@@ -283,14 +324,27 @@ export default function AdminProductPanel({ showToast }) {
                                         <td><span className="admin-badge" style={{ background: BUDGET_COLORS[p.budgetLevel]?.bg || '#f3f4f6', color: BUDGET_COLORS[p.budgetLevel]?.fg || '#6b7280' }}>{p.budgetLevel ?? '—'}</span></td>
                                         <td style={{ color: '#7c3aed', fontWeight: 700 }}>Rs. {Number(p.basePrice).toFixed(2)}</td>
                                         <td>
-                                            <button onClick={() => handleToggleStatus(p)} title="Toggle stock status" style={{ padding: '3px 12px', borderRadius: 9999, fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', border: 'none', background: p.isActive ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: p.isActive ? '#059669' : '#dc2626', transition: 'all 0.2s' }}>
-                                                {p.isActive ? '✅ In Stock' : '⛔ Out of Stock'}
-                                            </button>
+                                            <button onClick={() => handleToggleStatus(p)} title="Click to toggle status"
+                                            style={{
+                                                padding: '4px 10px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', border: 'none',
+                                                background: p.isActive ? 'rgba(5,150,105,0.1)' : 'rgba(220,38,38,0.1)',
+                                                color: p.isActive ? '#059669' : '#dc2626',
+                                                display: 'flex', alignItems: 'center', gap: 4
+                                            }}>
+                                            {p.isActive ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                                            {p.isActive ? 'In Stock' : 'Out of Stock'}
+                                        </button>
                                         </td>
                                         <td>
                                             <div style={{ display: 'flex', gap: 8 }}>
-                                                <button onClick={() => openEdit(p)} style={{ padding: '5px 14px', borderRadius: 8, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 500, background: '#ede9fe', border: '1px solid #c4b5fd', color: '#7c3aed', transition: 'all 0.2s' }}>✏️ Edit</button>
-                                                <button onClick={() => handleDelete(p)} style={{ padding: '5px 14px', borderRadius: 8, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 500, background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', transition: 'all 0.2s' }}>🗑 Delete</button>
+                                                <button onClick={() => openEdit(p)} title="Edit Product"
+                                                    style={{ padding: '6px', borderRadius: 8, cursor: 'pointer', background: 'rgba(124,58,237,0.1)', border: '1.5px solid rgba(124,58,237,0.2)', color: '#7c3aed', display: 'flex' }}>
+                                                    <Pencil size={16} />
+                                                </button>
+                                                <button onClick={() => handleDelete(p)} title="Delete Product"
+                                                    style={{ padding: '6px', borderRadius: 8, cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1.5px solid rgba(239,68,68,0.2)', color: '#ef4444', display: 'flex' }}>
+                                                    <Trash2 size={16} />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
