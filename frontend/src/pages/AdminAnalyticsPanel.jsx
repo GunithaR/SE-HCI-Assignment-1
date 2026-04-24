@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { 
+    TrendingUp, Calendar, Globe, Building, Brain, BarChart2, 
+    CalendarDays, FileText, Users, Trophy, Package, Medal, 
+    ClipboardList, X 
+} from 'lucide-react';
 import catalogService from '../services/catalogService';
 import './AdminDashboardUnified.css';
 
@@ -10,7 +15,7 @@ function StatCard({ icon, title, value, subtitle, accent }) {
             <div className="stat-accent-bar" style={{ background: accent }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                 <p style={{ color: '#6b7280', fontSize: '0.82rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{title}</p>
-                <div style={{ fontSize: '1.4rem', opacity: 0.8 }}>{icon}</div>
+                <div style={{ color: accent, opacity: 0.8 }}>{icon}</div>
             </div>
             <h3 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#1e1b4b', margin: '0 0 2px', fontFamily: 'Outfit, sans-serif' }}>{value.toLocaleString()}</h3>
             <p style={{ color: accent, fontSize: '0.78rem', fontWeight: 600, margin: 0 }}>{subtitle}</p>
@@ -53,13 +58,17 @@ function RuleUsageTable({ title, accentColor, rows }) {
 
 /* ── Product Rank List ───────────────────────────────────────────────────── */
 function ProductRankList({ products, accentColor }) {
-    const medals = ['🥇', '🥈', '🥉'];
+    const medalIcons = [
+        <Medal size={18} color="#f59e0b" />, 
+        <Medal size={18} color="#94a3b8" />, 
+        <Medal size={18} color="#d97706" />
+    ];
     if (products.length === 0) return <p style={{ color: '#9ca3af', fontSize: '0.85rem', fontStyle: 'italic' }}>No data this period.</p>;
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {products.map((product, idx) => (
                 <div key={product.name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '6px 8px', borderRadius: 8, background: idx === 0 ? `${accentColor}12` : 'transparent' }}>
-                    <span style={{ fontSize: '1rem', width: 22, textAlign: 'center' }}>{medals[idx] || `#${idx + 1}`}</span>
+                    <span style={{ width: 22, display: 'flex', justifyContent: 'center' }}>{medalIcons[idx] || <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8' }}>{idx + 1}</span>}</span>
                     <span style={{ flex: 1, fontSize: '0.85rem', fontWeight: idx === 0 ? 700 : 500, color: idx === 0 ? '#1e1b4b' : '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.name}</span>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, color: accentColor, background: `${accentColor}18`, padding: '2px 7px', borderRadius: 99, flexShrink: 0 }}>{product.count}x</span>
                 </div>
@@ -85,8 +94,10 @@ function SessionDetailsModal({ session, onClose }) {
         <div className="admin-modal-overlay light-theme" onClick={(e) => e.target === e.currentTarget && onClose()}>
             <div className="admin-modal-content" style={{ maxWidth: 700 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '2px solid #ede9fe', paddingBottom: '1rem' }}>
-                    <h2 style={{ fontWeight: 800, fontSize: '1.3rem', color: '#1e1b4b', fontFamily: 'Manrope' }}>📋 Session #{session.id} Details</h2>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
+                    <h2 style={{ fontWeight: 800, fontSize: '1.3rem', color: '#1e1b4b', fontFamily: 'Manrope', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <ClipboardList size={22} color="#7c3aed" /> Session #{session.id} Details
+                    </h2>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '1.4rem', cursor: 'pointer', display: 'flex' }}><X size={24} /></button>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                     <div><p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: 2, fontWeight: 600 }}>User</p><p style={{ fontWeight: 600, color: session.userEmail ? '#059669' : '#9ca3af', margin: 0 }}>{session.userEmail || 'Anonymous'}</p></div>
@@ -163,7 +174,9 @@ function RecHistorySubPanel() {
 
     return (
         <div>
-            <h2 style={{ fontFamily: 'Manrope', fontWeight: 700, fontSize: '1.3rem', color: '#1e1b4b', marginBottom: 20 }}>📜 Recommendation History</h2>
+            <h2 style={{ fontFamily: 'Manrope', fontWeight: 700, fontSize: '1.3rem', color: '#1e1b4b', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <FileText size={22} color="#7c3aed" /> Recommendation History
+            </h2>
             {loading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}><div className="spinner" /></div>
             ) : error ? (
@@ -237,7 +250,9 @@ export default function AdminAnalyticsPanel({ showToast, analyticsTab = 'overvie
         <div className="admin-panel-enter">
             <div className="panel-header">
                 <p className="panel-label">System Overview</p>
-                <h1>📈 Analytics Dashboard</h1>
+                <h1 style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <TrendingUp size={32} color="#7c3aed" /> Analytics Dashboard
+                </h1>
                 <p className="panel-desc">Monitor system traffic, user behavior, and recommendation trends.</p>
             </div>
 
@@ -245,10 +260,10 @@ export default function AdminAnalyticsPanel({ showToast, analyticsTab = 'overvie
             <div style={{ marginBottom: '2.5rem' }}>
                 <h2 style={{ fontFamily: 'Manrope', fontWeight: 700, fontSize: '1.25rem', color: '#1e1b4b', marginBottom: 16, borderBottom: '2px solid #ede9fe', paddingBottom: 8 }}>Site Traffic</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
-                    <StatCard icon="📅" title="Today's Visits" value={visits?.lastDay || 0} subtitle="Last 24 hours" accent="#3b82f6" />
-                    <StatCard icon="📈" title="This Week" value={visits?.lastWeek || 0} subtitle="Last 7 days" accent="#7c3aed" />
-                    <StatCard icon="🌍" title="This Month" value={visits?.lastMonth || 0} subtitle="Last 30 days" accent="#059669" />
-                    <StatCard icon="🏢" title="All-Time" value={visits?.total || 0} subtitle="Lifetime" accent="#f59e0b" />
+                    <StatCard icon={<Calendar size={24} />} title="Today's Visits" value={visits?.lastDay || 0} subtitle="Last 24 hours" accent="#3b82f6" />
+                    <StatCard icon={<TrendingUp size={24} />} title="This Week" value={visits?.lastWeek || 0} subtitle="Last 7 days" accent="#7c3aed" />
+                    <StatCard icon={<Globe size={24} />} title="This Month" value={visits?.lastMonth || 0} subtitle="Last 30 days" accent="#059669" />
+                    <StatCard icon={<Building size={24} />} title="All-Time" value={visits?.total || 0} subtitle="Lifetime" accent="#f59e0b" />
                 </div>
             </div>
 
@@ -256,10 +271,10 @@ export default function AdminAnalyticsPanel({ showToast, analyticsTab = 'overvie
             <div style={{ marginBottom: '2.5rem' }}>
                 <h2 style={{ fontFamily: 'Manrope', fontWeight: 700, fontSize: '1.25rem', color: '#1e1b4b', marginBottom: 16, borderBottom: '2px solid #ede9fe', paddingBottom: 8 }}>Recommendation Engine</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
-                    <StatCard icon="🧠" title="Today's Sessions" value={sessions?.lastDay || 0} subtitle="Last 24 hours" accent="#6366f1" />
-                    <StatCard icon="📊" title="This Week" value={sessions?.lastWeek || 0} subtitle="Last 7 days" accent="#a855f7" />
-                    <StatCard icon="🗓️" title="This Month" value={sessions?.lastMonth || 0} subtitle="Last 30 days" accent="#d946ef" />
-                    <StatCard icon="📜" title="All Sessions" value={sessions?.total || 0} subtitle="Total logs" accent="#6b7280" />
+                    <StatCard icon={<Brain size={24} />} title="Today's Sessions" value={sessions?.lastDay || 0} subtitle="Last 24 hours" accent="#6366f1" />
+                    <StatCard icon={<BarChart2 size={24} />} title="This Week" value={sessions?.lastWeek || 0} subtitle="Last 7 days" accent="#a855f7" />
+                    <StatCard icon={<CalendarDays size={24} />} title="This Month" value={sessions?.lastMonth || 0} subtitle="Last 30 days" accent="#d946ef" />
+                    <StatCard icon={<FileText size={24} />} title="All Sessions" value={sessions?.total || 0} subtitle="Total logs" accent="#6b7280" />
                 </div>
             </div>
 
@@ -267,7 +282,7 @@ export default function AdminAnalyticsPanel({ showToast, analyticsTab = 'overvie
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem', marginBottom: '2.5rem' }}>
                 <div>
                     <h2 style={{ fontFamily: 'Manrope', fontWeight: 700, fontSize: '1.25rem', color: '#1e1b4b', marginBottom: 16, borderBottom: '2px solid #ede9fe', paddingBottom: 8 }}>User Base</h2>
-                    <StatCard icon="👥" title="Total Users" value={users?.total || 0} subtitle="Accounts in system" accent="#ec4899" />
+                    <StatCard icon={<Users size={24} />} title="Total Users" value={users?.total || 0} subtitle="Accounts in system" accent="#ec4899" />
                 </div>
                 <div>
                     <h2 style={{ fontFamily: 'Manrope', fontWeight: 700, fontSize: '1.25rem', color: '#1e1b4b', marginBottom: 16, borderBottom: '2px solid #ede9fe', paddingBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -291,7 +306,9 @@ export default function AdminAnalyticsPanel({ showToast, analyticsTab = 'overvie
 
             {/* Most Used Rules */}
             <div style={{ marginBottom: '2.5rem' }}>
-                <h2 style={{ fontFamily: 'Manrope', fontWeight: 700, fontSize: '1.25rem', color: '#1e1b4b', marginBottom: 16, borderBottom: '2px solid #ede9fe', paddingBottom: 8 }}>🏆 Most Used Rules</h2>
+                <h2 style={{ fontFamily: 'Manrope', fontWeight: 700, fontSize: '1.25rem', color: '#1e1b4b', marginBottom: 16, borderBottom: '2px solid #ede9fe', paddingBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Trophy size={22} color="#f59e0b" /> Most Used Rules
+                </h2>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                     <RuleUsageTable title="This Week" accentColor="#6366f1" rows={ruleUsage?.thisWeek || []} />
                     <RuleUsageTable title="Last Week" accentColor="#9ca3af" rows={ruleUsage?.lastWeek || []} />
@@ -300,7 +317,9 @@ export default function AdminAnalyticsPanel({ showToast, analyticsTab = 'overvie
 
             {/* Top Products by Category */}
             <div style={{ marginBottom: '2.5rem' }}>
-                <h2 style={{ fontFamily: 'Manrope', fontWeight: 700, fontSize: '1.25rem', color: '#1e1b4b', marginBottom: 16, borderBottom: '2px solid #ede9fe', paddingBottom: 8 }}>📦 Top Recommended Products</h2>
+                <h2 style={{ fontFamily: 'Manrope', fontWeight: 700, fontSize: '1.25rem', color: '#1e1b4b', marginBottom: 16, borderBottom: '2px solid #ede9fe', paddingBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Package size={22} color="#7c3aed" /> Top Recommended Products
+                </h2>
                 {(() => {
                     const allCats = new Set([...Object.keys(topProducts?.thisWeek || {}), ...Object.keys(topProducts?.lastWeek || {})]);
                     if (allCats.size === 0) return <div className="admin-card" style={{ padding: '2rem', textAlign: 'center', color: '#9ca3af' }}>No recommendation data yet.</div>;
@@ -309,7 +328,7 @@ export default function AdminAnalyticsPanel({ showToast, analyticsTab = 'overvie
                             {[...allCats].map(cat => (
                                 <div key={cat} className="admin-card" style={{ overflow: 'hidden' }}>
                                     <div style={{ padding: '0.85rem 1.25rem', background: '#f5f3ff', borderBottom: '1px solid #ede9fe', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                        <span style={{ fontSize: '1.05rem' }}>📦</span>
+                                        <Package size={18} color="#7c3aed" />
                                         <span style={{ fontWeight: 800, color: '#4c1d95', fontSize: '0.95rem' }}>{cat}</span>
                                     </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
