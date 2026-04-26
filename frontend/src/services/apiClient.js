@@ -7,7 +7,7 @@ import axios from 'axios';
  * - 401 responses trigger automatic logout
  */
 const apiClient = axios.create({
-    baseURL: '/api',
+    baseURL: import.meta.env.VITE_API_URL || '/api',
     headers: { 'Content-Type': 'application/json' },
     timeout: 60000,
 });
