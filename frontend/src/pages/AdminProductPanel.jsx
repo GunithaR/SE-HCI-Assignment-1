@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { 
     Plus, Pencil, Trash2, CheckCircle, XCircle, 
-    Image as ImageIcon, Upload, X, Package 
+    Image as ImageIcon, Upload, X, Package, Layers, 
+    Check, AlertTriangle, Star
 } from 'lucide-react';
 import catalogService from '../services/catalogService';
 import './AdminDashboardUnified.css';
@@ -52,7 +53,7 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
         const payload = { ...form, categoryId: Number(form.categoryId), brandId: Number(form.brandId), basePrice: parseFloat(form.basePrice), durabilityRating: parseInt(form.durabilityRating, 10), isActive: form.isActive, mainImageIndex };
         try {
             const result = isEdit ? await catalogService.updateProduct(editingProduct.id, payload, imageFiles) : await catalogService.createProduct(payload, imageFiles);
-            onSuccess(`Product "${result.name}" ${isEdit ? 'updated' : 'created'} successfully! ✅`, result); onClose();
+            onSuccess(`Product "${result.name}" ${isEdit ? 'updated' : 'created'} successfully!`, result); onClose();
         } catch (err) {
             const data = err?.response?.data;
             if (data && typeof data === 'object' && !data.message) setErrors(data);
@@ -74,7 +75,7 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                     </h2>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', display: 'flex' }}><X size={24} /></button>
                 </div>
-                {errors._general && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', color: '#f87171', fontSize: '0.85rem', marginBottom: '1rem' }}>⚠ {errors._general}</div>}
+                {errors._general && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', color: '#f87171', fontSize: '0.85rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}><AlertTriangle size={16} /> {errors._general}</div>}
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div><label style={lbl}>Category *</label><select value={form.categoryId} onChange={set('categoryId')} style={inp('categoryId')} required><option value="">Select…</option>{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>{errors.categoryId && <p style={errS}>{errors.categoryId}</p>}</div>
@@ -230,7 +231,7 @@ export default function AdminProductPanel({ showToast }) {
     };
 
     const handleToggleStatus = async (product) => {
-        try { const updated = await catalogService.toggleProductStatus(product.id, !product.isActive); showToast(`"${updated.name}" → ${updated.isActive ? 'In Stock ✅' : 'Out of Stock ⛔'}`); setProducts(prev => prev.map(p => p.id === updated.id ? updated : p)); }
+        try { const updated = await catalogService.toggleProductStatus(product.id, !product.isActive); showToast(`"${updated.name}" → ${updated.isActive ? 'In Stock' : 'Out of Stock'}`); setProducts(prev => prev.map(p => p.id === updated.id ? updated : p)); }
         catch { showToast('Failed to update stock status.', true); }
     };
 
@@ -258,14 +259,14 @@ export default function AdminProductPanel({ showToast }) {
             {/* Stat cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16, marginBottom: 28 }}>
                 {[
-                    { icon: '🏷️', label: 'Categories', value: categories.length, color: '#f59e0b' },
-                    { icon: '📦', label: 'Products Shown', value: totalProducts, color: '#7c3aed' },
-                    { icon: '✅', label: 'In Stock', value: products.filter(p => p.isActive).length, color: '#059669' },
-                    { icon: '⛔', label: 'Out of Stock', value: products.filter(p => !p.isActive).length, color: '#dc2626' },
+                    { icon: <Layers size={20} />, label: 'Categories', value: categories.length, color: '#f59e0b' },
+                    { icon: <Package size={20} />, label: 'Products Shown', value: totalProducts, color: '#7c3aed' },
+                    { icon: <CheckCircle size={20} />, label: 'In Stock', value: products.filter(p => p.isActive).length, color: '#059669' },
+                    { icon: <XCircle size={20} />, label: 'Out of Stock', value: products.filter(p => !p.isActive).length, color: '#dc2626' },
                 ].map(s => (
                     <div key={s.label} className="admin-card stat-card">
                         <div className="stat-accent-bar" style={{ background: s.color }} />
-                        <div className="stat-icon">{s.icon}</div>
+                        <div className="stat-icon" style={{ color: s.color }}>{s.icon}</div>
                         <div className="stat-value" style={{ color: s.color }}>{loadingProds ? '—' : s.value}</div>
                         <div className="stat-label">{s.label}</div>
                     </div>
@@ -274,7 +275,9 @@ export default function AdminProductPanel({ showToast }) {
 
             {/* Category tabs */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24, borderBottom: '1px solid #ede9fe', paddingBottom: 14 }}>
-                <button onClick={() => { setViewAll(true); setActiveCatId(null); }} className={`admin-tab${viewAll ? ' active' : ''}`}>⭐ All Products</button>
+                <button onClick={() => { setViewAll(true); setActiveCatId(null); }} className={`admin-tab${viewAll ? ' active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Star size={14} /> All Products
+                </button>
                 {categories.map(cat => (
                     <button key={cat.id} onClick={() => { setActiveCatId(cat.id); setViewAll(false); }} className={`admin-tab${!viewAll && activeCatId === cat.id ? ' active' : ''}`}>{cat.name}</button>
                 ))}
