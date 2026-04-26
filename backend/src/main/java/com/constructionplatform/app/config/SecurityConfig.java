@@ -135,12 +135,10 @@ public class SecurityConfig {
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:5173",
                 "http://localhost:3000",
-                "https://lplus-sivilima.vercel.app",
-                "https://se-hci-assignment-v2-git-main-gunithastcblk-2343.vercel.app",
-                "https://se-hci-assignment-v2-45oh8b38x-gunithastcblk-2343s-projects.vercel.app"));
+                "https://*.vercel.app"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
