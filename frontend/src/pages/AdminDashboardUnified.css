@@ -311,6 +311,11 @@
   transition: all 0.2s;
   box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);
   font-family: 'Inter', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
 }
 .admin-btn-primary:hover {
   background: #6d28d9;
@@ -329,6 +334,11 @@
   font-size: 0.88rem;
   transition: all 0.2s;
   font-family: 'Inter', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
 }
 .admin-btn-secondary:hover {
   background: #ddd6fe;

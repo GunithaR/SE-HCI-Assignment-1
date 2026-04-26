@@ -325,7 +325,16 @@ public class RecommendationService {
         dto.setBrandName(product.getBrand() != null ? product.getBrand().getName() : null);
         dto.setCategoryName(product.getCategory() != null ? product.getCategory().getName() : null);
         dto.setBasePrice(product.getBasePrice());
-        dto.setImageUrl(product.getImageUrl());
+        // Prefer the explicit main imageUrl; otherwise fall back to the first stored ProductImage.
+        // This fixes cases where images were uploaded but imageUrl wasn't set/populated.
+        String imageUrl = product.getImageUrl();
+        if ((imageUrl == null || imageUrl.trim().isEmpty())
+                && product.getImages() != null
+                && !product.getImages().isEmpty()
+                && product.getImages().get(0) != null) {
+            imageUrl = product.getImages().get(0).getImageUrl();
+        }
+        dto.setImageUrl(imageUrl);
 
         dto.setTotalScore(adjusted.getFinalScore());
         dto.setStrategyScores(adjusted.getStrategyScores());

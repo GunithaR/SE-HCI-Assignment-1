@@ -3,18 +3,18 @@ import { useEffect, useState, useCallback } from 'react';
 import catalogService from '../services/catalogService';
 import ProductCard from '../components/ProductCard';
 
-import roofingImg     from '../assets/roofing image.png';
-import flooringImg    from '../assets/flooring.png';
-import ceilingImg     from '../assets/ceiling.png';
-import wallImg        from '../assets/wall.png';
+import roofingImg from '../assets/roofing image.png';
+import flooringImg from '../assets/flooring.png';
+import ceilingImg from '../assets/ceiling.png';
+import wallImg from '../assets/wall.png';
 import accessoriesImg from '../assets/accessories.png';
 
 const CATEGORY_HERO = {
-    'Roofing Solution':  { title: 'Roofing Solutions',  image: roofingImg,     description: 'Crafting silhouettes of permanence. Our curated selection of high-end roofing materials combines architectural precision with unparalleled durability for the modern estate.' },
-    'Flooring Solution': { title: 'Flooring Solutions', image: flooringImg,    description: 'Define the foundation of your space with our curated collection of artisanal hardwoods and rare marbles. Precision-crafted for those who value permanence and elegance.' },
-    'Ceiling Solution':  { title: 'Ceiling Solutions',  image: ceilingImg,     description: 'Elevate the structural narrative of your space. Our curated ceiling materials blend acoustic precision with uncompromising architectural beauty, turning fifth walls into masterpieces.' },
-    'Wall Solution':     { title: 'Wall Solutions',     image: wallImg,        description: 'Transform vertical planes into architectural statements. Our curated selection of textures and materials brings character, depth, and tactile luxury to every structural surface.' },
-    'Accessories':       { title: 'Accessories',        image: accessoriesImg, description: 'Complete your build with precision. Our curated accessories bring the finishing touches that transform a construction project into an architectural masterpiece.' },
+    'Roofing Solution': { title: 'Roofing Solutions', image: roofingImg, description: 'Crafting silhouettes of permanence. Our curated selection of high-end roofing materials combines architectural precision with unparalleled durability for the modern estate.' },
+    'Flooring Solution': { title: 'Flooring Solutions', image: flooringImg, description: 'Define the foundation of your space with our curated collection of artisanal hardwoods and rare marbles. Precision-crafted for those who value permanence and elegance.' },
+    'Ceiling Solution': { title: 'Ceiling Solutions', image: ceilingImg, description: 'Elevate the structural narrative of your space. Our curated ceiling materials blend acoustic precision with uncompromising architectural beauty, turning fifth walls into masterpieces.' },
+    'Wall Solution': { title: 'Wall Solutions', image: wallImg, description: 'Transform vertical planes into architectural statements. Our curated selection of textures and materials brings character, depth, and tactile luxury to every structural surface.' },
+    'Accessories': { title: 'Accessories', image: accessoriesImg, description: 'Complete your build with precision. Our curated accessories bring the finishing touches that transform a construction project into an architectural masterpiece.' },
 };
 
 // ── Dual-handle price range slider (10 equal steps, snapping) ────────────────
@@ -26,7 +26,7 @@ function PriceRangeSlider({ min, max, low, high, onChange }) {
     // Snap a raw slider value (0-STEPS) to the exact price for that step.
     // Step 0  → min exactly; Step STEPS → max exactly (fixes reset-filter edge case).
     const stepToPrice = (step) => {
-        if (step === 0)     return min;
+        if (step === 0) return min;
         if (step === STEPS) return max;
         return Math.round(min + step * stepSize);
     };
@@ -34,7 +34,7 @@ function PriceRangeSlider({ min, max, low, high, onChange }) {
     // Convert a price back to the nearest step index.
     const priceToStep = (price) => Math.round((price - min) / stepSize);
 
-    const lowStep  = priceToStep(low);
+    const lowStep = priceToStep(low);
     const highStep = priceToStep(high);
     const pct = (step) => (step / STEPS) * 100;
 
@@ -72,7 +72,7 @@ function PriceRangeSlider({ min, max, low, high, onChange }) {
                 <input type="range" className="price-slider"
                     min={0} max={STEPS} step={1} value={lowStep}
                     onChange={handleMin}
-                    style={{ zIndex: lowStep >= STEPS - 1 ? 5 : 3 }} />
+                    style={{ zIndex: lowStep > STEPS / 2 ? 3 : 5 }} />
                 <input type="range" className="price-slider"
                     min={0} max={STEPS} step={1} value={highStep}
                     onChange={handleMax}
@@ -118,28 +118,29 @@ function PriceRangeSlider({ min, max, low, high, onChange }) {
 
 // ── Main Catalog Page ─────────────────────────────────────────────────────────
 export default function Catalog() {
-    const [categories,        setCategories]        = useState([]);
-    const [activeCategoryId,  setActiveCategoryId]  = useState(null);
-    const [activeCategoryName,setActiveCategoryName]= useState('');
-    const [products,          setProducts]          = useState([]);
-    const [pagination,        setPagination]        = useState({ page: 0, totalPages: 0, totalElements: 0 });
-    const [loadingCats,       setLoadingCats]       = useState(true);
-    const [loadingProds,      setLoadingProds]      = useState(false);
-    const [error,             setError]             = useState('');
-    const [search,            setSearch]            = useState('');
-    const [heroVisible,       setHeroVisible]       = useState(true);
+    const [categories, setCategories] = useState([]);
+    const [activeCategoryId, setActiveCategoryId] = useState(null);
+    const [activeCategoryName, setActiveCategoryName] = useState('');
+    const [products, setProducts] = useState([]);
+    const [pagination, setPagination] = useState({ page: 0, totalPages: 0, totalElements: 0 });
+    const [loadingCats, setLoadingCats] = useState(true);
+    const [loadingProds, setLoadingProds] = useState(false);
+    const [error, setError] = useState('');
+    const [search, setSearch] = useState('');
+    const [heroVisible, setHeroVisible] = useState(true);
+    const [gridVisible, setGridVisible] = useState(true);
 
-    const [brands,      setBrands]      = useState([]);
+    const [brands, setBrands] = useState([]);
     const [attrOptions, setAttrOptions] = useState({ sizes: [], materials: [] });
-    const [brandId,     setBrandId]     = useState('');
+    const [brandId, setBrandId] = useState('');
     const [productSize, setProductSize] = useState('');
-    const [material,    setMaterial]    = useState('');
+    const [material, setMaterial] = useState('');
 
     // Price range state
     const [priceAbsMin, setPriceAbsMin] = useState(0);
     const [priceAbsMax, setPriceAbsMax] = useState(100000);
-    const [priceLow,    setPriceLow]    = useState(0);
-    const [priceHigh,   setPriceHigh]   = useState(100000);
+    const [priceLow, setPriceLow] = useState(0);
+    const [priceHigh, setPriceHigh] = useState(100000);
     const [priceActive, setPriceActive] = useState(false);
 
     // Load categories
@@ -162,7 +163,7 @@ export default function Catalog() {
             .then(([b, opts]) => {
                 setBrands(b ?? []);
                 setAttrOptions({ sizes: opts?.sizes ?? [], materials: opts?.materials ?? [] });
-            }).catch(() => {});
+            }).catch(() => { });
     }, []);
 
     // Fetch ALL products for current category (large page) to compute price range
@@ -180,11 +181,11 @@ export default function Catalog() {
                     setPriceHigh(mx);
                     setPriceActive(false);
                 }
-            }).catch(() => {});
+            }).catch(() => { });
     }, [activeCategoryId]);
 
     // Load paginated products with filters
-    const minPrice = priceActive ? priceLow  : '';
+    const minPrice = priceActive ? priceLow : '';
     const maxPrice = priceActive ? priceHigh : '';
 
     useEffect(() => {
@@ -192,11 +193,11 @@ export default function Catalog() {
         setLoadingProds(true);
         setError('');
         const filters = {
-            ...(brandId    ? { brandId: Number(brandId) } : {}),
+            ...(brandId ? { brandId: Number(brandId) } : {}),
             ...(minPrice !== '' ? { minPrice: Number(minPrice) } : {}),
             ...(maxPrice !== '' ? { maxPrice: Number(maxPrice) } : {}),
             ...(productSize ? { productSize } : {}),
-            ...(material   ? { material } : {}),
+            ...(material ? { material } : {}),
         };
         catalogService.getProductsByCategory(activeCategoryId, pagination.page, 12, filters)
             .then((d) => {
@@ -210,6 +211,7 @@ export default function Catalog() {
     const handleCategoryChange = useCallback((catId, catName) => {
         if (catId === activeCategoryId) return;
         setHeroVisible(false);
+        setGridVisible(false);
         setTimeout(() => {
             setActiveCategoryId(catId);
             setActiveCategoryName(catName);
@@ -217,7 +219,8 @@ export default function Catalog() {
             setSearch(''); setBrandId(''); setProductSize(''); setMaterial('');
             setPriceActive(false);
             setHeroVisible(true);
-        }, 260);
+            setGridVisible(true);
+        }, 320);
     }, [activeCategoryId]);
 
     const handlePriceChange = (lo, hi) => {
@@ -250,13 +253,14 @@ export default function Catalog() {
 
             {/* ── HERO — full-bleed behind fixed navbar ─────────────────── */}
             <div style={{
-                position: 'relative', width: '100%', height: 540,
+                position: 'relative', width: '100%', height: 660,
                 overflow: 'hidden',
                 opacity: heroVisible ? 1 : 0,
-                transition: 'opacity 0.26s ease',
+                transform: heroVisible ? 'translateY(0)' : 'translateY(10px)',
+                transition: 'opacity 0.4s ease, transform 0.4s ease',
             }}>
                 {hero
-                    ? <img src={hero.image} alt={hero.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
+                    ? <img className="ken-burns" src={hero.image} alt={hero.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
                     : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,#4c1d95,#7c3aed)' }} />
                 }
 
@@ -271,7 +275,10 @@ export default function Catalog() {
                     position: 'absolute', bottom: 0, left: 0, right: 0,
                     padding: '0 5% 40px',
                 }}>
-                    <p style={{ color: '#c4b5fd', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', margin: '0 0 10px' }}>
+                    <p style={{
+                        color: '#c4b5fd', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', margin: '0 0 10px',
+                        opacity: heroVisible ? 1 : 0, transform: heroVisible ? 'translateY(0)' : 'translateY(20px)', transition: 'all 0.6s ease 0.1s'
+                    }}>
                         Our Collection
                     </p>
                     <h1 style={{
@@ -279,10 +286,14 @@ export default function Catalog() {
                         fontSize: 'clamp(2rem, 4vw, 3.2rem)', color: '#fff',
                         lineHeight: 1.1, margin: '0 0 12px',
                         textShadow: '0 2px 16px rgba(0,0,0,0.5)',
+                        opacity: heroVisible ? 1 : 0, transform: heroVisible ? 'translateY(0)' : 'translateY(20px)', transition: 'all 0.6s ease 0.2s'
                     }}>
                         {hero?.title || 'Product Catalog'}
                     </h1>
-                    <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: '0.95rem', lineHeight: 1.7, margin: 0, maxWidth: 560 }}>
+                    <p style={{
+                        color: 'rgba(255,255,255,0.82)', fontSize: '0.95rem', lineHeight: 1.7, margin: 0, maxWidth: 560,
+                        opacity: heroVisible ? 1 : 0, transform: heroVisible ? 'translateY(0)' : 'translateY(20px)', transition: 'all 0.6s ease 0.3s'
+                    }}>
                         {hero?.description || 'Browse our curated selection of premium construction materials.'}
                     </p>
                 </div>
@@ -306,7 +317,7 @@ export default function Catalog() {
                             onClick={() => handleCategoryChange(cat.id, cat.name)}
                             style={{
                                 background: activeCategoryId === cat.id ? '#7c3aed' : '#ede9fe',
-                                color:      activeCategoryId === cat.id ? '#fff'    : '#4c1d95',
+                                color: activeCategoryId === cat.id ? '#fff' : '#4c1d95',
                                 border: 'none', borderRadius: 40, padding: '10px 24px',
                                 fontWeight: 600, fontSize: 14, cursor: 'pointer',
                                 transition: 'all 0.2s', fontFamily: 'Manrope, sans-serif',
@@ -377,7 +388,7 @@ export default function Catalog() {
                             </div>
                             <PriceRangeSlider
                                 min={priceAbsMin} max={priceAbsMax}
-                                low={priceLow}    high={priceHigh}
+                                low={priceLow} high={priceHigh}
                                 onChange={handlePriceChange}
                             />
                         </div>
@@ -415,8 +426,8 @@ export default function Catalog() {
                 {/* Product grid */}
                 {loadingProds ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.5rem' }}>
-                        {Array.from({ length: 12 }).map((_, i) => (
-                            <div key={i} style={{ height: 420, borderRadius: 20, background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)' }} />
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="skeleton" style={{ height: 420, borderRadius: 20 }} />
                         ))}
                     </div>
                 ) : !error && filteredProducts.length === 0 ? (
@@ -432,8 +443,16 @@ export default function Catalog() {
                         )}
                     </div>
                 ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.5rem' }}>
-                        {filteredProducts.map(p => <ProductCard key={p.id} product={p} />)}
+                    <div
+                        key={activeCategoryId + pagination.page}
+                        className={gridVisible ? 'card-entrance' : ''}
+                        style={{
+                            display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.5rem',
+                            opacity: gridVisible ? 1 : 0,
+                            transition: 'opacity 0.3s ease'
+                        }}
+                    >
+                        {filteredProducts.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
                     </div>
                 )}
 

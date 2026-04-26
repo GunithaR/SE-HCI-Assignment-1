@@ -49,7 +49,9 @@ export default function Register() {
                     <p className="login-left-description">
                         Access your curated construction experience—explore premium materials, manage your projects, and unlock intelligent recommendations
                     </p>
-                    <img src={vectorImg} alt="Construction Platform Vector" className="login-image" />
+                    <div className="login-image-container">
+                        <img src={vectorImg} alt="Construction Platform Vector" className="login-image ken-burns" />
+                    </div>
                 </div>
 
                 {/* Right Section / Form */}

@@ -1,5 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { 
+    Users, Shield, Key, User, Search, 
+    X, Lock, Mail, Plus, CheckCircle 
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import catalogService from '../services/catalogService';
 import './AdminDashboardUnified.css';
@@ -25,7 +29,7 @@ function AddSubAdminModal({ onClose, onSuccess }) {
         setSubmitting(true);
         try {
             const result = await catalogService.createSubAdminUser(form);
-            onSuccess(`Sub-Admin "${result.email}" created successfully! ✅`);
+            onSuccess(`Sub-Admin "${result.email}" created successfully!`);
             onClose();
         } catch (err) {
             setError(err?.response?.data?.message || 'Failed to create Sub-Admin.');
@@ -37,9 +41,11 @@ function AddSubAdminModal({ onClose, onSuccess }) {
     return createPortal(
         <div className="admin-modal-overlay light-theme" onClick={(e) => e.target === e.currentTarget && onClose()}>
             <div className="admin-modal-content" style={{ maxWidth: 440 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2 style={{ fontWeight: 700, fontSize: '1.2rem', color: '#7c3aed' }}>➕ Add Sub-Admin</h2>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '1.3rem', cursor: 'pointer' }}>✕</button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '2px solid #ede9fe', paddingBottom: '1rem' }}>
+                    <h2 style={{ fontWeight: 800, fontSize: '1.2rem', color: '#7c3aed', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Plus size={20} /> Add Sub-Admin
+                    </h2>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '1.3rem', cursor: 'pointer', display: 'flex' }}><X size={24} /></button>
                 </div>
                 <p style={{ color: '#64748b', fontSize: '0.82rem', marginBottom: '1.2rem' }}>Sub-admins can manage products and brands, but cannot create new admins.</p>
                 {error && <p style={{ color: '#f87171', fontSize: '0.82rem', marginBottom: '1rem', background: 'rgba(239,68,68,0.08)', padding: '8px 12px', borderRadius: 8 }}>{error}</p>}
@@ -90,7 +96,7 @@ export default function AdminUserPanel({ showToast }) {
     const ROLE_STYLES = {
         ADMIN: { bg: 'rgba(124,58,237,0.1)', color: '#7c3aed' },
         SUB_ADMIN: { bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
-        USER: { bg: 'rgba(107,114,128,0.1)', color: '#6b7280' },
+        CUSTOMER: { bg: 'rgba(107,114,128,0.1)', color: '#6b7280' },
     };
 
     if (!isFullAdmin) {
@@ -98,11 +104,15 @@ export default function AdminUserPanel({ showToast }) {
             <div className="admin-panel-enter">
                 <div className="panel-header">
                     <p className="panel-label">Administration</p>
-                    <h1>👥 User Management</h1>
+                    <h1 style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <Users size={32} color="#7c3aed" /> User Management
+                    </h1>
                 </div>
                 <div className="admin-card" style={{ padding: '3rem', textAlign: 'center' }}>
-                    <p style={{ fontSize: '2.5rem', marginBottom: 12 }}>🔒</p>
-                    <p style={{ color: '#6b7280', fontWeight: 600 }}>Only full Admins can manage users.</p>
+                    <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+                        <Lock size={48} color="#ddd6fe" />
+                    </div>
+                    <p style={{ color: '#64748b', fontWeight: 600 }}>Only full Admins can manage users.</p>
                     <p style={{ color: '#9ca3af', fontSize: '0.82rem', marginTop: 8 }}>Contact a full administrator for access.</p>
                 </div>
             </div>
@@ -122,26 +132,30 @@ export default function AdminUserPanel({ showToast }) {
                 />
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
                 <div className="panel-header" style={{ marginBottom: 0 }}>
                     <p className="panel-label">Administration</p>
-                    <h1>👥 User Management</h1>
+                    <h1 style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <Users size={32} color="#7c3aed" /> User Management
+                    </h1>
                     <p className="panel-desc">{users.length} registered users in the system.</p>
                 </div>
-                <button className="admin-btn-primary" onClick={() => setShowSubAdminModal(true)}>+ Add Sub-Admin</button>
+                <button className="admin-btn-primary" onClick={() => setShowSubAdminModal(true)}>
+                    <Plus size={18} /> Add Sub-Admin
+                </button>
             </div>
 
             {/* Stat row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16, marginBottom: 28 }}>
                 {[
-                    { icon: '👥', label: 'Total Users', value: users.length, color: '#7c3aed' },
-                    { icon: '🛡️', label: 'Admins', value: users.filter(u => u.role === 'ADMIN').length, color: '#7c3aed' },
-                    { icon: '🔑', label: 'Sub-Admins', value: users.filter(u => u.role === 'SUB_ADMIN').length, color: '#f59e0b' },
-                    { icon: '👤', label: 'Regular Users', value: users.filter(u => u.role === 'USER').length, color: '#6b7280' },
+                    { icon: <Users size={20} />, label: 'Total Users', value: users.length, color: '#7c3aed' },
+                    { icon: <Shield size={20} />, label: 'Admins', value: users.filter(u => u.role === 'ADMIN').length, color: '#7c3aed' },
+                    { icon: <Key size={20} />, label: 'Sub-Admins', value: users.filter(u => u.role === 'SUB_ADMIN').length, color: '#f59e0b' },
+                    { icon: <User size={20} />, label: 'Regular Users', value: users.filter(u => u.role === 'CUSTOMER').length, color: '#6b7280' },
                 ].map(s => (
                     <div key={s.label} className="admin-card stat-card">
                         <div className="stat-accent-bar" style={{ background: s.color }} />
-                        <div className="stat-icon">{s.icon}</div>
+                        <div className="stat-icon" style={{ color: s.color }}>{s.icon}</div>
                         <div className="stat-value" style={{ color: s.color }}>{loading ? '—' : s.value}</div>
                         <div className="stat-label">{s.label}</div>
                     </div>
@@ -150,9 +164,9 @@ export default function AdminUserPanel({ showToast }) {
 
             {/* Search */}
             <div className="admin-search">
-                <span style={{ color: '#a78bfa' }}>🔍</span>
+                <Search size={18} color="#a78bfa" />
                 <input placeholder="Search users by email…" value={search} onChange={e => setSearch(e.target.value)} />
-                {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer' }}>✕</button>}
+                {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>}
             </div>
 
             {/* Table */}
@@ -178,7 +192,7 @@ export default function AdminUserPanel({ showToast }) {
                                     <td style={{ fontWeight: 600, color: '#1e1b4b' }}>{u.email}</td>
                                     <td>
                                         <span className="admin-badge" style={{ background: ROLE_STYLES[u.role]?.bg, color: ROLE_STYLES[u.role]?.color }}>
-                                            {u.role === 'SUB_ADMIN' ? 'Sub-Admin' : u.role}
+                                            {u.role === 'SUB_ADMIN' ? 'Sub-Admin' : (u.role === 'CUSTOMER' ? 'Regular User' : u.role)}
                                         </span>
                                     </td>
                                     <td style={{ color: '#6b7280', fontSize: '0.82rem' }}>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>

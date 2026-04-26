@@ -21,7 +21,7 @@ export default function Navbar() {
                     <img src="/PE+.jpg" alt="PE+" style={{ height: 32, width: 'auto', objectFit: 'contain', mixBlendMode: 'multiply' }} />
                     <img src="/sivilima.png" alt="Sivilima" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
                     <img src="/s-lon.png" alt="S-Lon" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
-                    
+
                 </Link>
 
                 {/* ── Right side: Nav links + Theme toggle + Auth ───────────── */}
@@ -47,8 +47,8 @@ export default function Navbar() {
                                         transition: 'all 0.2s ease',
                                         whiteSpace: 'nowrap',
                                     }}
-                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(239,68,68,0.25)'; }}
-                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = 'none'; }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(239, 68, 68, 0.6)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
                                 >
                                     Go to Admin Dashboard
                                 </button>
@@ -62,7 +62,23 @@ export default function Navbar() {
                             <button
                                 id="nav-logout-btn"
                                 onClick={handleLogout}
-                                className="btn-secondary !rounded-full text-sm py-2 px-5 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors"
+                                style={{
+                                    background: 'rgba(255,255,255,0.12)',
+                                    backdropFilter: 'blur(6px)',
+                                    WebkitBackdropFilter: 'blur(6px)',
+                                    color: '#7c3aed',
+                                    border: '1.5px solid #7c3aed',
+                                    borderRadius: 9999,
+                                    padding: '8px 20px',
+                                    fontFamily: 'Manrope, sans-serif',
+                                    fontWeight: 700,
+                                    fontSize: '0.875rem',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    transition: 'transform 0.2s, background 0.2s',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(124, 58, 237, 0.6)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.boxShadow = 'none'; }}
                             >
                                 Logout
                             </button>
@@ -78,7 +94,28 @@ export default function Navbar() {
                             {/* Conditionally render Login and Sign Up buttons */}
                             {!isAuthenticated && window.location.pathname !== '/login' && (
                                 <Link to="/login">
-                                    <button id="nav-login-btn" className="btn-secondary !rounded-full text-sm py-2 px-5 shadow-lg shadow-indigo-500/30">Login</button>
+                                    <button
+                                        id="nav-login-btn"
+                                        style={{
+                                            background: 'rgba(255,255,255,0.12)',
+                                            backdropFilter: 'blur(6px)',
+                                            WebkitBackdropFilter: 'blur(6px)',
+                                            color: '#7c3aed',
+                                            border: '1.5px solid #7c3aed',
+                                            borderRadius: 9999,
+                                            padding: '8px 20px',
+                                            fontFamily: 'Manrope, sans-serif',
+                                            fontWeight: 700,
+                                            fontSize: '0.875rem',
+                                            cursor: 'pointer',
+                                            whiteSpace: 'nowrap',
+                                            transition: 'transform 0.2s, background 0.2s',
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(124, 58, 237, 0.6)'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.boxShadow = 'none'; }}
+                                    >
+                                        Login
+                                    </button>
                                 </Link>
                             )}
                             {!isAuthenticated && window.location.pathname !== '/register' && (

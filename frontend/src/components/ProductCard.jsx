@@ -2,16 +2,16 @@ import { Link } from 'react-router-dom';
 
 // ── Budget tier config (friendly labels) ─────────────────────────────────────
 const BUDGET_CONFIG = {
-    LOW:    { label: 'Budget-Friendly', icon: '💰', color: '#16a34a', bg: 'rgba(22,163,74,0.13)',  border: 'rgba(22,163,74,0.4)' },
-    MEDIUM: { label: 'Mid-Range',       icon: '💎', color: '#7c3aed', bg: 'rgba(124,58,237,0.13)', border: 'rgba(124,58,237,0.4)' },
-    HIGH:   { label: 'Premium',         icon: '👑', color: '#b45309', bg: 'rgba(180,83,9,0.13)',   border: 'rgba(180,83,9,0.4)' },
+    LOW:    { label: 'Budget-Friendly', icon: null, color: '#16a34a', bg: 'rgba(22,163,74,0.13)',  border: 'rgba(22,163,74,0.4)' },
+    MEDIUM: { label: 'Mid-Range',       icon: null, color: '#7c3aed', bg: 'rgba(124,58,237,0.13)', border: 'rgba(124,58,237,0.4)' },
+    HIGH:   { label: 'Premium',         icon: null, color: '#b45309', bg: 'rgba(180,83,9,0.13)',   border: 'rgba(180,83,9,0.4)' },
 };
 
 // ── Maintenance level config ──────────────────────────────────────────────────
 const MAINTENANCE_CONFIG = {
-    LOW:    { label: 'Easy Care',    icon: '✨' },
-    MEDIUM: { label: 'Standard',     icon: '⚙️' },
-    HIGH:   { label: 'High Upkeep', icon: '🛠️' },
+    LOW:    { label: 'Easy Care',    icon: null },
+    MEDIUM: { label: 'Standard',     icon: null },
+    HIGH:   { label: 'High Upkeep', icon: null },
 };
 
 // ── Star display (filled/empty) ───────────────────────────────────────────────
@@ -44,7 +44,7 @@ function Pill({ icon, label, color = '#7c3aed', bg = 'rgba(124,58,237,0.09)', bo
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, index = 0 }) {
     // Unified field resolution — handles both Home & Catalog data shapes
     const imageToDisplay = product.imageUrl || product.imageUrls?.[0] || null;
     const rating = product.averageRating != null
@@ -60,6 +60,7 @@ export default function ProductCard({ product }) {
     return (
         <Link to={`/product/${product.id}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
             <div
+                className="card-entrance"
                 style={{
                     background: '#fff',
                     border: '1.5px solid #ede9fe',
@@ -70,6 +71,7 @@ export default function ProductCard({ product }) {
                     transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
                     boxShadow: '0 2px 16px rgba(124,58,237,0.08)',
                     cursor: 'pointer',
+                    animationDelay: `${index * 0.06}s`,
                 }}
                 onMouseEnter={e => {
                     e.currentTarget.style.transform = 'translateY(-6px)';
@@ -98,7 +100,7 @@ export default function ProductCard({ product }) {
                         />
                     ) : (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '3rem', opacity: 0.45 }}>
-                            🏗️
+                            No image
                         </div>
                     )}
 
@@ -113,7 +115,7 @@ export default function ProductCard({ product }) {
                             boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
                             display: 'inline-flex', alignItems: 'center', gap: 4,
                         }}>
-                            {budget.icon} {budget.label}
+                            {budget.label}
                         </span>
                     )}
 
@@ -127,7 +129,7 @@ export default function ProductCard({ product }) {
                             backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
                         }}>
-                            ⭐ Top Rated
+                            Top Rated
                         </span>
                     )}
                 </div>
@@ -181,7 +183,7 @@ export default function ProductCard({ product }) {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 2 }}>
                         {product.climateSuitability && (
                             <Pill
-                                icon="🌤"
+                                icon={null}
                                 label={product.climateSuitability}
                                 color="#0369a1"
                                 bg="rgba(3,105,161,0.08)"
@@ -199,7 +201,7 @@ export default function ProductCard({ product }) {
                         )}
                         {product.material && (
                             <Pill
-                                icon="🧱"
+                                icon={null}
                                 label={product.material}
                                 color="#374151"
                                 bg="rgba(55,65,81,0.07)"
@@ -230,7 +232,7 @@ export default function ProductCard({ product }) {
                             color: inStock ? '#16a34a' : '#dc2626',
                             border: `1px solid ${inStock ? 'rgba(22,163,74,0.3)' : 'rgba(220,38,38,0.3)'}`,
                         }}>
-                            {inStock ? '✅ In Stock' : '❌ Out of Stock'}
+                            {inStock ? 'In Stock' : 'Out of Stock'}
                         </span>
                     </div>
 
@@ -256,7 +258,7 @@ export default function ProductCard({ product }) {
                             e.currentTarget.style.boxShadow = 'none';
                         }}
                     >
-                        View Details →
+                        View Details
                     </button>
                 </div>
             </div>
