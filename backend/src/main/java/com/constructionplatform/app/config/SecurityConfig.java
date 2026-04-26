@@ -71,8 +71,8 @@ public class SecurityConfig {
                         // ── Public endpoints ──────────────────────────────────────
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
-                        .requestMatchers("/api/chat/**").permitAll()      // AI Chatbot
-                        .requestMatchers("/uploads/**").permitAll()       // product images
+                        .requestMatchers("/api/chat/**").permitAll() // AI Chatbot
+                        .requestMatchers("/uploads/**").permitAll() // product images
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // pre-flight
 
                         // ── Admin-only endpoints (ADMIN or SUB_ADMIN) ────────────
@@ -114,8 +114,7 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // ── Password Encoder ─────────────────────────────────────────────────────
-
+    // Password Encoder
     /**
      * BCrypt with default strength (10 rounds).
      * Declared as a {@code @Bean} so it can be injected throughout the application
@@ -126,7 +125,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // ── CORS ─────────────────────────────────────────────────────────────────
+    // CORS
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -135,9 +134,7 @@ public class SecurityConfig {
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:5173",
                 "http://localhost:3000",
-                "https://*-gunithas-projects.vercel.app",
-                "https://*.vercel.app"
-        ));
+                "https://lplus-sivilima.vercel.app"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
