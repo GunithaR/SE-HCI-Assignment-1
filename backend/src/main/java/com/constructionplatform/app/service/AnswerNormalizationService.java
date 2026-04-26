@@ -60,7 +60,7 @@ public class AnswerNormalizationService {
         return fallbackNormalize(category, rawAnswers);
     }
 
-    // ── Gemini AI call ───────────────────────────────────────────────────────
+    // ── Gemini AI call
 
     private Map<String, String> callGemini(String category, Map<String, String> rawAnswers) throws Exception {
         String prompt = buildNormalizationPrompt(category, rawAnswers);

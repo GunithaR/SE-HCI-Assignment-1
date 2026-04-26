@@ -55,8 +55,7 @@ public class SecurityConfig {
         this.userDetailsService = userDetailsService;
     }
 
-    // ── Filter Chain ─────────────────────────────────────────────────────────
-
+    // Filter Chain
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -68,7 +67,7 @@ public class SecurityConfig {
 
                 // Route access rules
                 .authorizeHttpRequests(auth -> auth
-                        // ── Public endpoints ──────────────────────────────────────
+                        // ── Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/chat/**").permitAll() // AI Chatbot
@@ -98,7 +97,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // ── Authentication Provider ───────────────────────────────────────────────
+    // Authentication Provider
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
@@ -131,10 +130,14 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         // Allow React dev server and Vercel deployments
+        // Included all related websites
+
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:5173",
                 "http://localhost:3000",
-                "https://lplus-sivilima.vercel.app"));
+                "https://lplus-sivilima.vercel.app",
+                "https://se-hci-assignment-v2-git-main-gunithastcblk-2343.vercel.app",
+                "https://se-hci-assignment-v2-45oh8b38x-gunithastcblk-2343s-projects.vercel.app"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
