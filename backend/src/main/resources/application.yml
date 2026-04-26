@@ -50,12 +50,8 @@ jwt:
 
 ai:
   gemini:
-    api-key: 
+    api-key: AIzaSyAcoYmHn9CRgmYH3BITQaBH2-jagjihYXY
     url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
-  openrouter:
-    api-key: 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
-    url: https://openrouter.ai/api/v1/chat/completions
-    model: google/gemini-2.5-flash
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 logging:
