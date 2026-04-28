@@ -4,6 +4,9 @@ server:
     context-path: /
 
 spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
   # ── DataSource ──────────────────────────────────────────────────────────────
   datasource:
     # ↓ Change 'root' username and 'root' password to your MySQL credentials
