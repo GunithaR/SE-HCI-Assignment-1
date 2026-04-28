@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import catalogService from '../services/catalogService';
+import { toAbsoluteImageUrl } from '../utils/imageUtils';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -139,9 +140,12 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
     const [submitting, setSubmitting] = useState(false);
     // Image state
     const [imageFiles, setImageFiles] = useState([]);
-    const [imagePreviews, setImagePreviews] = useState(
-        isEdit && editingProduct.imageUrls ? editingProduct.imageUrls : []
-    );
+    const [imagePreviews, setImagePreviews] = useState(() => {
+        if (isEdit && editingProduct.imageUrls) {
+            return editingProduct.imageUrls.map(toAbsoluteImageUrl);
+        }
+        return [];
+    });
     const [mainImageIndex, setMainImageIndex] = useState(0);
 
     const set = (field) => (e) => {
@@ -165,7 +169,7 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
     const clearImage = () => {
         setImageFiles([]);
         setMainImageIndex(0);
-        setImagePreviews(isEdit && editingProduct.imageUrls ? editingProduct.imageUrls : []);
+        setImagePreviews(isEdit && editingProduct.imageUrls ? editingProduct.imageUrls.map(toAbsoluteImageUrl) : []);
     };
 
     const handleSubmit = async (e) => {
@@ -667,7 +671,7 @@ export default function AdminDashboard() {
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                                     <div style={{ width: 36, height: 36, borderRadius: 7, overflow: 'hidden', flexShrink: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                         {p.imageUrls && p.imageUrls.length > 0
-                                                            ? <img src={p.imageUrls[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            ? <img src={toAbsoluteImageUrl(p.imageUrls[0])} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                             : <span style={{ fontSize: '1rem', opacity: 0.25 }}>🖼️</span>}
                                                     </div>
                                                     {p.name}

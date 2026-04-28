@@ -7,6 +7,7 @@ import {
     Check, AlertTriangle, Star
 } from 'lucide-react';
 import catalogService from '../services/catalogService';
+import { toAbsoluteImageUrl } from '../utils/imageUtils';
 import './AdminDashboardUnified.css';
 
 const EMPTY_FORM = {
@@ -41,12 +42,17 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
     const [errors, setErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
     const [imageFiles, setImageFiles] = useState([]);
-    const [imagePreviews, setImagePreviews] = useState(isEdit && editingProduct.imageUrls ? editingProduct.imageUrls : []);
+    const [imagePreviews, setImagePreviews] = useState(() => {
+        if (isEdit && editingProduct.imageUrls) {
+            return editingProduct.imageUrls.map(toAbsoluteImageUrl);
+        }
+        return [];
+    });
     const [mainImageIndex, setMainImageIndex] = useState(0);
 
     const set = (field) => (e) => { const v = e.target.type === 'checkbox' ? e.target.checked : e.target.value; setForm((f) => ({ ...f, [field]: v })); };
     const handleImageChange = (e) => { const files = Array.from(e.target.files || []); setImageFiles(files); setMainImageIndex(0); if (files.length > 0) setImagePreviews(files.map(f => URL.createObjectURL(f))); else setImagePreviews([]); };
-    const clearImage = () => { setImageFiles([]); setMainImageIndex(0); setImagePreviews(isEdit && editingProduct.imageUrls ? editingProduct.imageUrls : []); };
+    const clearImage = () => { setImageFiles([]); setMainImageIndex(0); setImagePreviews(isEdit && editingProduct.imageUrls ? editingProduct.imageUrls.map(toAbsoluteImageUrl) : []); };
 
     const handleSubmit = async (e) => {
         e.preventDefault(); setErrors({}); setSubmitting(true);
@@ -316,7 +322,7 @@ export default function AdminProductPanel({ showToast }) {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                                 <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#f5f3ff', border: '1.5px solid #ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                     {p.imageUrls && p.imageUrls.length > 0
-                                                        ? <img src={p.imageUrls[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        ? <img src={toAbsoluteImageUrl(p.imageUrls[0])} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                         : <ImageIcon size={18} color="#ddd6fe" />}
                                                 </div>
                                                 <span style={{ fontWeight: 600, color: '#1e1b4b' }}>{p.name}</span>

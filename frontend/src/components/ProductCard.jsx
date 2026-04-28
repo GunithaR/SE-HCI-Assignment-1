@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { toAbsoluteImageUrl } from '../utils/imageUtils';
 
 // ── Budget tier config (friendly labels) ─────────────────────────────────────
 const BUDGET_CONFIG = {
@@ -46,7 +47,7 @@ function Pill({ icon, label, color = '#7c3aed', bg = 'rgba(124,58,237,0.09)', bo
 // ── Main component ────────────────────────────────────────────────────────────
 export default function ProductCard({ product, index = 0 }) {
     // Unified field resolution — handles both Home & Catalog data shapes
-    const imageToDisplay = product.imageUrl || product.imageUrls?.[0] || null;
+    const imageToDisplay = toAbsoluteImageUrl(product.imageUrl || product.imageUrls?.[0] || null);
     const rating = product.averageRating != null
         ? product.averageRating
         : (product.durabilityRating != null ? product.durabilityRating / 2 : null);

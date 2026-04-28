@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import catalogService from '../services/catalogService';
+import { toAbsoluteImageUrl } from '../utils/imageUtils';
 import './Wizard.css';
 
 /* ── Background Images ───────────────────────────────────────── */
@@ -181,13 +182,7 @@ function ResultCard({ product, rank, isSelected, onToggleSelect }) {
     tradeOffs, excluded, ruleAdjustment, appliedRuleNames, excludedByRules, imageUrl,
   } = product;
 
-  const BACKEND_ORIGIN = (import.meta?.env?.VITE_BACKEND_ORIGIN || 'http://localhost:8080').replace(/\/$/, '');
-  const toAbsoluteImageUrl = (url) => {
-    if (!url) return null;
-    if (/^https?:\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')) return url;
-    if (url.startsWith('/')) return `${BACKEND_ORIGIN}${url}`;
-    return `${BACKEND_ORIGIN}/${url}`;
-  };
+
 
   const resolvedImageUrl = toAbsoluteImageUrl(imageUrl);
 

@@ -20,6 +20,7 @@ import {
     X,
     Maximize2
 } from 'lucide-react';
+import { toAbsoluteImageUrl } from '../utils/imageUtils';
 
 const BUDGET_CONFIG = {
     LOW: { label: 'Budget-Friendly', color: '#16a34a', bg: 'rgba(22,163,74,0.12)', border: 'rgba(22,163,74,0.35)', Icon: Banknote },
@@ -134,7 +135,7 @@ export default function ProductDetails() {
 
     const budget = BUDGET_CONFIG[budgetLevel];
     const inStock = isActive !== false;
-    const imgs = imageUrls && imageUrls.length > 0 ? imageUrls : [];
+    const imgs = (imageUrls && imageUrls.length > 0) ? imageUrls.map(toAbsoluteImageUrl) : [];
 
     const avgScore = reviews.length > 0 ? (reviews.reduce((s, r) => s + r.score, 0) / reviews.length) : 0;
     const distrib = [5, 4, 3, 2, 1].map(s => ({ star: s, count: reviews.filter(r => r.score === s).length }));
