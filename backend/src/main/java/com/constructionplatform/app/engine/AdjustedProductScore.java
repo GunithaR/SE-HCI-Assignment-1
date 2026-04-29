@@ -43,7 +43,7 @@ public class AdjustedProductScore {
         return a;
     }
 
-    // ── Score mutation by rules ──────────────────────────────────────────────
+    // Score mutation by rules
 
     public void addScore(double amount, String ruleName) {
         this.ruleAdjustment += amount;
@@ -62,7 +62,7 @@ public class AdjustedProductScore {
         this.excludedByRules.add(ruleName);
     }
 
-    // ── Getters ──────────────────────────────────────────────────────────────
+    // Getters
 
     public Product getProduct() {
         return product;

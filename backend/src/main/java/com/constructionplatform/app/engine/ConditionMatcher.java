@@ -19,7 +19,7 @@ import java.util.Map;
 @Component
 public class ConditionMatcher {
 
-    private static final Logger log = LoggerFactory.getLogger(ConditionMatcher.class);
+    private static final Logger log = LoggerFactory.getLogger(ConditionMatcher.class.getName());
 
     /**
      * Evaluate a single condition against user answers and product data.
@@ -55,7 +55,7 @@ public class ConditionMatcher {
         return userValue.equalsIgnoreCase(productValue);
     }
 
-    // ── Value resolution ─────────────────────────────────────────────────────
+    // Value resolution
 
     String resolveValue(OperandSource source, String attributeName,
                         Map<String, String> normalizedAnswers, Product product) {
@@ -112,7 +112,7 @@ public class ConditionMatcher {
         };
     }
 
-    // ── Comparison engine ────────────────────────────────────────────────────
+    // Comparison engine
 
     boolean compare(String actual, ConditionOperator operator, String expected) {
         if (actual == null || expected == null) return false;
@@ -120,7 +120,7 @@ public class ConditionMatcher {
         return switch (operator) {
             case EQUALS -> actual.equalsIgnoreCase(expected);
             case NOT_EQUALS -> !actual.equalsIgnoreCase(expected);
-            case CONTAINS -> actual.toLowerCase().contains(expected.toLowerCase());
+            case CONTAINS -> actual.toLowerCase().indexOf(expected.toLowerCase()) != -1;
             case IN -> {
                 String[] parts = expected.split(",");
                 for (String part : parts) {
