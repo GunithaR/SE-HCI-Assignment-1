@@ -66,6 +66,12 @@ const QuestionMarkIcon = ({ color = '#44474e' }) => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
 );
 
+/* ── Helper: strip emojis ────────────────────────────────────── */
+const stripEmojis = (str) => {
+  if (!str) return '';
+  return str.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim();
+};
+
 /* ── Helper: extract label from question ID or text ──────────── */
 function extractLabel(text, questionId) {
   if (questionId) {
@@ -500,8 +506,8 @@ function OptionCard({ option, selected, onClick, index }) {
     <button className={`wizard-opt-card${selected ? ' selected' : ''}`} onClick={onClick}>
       {selected && <div className="opt-check"><CheckSvg /></div>}
       <div className="opt-icon-bg">{IconFn(iconColor)}</div>
-      <div className="opt-title">{option.label}</div>
-      {option.desc && <div className="opt-desc">{option.desc}</div>}
+      <div className="opt-title">{stripEmojis(option.label)}</div>
+      {option.desc && <div className="opt-desc">{stripEmojis(option.desc)}</div>}
     </button>
   );
 }
@@ -650,18 +656,19 @@ export default function Wizard() {
     <div className="wizard-page" style={{ backgroundImage: `url(${isResultsStep ? bgResults : (isCategoryStep ? bgCategory : (BG_IMAGES[currentIndex % BG_IMAGES.length] || bgQ1))})` }}>
       <div className="wizard-overlay"></div>
       <div className="wizard-page-inner">
-        {!isResultsStep && (
+        {!isResultsStep && !isCategoryStep && (
           <div className="wizard-header" style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
             <StepIndicator visibleQuestions={visibleQuestions} currentIndex={currentIndex} answers={answers} isReviewStep={isReviewStep} isResultsStep={isResultsStep} />
-            <h1 className="wizard-q-heading">{isReviewStep ? 'Review Choices' : (isCategoryStep ? 'Project Type' : 'Preferences')}</h1>
-            <p className="wizard-q-subtext">{isReviewStep ? 'Verify your selections before AI matching' : (isCategoryStep ? 'Select your project scope' : (currentQ?.question || 'Answer a few questions'))}</p>
           </div>
         )}
         <div className="wizard-layout">
-          {!isCategoryStep && !isResultsStep && (
-            <AnswersSidebar visibleQuestions={visibleQuestions} answers={answers} onEdit={(id) => setCurrentQuestionId(id)} selectedCategory={selectedCategory} />
-          )}
           <div className={`wizard-question-panel${isCategoryStep || isResultsStep ? ' full-width' : ''}`}>
+            {!isResultsStep && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h1 className="wizard-q-heading">{isReviewStep ? 'Review Choices' : (isCategoryStep ? 'Project Type' : 'Preferences')}</h1>
+                <p className="wizard-q-subtext">{isReviewStep ? 'Verify your selections before AI matching' : (isCategoryStep ? 'Select your project scope' : (stripEmojis(currentQ?.question) || 'Answer a few questions'))}</p>
+              </div>
+            )}
             {isResultsStep ? (
               <ResultsView resultsData={resultsData} answers={answers} visibleQuestions={visibleQuestions} selectedCategory={selectedCategory} onTryAgain={() => { setResultsData(null); setSelectedCategory(null); }} />
             ) : isCategoryStep ? (
@@ -681,7 +688,7 @@ export default function Wizard() {
                     <div key={q.id} className="wizard-review-item">
                       <div>
                         <div className="wizard-review-q">{extractLabel(q.question, q.id)}</div>
-                        <div className="wizard-review-a">{q.options.find(o => o.value === answers[q.id])?.label || answers[q.id]}</div>
+                        <div className="wizard-review-a">{stripEmojis(q.options.find(o => o.value === answers[q.id])?.label || answers[q.id])}</div>
                       </div>
                       <button className="wizard-review-edit" onClick={() => setCurrentQuestionId(q.id)}>Change</button>
                     </div>
@@ -695,16 +702,19 @@ export default function Wizard() {
               <div className="wizard-q-container">
                 <div className="wizard-options-grid">
                   {currentQ?.options.map((opt, i) => (
-                    <OptionCard key={opt.value} option={opt} selected={currentAnswer === opt.value} onClick={() => { selectOption(currentQ.id, opt.value); goNext(); }} index={i} />
+                    <OptionCard key={opt.value} option={opt} selected={currentAnswer === opt.value} onClick={() => { selectOption(currentQ.id, opt.value); }} index={i} />
                   ))}
                 </div>
                 <div className="wizard-nav-footer">
                   <button className="wizard-nav-btn back-btn" onClick={goBack}><ArrowLeft /> Back</button>
-                  {currentAnswer && <button className="wizard-nav-btn next-btn" onClick={goNext}>Next <ArrowRight /></button>}
+                  <button className="wizard-nav-btn next-btn" onClick={goNext} disabled={!currentAnswer}>Next <ArrowRight /></button>
                 </div>
               </div>
             )}
           </div>
+          {!isCategoryStep && !isResultsStep && (
+            <AnswersSidebar visibleQuestions={visibleQuestions} answers={answers} onEdit={(id) => setCurrentQuestionId(id)} selectedCategory={selectedCategory} />
+          )}
         </div>
       </div>
     </div>
