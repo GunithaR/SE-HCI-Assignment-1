@@ -68,8 +68,12 @@ const QuestionMarkIcon = ({ color = '#44474e' }) => (
 
 /* ── Helper: strip emojis ────────────────────────────────────── */
 const stripEmojis = (str) => {
-  if (!str) return '';
-  return str.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim();
+  if (!str || typeof str !== 'string') return str || '';
+  try {
+    return str.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim();
+  } catch (e) {
+    return str; // Fallback if unsupported
+  }
 };
 
 /* ── Helper: extract label from question ID or text ──────────── */
@@ -148,7 +152,7 @@ function ScoreRing({ score, size = 64 }) {
                 />
             </svg>
             <div className="score-ring-text">
-                <span className="ring-val">{score.toFixed(1)}</span>
+                <span className="ring-val">{Number(score || 0).toFixed(1)}</span>
                 <span className="ring-max">/10</span>
             </div>
         </div>
@@ -213,7 +217,7 @@ function ResultCard({ product, rank, isSelected, onToggleSelect }) {
                     )}
                 </div>
 
-                {totalScore !== undefined && (
+                {totalScore != null && (
                     <div className="result-scores">
                         <ScoreRing score={totalScore} />
                         <div className="score-pills">
@@ -223,7 +227,7 @@ function ResultCard({ product, rank, isSelected, onToggleSelect }) {
                                     <div key={key} className="score-pill">
                                         {meta.icon ? <span className="pill-icon">{meta.icon}</span> : null}
                                         <span className="pill-label">{meta.label}</span>
-                                        <span className="pill-val">{val.toFixed(1)}</span>
+                                        <span className="pill-val">{Number(val || 0).toFixed(1)}</span>
                                     </div>
                                 );
                             })}
@@ -252,7 +256,7 @@ function ResultCard({ product, rank, isSelected, onToggleSelect }) {
                     <div className="result-rules">
                         <h4>Policy Adjustments</h4>
                         <div className="rule-adj" style={{ color: ruleAdjustment > 0 ? '#10b981' : '#ef4444' }}>
-                            {ruleAdjustment > 0 ? '+' : ''}{ruleAdjustment.toFixed(1)} points
+                            {ruleAdjustment > 0 ? '+' : ''}{Number(ruleAdjustment || 0).toFixed(1)} points
                         </div>
                         {appliedRuleNames.map((name, i) => <p key={i}>• {name}</p>)}
                     </div>
@@ -358,7 +362,7 @@ function AnswerChips({ answers, visibleQuestions, selectedCategory }) {
 }
 
 function ResultsView({ resultsData, answers, visibleQuestions, selectedCategory, onTryAgain }) {
-  const { products = [], additionalInsights = [], augmentationFallbackUsed = false } = resultsData;
+  const { recommendations: products = [], additionalInsights = [], fallbackUsed: augmentationFallbackUsed = false } = resultsData;
 
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [comparisonData, setComparisonData] = useState(null);
