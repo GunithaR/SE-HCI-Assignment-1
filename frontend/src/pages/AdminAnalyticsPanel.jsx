@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useQuery } from '@tanstack/react-query';
 import { 
     TrendingUp, Calendar, Globe, Building, Brain, BarChart2, 
     CalendarDays, FileText, Users, Trophy, Package, Medal, 
@@ -84,7 +85,6 @@ function SessionDetailsModal({ session, onClose }) {
     const recommendations = resultSummary.recommendations || [];
     const appliedRules = JSON.parse(session.appliedRulesJson || '[]');
 
-    // Lock background scroll while modal is open
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => { document.body.style.overflow = ''; };
@@ -158,16 +158,12 @@ function SessionDetailsModal({ session, onClose }) {
 
 /* ── Rec History Sub-panel ───────────────────────────────────────────────── */
 function RecHistorySubPanel() {
-    const [history, setHistory] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [selectedSession, setSelectedSession] = useState(null);
+    const { data: history = [], isLoading, error } = useQuery({
+        queryKey: ['recommendation-history'],
+        queryFn: catalogService.getRecommendationHistory,
+    });
 
-    useEffect(() => {
-        catalogService.getRecommendationHistory()
-            .then(setHistory).catch(() => setError('Failed to load recommendation history.'))
-            .finally(() => setLoading(false));
-    }, []);
+    const [selectedSession, setSelectedSession] = (window.useState || (typeof useState !== 'undefined' ? useState : () => [null, () => {}]))(null);
 
     const parseJSON = (str) => { try { return JSON.parse(str); } catch { return null; } };
     const getTopResultName = (s) => { const r = parseJSON(s); return r?.recommendations?.[0]?.productName || 'No results'; };
@@ -177,10 +173,10 @@ function RecHistorySubPanel() {
             <h2 style={{ fontFamily: 'Manrope', fontWeight: 700, fontSize: '1.3rem', color: '#1e1b4b', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <FileText size={22} color="#7c3aed" /> Recommendation History
             </h2>
-            {loading ? (
+            {isLoading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}><div className="spinner" /></div>
             ) : error ? (
-                <div style={{ color: '#dc2626', background: '#fef2f2', padding: '1rem', borderRadius: 8 }}>{error}</div>
+                <div style={{ color: '#dc2626', background: '#fef2f2', padding: '1rem', borderRadius: 8 }}>Failed to load history.</div>
             ) : (
                 <div className="admin-card" style={{ overflow: 'hidden' }}>
                     <table className="admin-table">
@@ -213,29 +209,14 @@ function RecHistorySubPanel() {
 
 /* ── Main Analytics Panel ────────────────────────────────────────────────── */
 export default function AdminAnalyticsPanel({ showToast, analyticsTab = 'overview' }) {
-    const [visits, setVisits] = useState(null);
-    const [sessions, setSessions] = useState(null);
-    const [users, setUsers] = useState(null);
-    const [activeRules, setActiveRules] = useState(null);
-    const [ruleUsage, setRuleUsage] = useState(null);
-    const [topProducts, setTopProducts] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const isOverview = analyticsTab === 'overview';
 
-    useEffect(() => {
-        if (analyticsTab !== 'overview') return;
-        Promise.all([
-            catalogService.getAnalyticsVisits().catch(() => null),
-            catalogService.getAnalyticsUsers().catch(() => null),
-            catalogService.getAnalyticsSessions().catch(() => null),
-            catalogService.getAnalyticsActiveRules().catch(() => null),
-            catalogService.getAnalyticsRuleUsage().catch(() => null),
-            catalogService.getAnalyticsTopProducts().catch(() => null),
-        ]).then(([v, u, s, ar, ru, tp]) => {
-            if (v) setVisits(v); if (u) setUsers(u); if (s) setSessions(s);
-            if (ar) setActiveRules(ar); if (ru) setRuleUsage(ru); if (tp) setTopProducts(tp);
-            setLoading(false);
-        }).catch(() => setLoading(false));
-    }, [analyticsTab]);
+    const { data: visits } = useQuery({ queryKey: ['analytics-visits'], queryFn: catalogService.getAnalyticsVisits, enabled: isOverview });
+    const { data: users } = useQuery({ queryKey: ['analytics-users'], queryFn: catalogService.getAnalyticsUsers, enabled: isOverview });
+    const { data: sessions } = useQuery({ queryKey: ['analytics-sessions'], queryFn: catalogService.getAnalyticsSessions, enabled: isOverview });
+    const { data: activeRules } = useQuery({ queryKey: ['analytics-active-rules'], queryFn: catalogService.getAnalyticsActiveRules, enabled: isOverview });
+    const { data: ruleUsage } = useQuery({ queryKey: ['analytics-rule-usage'], queryFn: catalogService.getAnalyticsRuleUsage, enabled: isOverview });
+    const { data: topProducts } = useQuery({ queryKey: ['analytics-top-products'], queryFn: catalogService.getAnalyticsTopProducts, enabled: isOverview });
 
     const formatEffect = (rule) => {
         if (rule.effectType === 'ADD_SCORE') return <span style={{ color: '#059669', fontWeight: 700 }}>+{rule.effectValue} Score</span>;

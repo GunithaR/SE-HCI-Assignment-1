@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import catalogService from '../services/catalogService';
 import ProductCard from '../components/ProductCard';
 
@@ -23,15 +24,12 @@ const STEPS = 10;
 function PriceRangeSlider({ min, max, low, high, onChange }) {
     const stepSize = (max - min) / STEPS;
 
-    // Snap a raw slider value (0-STEPS) to the exact price for that step.
-    // Step 0  → min exactly; Step STEPS → max exactly (fixes reset-filter edge case).
     const stepToPrice = (step) => {
         if (step === 0) return min;
         if (step === STEPS) return max;
         return Math.round(min + step * stepSize);
     };
 
-    // Convert a price back to the nearest step index.
     const priceToStep = (price) => Math.round((price - min) / stepSize);
 
     const lowStep = priceToStep(low);
@@ -47,12 +45,10 @@ function PriceRangeSlider({ min, max, low, high, onChange }) {
         onChange(low, stepToPrice(step));
     };
 
-    // Build tick marks for all 11 points (0 … STEPS)
     const ticks = Array.from({ length: STEPS + 1 }, (_, i) => i);
 
     return (
         <div>
-            {/* Current range labels */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                 <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#7c3aed' }}>
                     Rs. {low.toLocaleString()}
@@ -62,13 +58,11 @@ function PriceRangeSlider({ min, max, low, high, onChange }) {
                 </span>
             </div>
 
-            {/* Track + fill + thumbs */}
             <div className="price-range-wrap">
                 <div className="price-range-track" />
                 <div className="price-range-fill" style={{ left: `${pct(lowStep)}%`, width: `${pct(highStep) - pct(lowStep)}%` }} />
                 <div className="price-range-thumb" style={{ left: `${pct(lowStep)}%` }} />
                 <div className="price-range-thumb" style={{ left: `${pct(highStep)}%` }} />
-                {/* invisible range inputs */}
                 <input type="range" className="price-slider"
                     min={0} max={STEPS} step={1} value={lowStep}
                     onChange={handleMin}
@@ -79,7 +73,6 @@ function PriceRangeSlider({ min, max, low, high, onChange }) {
                     style={{ zIndex: 4 }} />
             </div>
 
-            {/* Tick marks */}
             <div style={{ position: 'relative', height: 28, marginTop: 4 }}>
                 {ticks.map((step) => (
                     <div key={step} style={{
@@ -89,13 +82,11 @@ function PriceRangeSlider({ min, max, low, high, onChange }) {
                         display: 'flex', flexDirection: 'column', alignItems: 'center',
                         gap: 2,
                     }}>
-                        {/* tick line */}
                         <div style={{
                             width: 1.5, height: 6,
                             background: step >= lowStep && step <= highStep ? '#7c3aed' : '#d1d5db',
                             borderRadius: 2,
                         }} />
-                        {/* only show label at endpoints + every 2nd step to avoid crowding */}
                         {(step === 0 || step === STEPS || step % 2 === 0) && (
                             <span style={{
                                 fontSize: '0.6rem', color: '#9ca3af', whiteSpace: 'nowrap',
@@ -118,20 +109,13 @@ function PriceRangeSlider({ min, max, low, high, onChange }) {
 
 // ── Main Catalog Page ─────────────────────────────────────────────────────────
 export default function Catalog() {
-    const [categories, setCategories] = useState([]);
     const [activeCategoryId, setActiveCategoryId] = useState(null);
     const [activeCategoryName, setActiveCategoryName] = useState('');
-    const [products, setProducts] = useState([]);
-    const [pagination, setPagination] = useState({ page: 0, totalPages: 0, totalElements: 0 });
-    const [loadingCats, setLoadingCats] = useState(true);
-    const [loadingProds, setLoadingProds] = useState(false);
-    const [error, setError] = useState('');
+    const [pagination, setPagination] = useState({ page: 0 });
     const [search, setSearch] = useState('');
     const [heroVisible, setHeroVisible] = useState(true);
     const [gridVisible, setGridVisible] = useState(true);
 
-    const [brands, setBrands] = useState([]);
-    const [attrOptions, setAttrOptions] = useState({ sizes: [], materials: [] });
     const [brandId, setBrandId] = useState('');
     const [productSize, setProductSize] = useState('');
     const [material, setMaterial] = useState('');
@@ -143,70 +127,72 @@ export default function Catalog() {
     const [priceHigh, setPriceHigh] = useState(100000);
     const [priceActive, setPriceActive] = useState(false);
 
-    // Load categories
-    useEffect(() => {
-        catalogService.getCategories()
-            .then((cats) => {
-                setCategories(cats);
-                if (cats.length > 0) {
-                    setActiveCategoryId(cats[0].id);
-                    setActiveCategoryName(cats[0].name);
-                }
-            })
-            .catch(() => setError('Could not load categories.'))
-            .finally(() => setLoadingCats(false));
-    }, []);
+    // Queries
+    const { data: categories = [], isLoading: loadingCats } = useQuery({
+        queryKey: ['categories'],
+        queryFn: catalogService.getCategories,
+        onSuccess: (cats) => {
+            if (cats.length > 0 && !activeCategoryId) {
+                setActiveCategoryId(cats[0].id);
+                setActiveCategoryName(cats[0].name);
+            }
+        }
+    });
 
-    // Load brands + attribute options
+    // Handle initial category selection
     useEffect(() => {
-        Promise.all([catalogService.getBrands(), catalogService.getAttributeOptions()])
-            .then(([b, opts]) => {
-                setBrands(b ?? []);
-                setAttrOptions({ sizes: opts?.sizes ?? [], materials: opts?.materials ?? [] });
-            }).catch(() => { });
-    }, []);
+        if (!activeCategoryId && categories.length > 0) {
+            setActiveCategoryId(categories[0].id);
+            setActiveCategoryName(categories[0].name);
+        }
+    }, [categories, activeCategoryId]);
 
-    // Fetch ALL products for current category (large page) to compute price range
-    useEffect(() => {
-        if (!activeCategoryId) return;
-        catalogService.getProductsByCategory(activeCategoryId, 0, 500, {})
-            .then((data) => {
-                const prices = (data.content ?? []).map(p => Number(p.basePrice)).filter(n => !isNaN(n) && n > 0);
-                if (prices.length > 0) {
-                    const mn = Math.floor(Math.min(...prices));
-                    const mx = Math.ceil(Math.max(...prices));
-                    setPriceAbsMin(mn);
-                    setPriceAbsMax(mx);
-                    setPriceLow(mn);
-                    setPriceHigh(mx);
-                    setPriceActive(false);
-                }
-            }).catch(() => { });
-    }, [activeCategoryId]);
+    const { data: brands = [] } = useQuery({
+        queryKey: ['brands'],
+        queryFn: catalogService.getBrands,
+    });
 
-    // Load paginated products with filters
+    const { data: attrOptions = { sizes: [], materials: [] } } = useQuery({
+        queryKey: ['options'],
+        queryFn: catalogService.getAttributeOptions,
+    });
+
+    // Fetch ALL products for current category to compute price range
+    useQuery({
+        queryKey: ['products-price-range', activeCategoryId],
+        queryFn: () => catalogService.getProductsByCategory(activeCategoryId, 0, 500, {}),
+        enabled: Boolean(activeCategoryId),
+        onSuccess: (data) => {
+            const prices = (data.content ?? []).map(p => Number(p.basePrice)).filter(n => !isNaN(n) && n > 0);
+            if (prices.length > 0) {
+                const mn = Math.floor(Math.min(...prices));
+                const mx = Math.ceil(Math.max(...prices));
+                setPriceAbsMin(mn);
+                setPriceAbsMax(mx);
+                setPriceLow(mn);
+                setPriceHigh(mx);
+                setPriceActive(false);
+            }
+        }
+    });
+
     const minPrice = priceActive ? priceLow : '';
     const maxPrice = priceActive ? priceHigh : '';
 
-    useEffect(() => {
-        if (!activeCategoryId) return;
-        setLoadingProds(true);
-        setError('');
-        const filters = {
-            ...(brandId ? { brandId: Number(brandId) } : {}),
-            ...(minPrice !== '' ? { minPrice: Number(minPrice) } : {}),
-            ...(maxPrice !== '' ? { maxPrice: Number(maxPrice) } : {}),
-            ...(productSize ? { productSize } : {}),
-            ...(material ? { material } : {}),
-        };
-        catalogService.getProductsByCategory(activeCategoryId, pagination.page, 12, filters)
-            .then((d) => {
-                setProducts(d.content ?? []);
-                setPagination(p => ({ ...p, totalPages: d.totalPages ?? 0, totalElements: d.totalElements ?? 0 }));
-            })
-            .catch((err) => setError(err?.response?.data?.message || 'Could not load products.'))
-            .finally(() => setLoadingProds(false));
-    }, [activeCategoryId, pagination.page, brandId, minPrice, maxPrice, productSize, material]);
+    const filters = useMemo(() => ({
+        ...(brandId ? { brandId: Number(brandId) } : {}),
+        ...(minPrice !== '' ? { minPrice: Number(minPrice) } : {}),
+        ...(maxPrice !== '' ? { maxPrice: Number(maxPrice) } : {}),
+        ...(productSize ? { productSize } : {}),
+        ...(material ? { material } : {}),
+    }), [brandId, minPrice, maxPrice, productSize, material]);
+
+    const { data: productsData = { content: [], totalPages: 0, totalElements: 0 }, isLoading: loadingProds, error } = useQuery({
+        queryKey: ['products', activeCategoryId, pagination.page, filters],
+        queryFn: () => catalogService.getProductsByCategory(activeCategoryId, pagination.page, 12, filters),
+        enabled: Boolean(activeCategoryId),
+        keepPreviousData: true,
+    });
 
     const handleCategoryChange = useCallback((catId, catName) => {
         if (catId === activeCategoryId) return;
@@ -215,7 +201,7 @@ export default function Catalog() {
         setTimeout(() => {
             setActiveCategoryId(catId);
             setActiveCategoryName(catName);
-            setPagination({ page: 0, totalPages: 0, totalElements: 0 });
+            setPagination({ page: 0 });
             setSearch(''); setBrandId(''); setProductSize(''); setMaterial('');
             setPriceActive(false);
             setHeroVisible(true);
@@ -227,22 +213,23 @@ export default function Catalog() {
         setPriceLow(lo);
         setPriceHigh(hi);
         setPriceActive(lo > priceAbsMin || hi < priceAbsMax);
-        setPagination(p => ({ ...p, page: 0 }));
+        setPagination({ page: 0 });
     };
 
     const clearAllFilters = () => {
         setBrandId(''); setProductSize(''); setMaterial('');
         setPriceLow(priceAbsMin); setPriceHigh(priceAbsMax); setPriceActive(false);
-        setPagination(p => ({ ...p, page: 0 }));
+        setPagination({ page: 0 });
     };
 
     const filtersActive = !!(brandId || productSize || material || priceActive);
+    const products = productsData.content ?? [];
     const filteredProducts = search
         ? products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
         : products;
     const hero = CATEGORY_HERO[activeCategoryName];
 
-    const sel = { // filter select shared style
+    const sel = {
         padding: '8px 12px', borderRadius: 10, border: '1.5px solid #ddd6fe',
         background: '#fbf8ff', color: '#1e1b4b', fontWeight: 500,
         fontSize: '0.83rem', outline: 'none', width: '100%', cursor: 'pointer',
@@ -251,7 +238,6 @@ export default function Catalog() {
     return (
         <div style={{ minHeight: '100vh', background: '#fbf8ff' }}>
 
-            {/* ── HERO — full-bleed behind fixed navbar ─────────────────── */}
             <div style={{
                 position: 'relative', width: '100%', height: 660,
                 overflow: 'hidden',
@@ -264,13 +250,11 @@ export default function Catalog() {
                     : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,#4c1d95,#7c3aed)' }} />
                 }
 
-                {/* Subtle scrim ONLY at bottom-left for text legibility — no purple tint over image */}
                 <div style={{
                     position: 'absolute', inset: 0,
                     background: 'linear-gradient(to top, rgba(10,4,30,0.72) 0%, rgba(10,4,30,0.38) 40%, transparent 70%)',
                 }} />
 
-                {/* Hero text — anchored to bottom-left */}
                 <div style={{
                     position: 'absolute', bottom: 0, left: 0, right: 0,
                     padding: '0 5% 40px',
@@ -299,7 +283,6 @@ export default function Catalog() {
                 </div>
             </div>
 
-            {/* ── CATEGORY TABS — sticky below navbar ────────────────────── */}
             <div style={{
                 background: '#fff', borderBottom: '1px solid #ede9fe',
                 boxShadow: '0 4px 20px rgba(124,58,237,0.08)',
@@ -332,16 +315,12 @@ export default function Catalog() {
                 }
             </div>
 
-            {/* ── MAIN CONTENT ────────────────────────────────────────────── */}
             <div style={{ maxWidth: 1320, margin: '0 auto', padding: '2.5rem 1.5rem 4rem' }}>
-
-                {/* Filter panel */}
                 <div style={{
                     background: '#fff', borderRadius: 16, border: '1.5px solid #ede9fe',
                     padding: '1.25rem 1.5rem', marginBottom: '2rem',
                     boxShadow: '0 2px 16px rgba(124,58,237,0.06)',
                 }}>
-                    {/* Search */}
                     <div style={{
                         display: 'flex', alignItems: 'center', gap: 10,
                         background: '#fbf8ff', borderRadius: 50, border: '1.5px solid #ddd6fe',
@@ -358,29 +337,27 @@ export default function Catalog() {
                         {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer', fontSize: '1rem' }}>✕</button>}
                     </div>
 
-                    {/* Dropdowns row */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: '1.25rem' }}>
-                        <select value={brandId} onChange={e => { setBrandId(e.target.value); setPagination(p => ({ ...p, page: 0 })); }} style={sel}>
+                        <select value={brandId} onChange={e => { setBrandId(e.target.value); setPagination({ page: 0 }); }} style={sel}>
                             <option value="">All Brands</option>
                             {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                         </select>
-                        <select value={material} onChange={e => { setMaterial(e.target.value); setPagination(p => ({ ...p, page: 0 })); }} style={sel}>
+                        <select value={material} onChange={e => { setMaterial(e.target.value); setPagination({ page: 0 }); }} style={sel}>
                             <option value="">All Materials</option>
                             {(attrOptions.materials ?? []).map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
-                        <select value={productSize} onChange={e => { setProductSize(e.target.value); setPagination(p => ({ ...p, page: 0 })); }} style={sel}>
+                        <select value={productSize} onChange={e => { setProductSize(e.target.value); setPagination({ page: 0 }); }} style={sel}>
                             <option value="">All Sizes</option>
                             {(attrOptions.sizes ?? []).map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                     </div>
 
-                    {/* Price range slider */}
                     {priceAbsMax > priceAbsMin && (
                         <div style={{ padding: '0.25rem 0 0.5rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                                 <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#4c1d95' }}>💰 Price Range</span>
                                 {priceActive && (
-                                    <button onClick={() => { setPriceLow(priceAbsMin); setPriceHigh(priceAbsMax); setPriceActive(false); setPagination(p => ({ ...p, page: 0 })); }}
+                                    <button onClick={() => { setPriceLow(priceAbsMin); setPriceHigh(priceAbsMax); setPriceActive(false); setPagination({ page: 0 }); }}
                                         style={{ background: 'none', border: 'none', color: '#a78bfa', fontSize: '0.73rem', cursor: 'pointer', fontWeight: 600 }}>
                                         Reset
                                     </button>
@@ -394,7 +371,6 @@ export default function Catalog() {
                         </div>
                     )}
 
-                    {/* Active filters badge */}
                     {filtersActive && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
                             <span style={{ background: '#ede9fe', color: '#7c3aed', borderRadius: 9999, padding: '3px 12px', fontSize: '0.75rem', fontWeight: 600 }}>
@@ -408,7 +384,6 @@ export default function Catalog() {
                     )}
                 </div>
 
-                {/* Result count */}
                 {!loadingProds && !error && (
                     <div style={{ marginBottom: '1.25rem', color: '#6b7280', fontSize: '0.85rem' }}>
                         Showing <strong style={{ color: '#7c3aed' }}>{filteredProducts.length}</strong> products
@@ -416,15 +391,13 @@ export default function Catalog() {
                     </div>
                 )}
 
-                {/* Error */}
                 {error && (
                     <div style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 12, padding: '1.25rem', textAlign: 'center', color: '#dc2626', marginBottom: '1.5rem' }}>
-                        {error}
+                        {error?.response?.data?.message || 'Could not load products.'}
                     </div>
                 )}
 
-                {/* Product grid */}
-                {loadingProds ? (
+                {loadingProds && !products.length ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.5rem' }}>
                         {Array.from({ length: 8 }).map((_, i) => (
                             <div key={i} className="skeleton" style={{ height: 420, borderRadius: 20 }} />
@@ -456,8 +429,7 @@ export default function Catalog() {
                     </div>
                 )}
 
-                {/* Pagination */}
-                {pagination.totalPages > 1 && (
+                {productsData.totalPages > 1 && (
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: '2.5rem', flexWrap: 'wrap' }}>
                         <button
                             onClick={() => setPagination(p => ({ ...p, page: p.page - 1 }))}
@@ -465,8 +437,8 @@ export default function Catalog() {
                             style={{ padding: '9px 20px', borderRadius: 50, border: '1.5px solid #ddd6fe', background: '#fff', color: '#7c3aed', fontWeight: 600, fontSize: '0.85rem', cursor: pagination.page === 0 ? 'not-allowed' : 'pointer', opacity: pagination.page === 0 ? 0.4 : 1 }}
                         >← Prev</button>
 
-                        {Array.from({ length: pagination.totalPages }).map((_, i) => (
-                            <button key={i} onClick={() => setPagination(p => ({ ...p, page: i }))}
+                        {Array.from({ length: productsData.totalPages }).map((_, i) => (
+                            <button key={i} onClick={() => setPagination({ page: i })}
                                 style={{ width: 38, height: 38, borderRadius: '50%', border: '1.5px solid #ddd6fe', background: pagination.page === i ? '#7c3aed' : '#fff', color: pagination.page === i ? '#fff' : '#7c3aed', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', boxShadow: pagination.page === i ? '0 4px 12px rgba(124,58,237,0.3)' : 'none' }}>
                                 {i + 1}
                             </button>
@@ -474,8 +446,8 @@ export default function Catalog() {
 
                         <button
                             onClick={() => setPagination(p => ({ ...p, page: p.page + 1 }))}
-                            disabled={pagination.page >= pagination.totalPages - 1}
-                            style={{ padding: '9px 20px', borderRadius: 50, border: '1.5px solid #ddd6fe', background: '#fff', color: '#7c3aed', fontWeight: 600, fontSize: '0.85rem', cursor: pagination.page >= pagination.totalPages - 1 ? 'not-allowed' : 'pointer', opacity: pagination.page >= pagination.totalPages - 1 ? 0.4 : 1 }}
+                            disabled={pagination.page >= productsData.totalPages - 1}
+                            style={{ padding: '9px 20px', borderRadius: 50, border: '1.5px solid #ddd6fe', background: '#fff', color: '#7c3aed', fontWeight: 600, fontSize: '0.85rem', cursor: pagination.page >= productsData.totalPages - 1 ? 'not-allowed' : 'pointer', opacity: pagination.page >= productsData.totalPages - 1 ? 0.4 : 1 }}
                         >Next →</button>
                     </div>
                 )}

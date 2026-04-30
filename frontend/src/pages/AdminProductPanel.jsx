@@ -6,6 +6,7 @@ import {
     Image as ImageIcon, Upload, X, Package, Layers, 
     Check, AlertTriangle, Star
 } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import catalogService from '../services/catalogService';
 import { toAbsoluteImageUrl } from '../utils/imageUtils';
 import './AdminDashboardUnified.css';
@@ -19,6 +20,7 @@ const EMPTY_FORM = {
 /* ── Product Form Modal ──────────────────────────────────────────────────── */
 function ProductFormModal({ editingProduct, categories, brands, options, onClose, onSuccess }) {
     const isEdit = Boolean(editingProduct);
+    const queryClient = useQueryClient();
 
     // Lock background scroll while modal is open
     useEffect(() => {
@@ -39,8 +41,8 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
         }
         return EMPTY_FORM;
     });
+
     const [errors, setErrors] = useState({});
-    const [submitting, setSubmitting] = useState(false);
     const [imageFiles, setImageFiles] = useState([]);
     const [imagePreviews, setImagePreviews] = useState(() => {
         if (isEdit && editingProduct.imageUrls) {
@@ -50,21 +52,43 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
     });
     const [mainImageIndex, setMainImageIndex] = useState(0);
 
+    // Mutations for Create/Update
+    const mutation = useMutation({
+        mutationFn: (variables) => {
+            const { id, payload, files } = variables;
+            return isEdit 
+                ? catalogService.updateProduct(id, payload, files)
+                : catalogService.createProduct(payload, files);
+        },
+        onSuccess: (result) => {
+            queryClient.invalidateQueries({ queryKey: ['products'] });
+            onSuccess(`Product "${result.name}" ${isEdit ? 'updated' : 'created'} successfully!`, result);
+            onClose();
+        },
+        onError: (err) => {
+            const data = err?.response?.data;
+            if (data && typeof data === 'object' && !data.message) setErrors(data);
+            else setErrors({ _general: data?.message || `Failed to ${isEdit ? 'update' : 'create'} product.` });
+        }
+    });
+
     const set = (field) => (e) => { const v = e.target.type === 'checkbox' ? e.target.checked : e.target.value; setForm((f) => ({ ...f, [field]: v })); };
     const handleImageChange = (e) => { const files = Array.from(e.target.files || []); setImageFiles(files); setMainImageIndex(0); if (files.length > 0) setImagePreviews(files.map(f => URL.createObjectURL(f))); else setImagePreviews([]); };
     const clearImage = () => { setImageFiles([]); setMainImageIndex(0); setImagePreviews(isEdit && editingProduct.imageUrls ? editingProduct.imageUrls.map(toAbsoluteImageUrl) : []); };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault(); setErrors({}); setSubmitting(true);
-        const payload = { ...form, categoryId: Number(form.categoryId), brandId: Number(form.brandId), basePrice: parseFloat(form.basePrice), durabilityRating: parseInt(form.durabilityRating, 10), isActive: form.isActive, mainImageIndex };
-        try {
-            const result = isEdit ? await catalogService.updateProduct(editingProduct.id, payload, imageFiles) : await catalogService.createProduct(payload, imageFiles);
-            onSuccess(`Product "${result.name}" ${isEdit ? 'updated' : 'created'} successfully!`, result); onClose();
-        } catch (err) {
-            const data = err?.response?.data;
-            if (data && typeof data === 'object' && !data.message) setErrors(data);
-            else setErrors({ _general: data?.message || `Failed to ${isEdit ? 'update' : 'create'} product.` });
-        } finally { setSubmitting(false); }
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        setErrors({});
+        const payload = { 
+            ...form, 
+            categoryId: Number(form.categoryId), 
+            brandId: Number(form.brandId), 
+            basePrice: parseFloat(form.basePrice), 
+            durabilityRating: parseInt(form.durabilityRating, 10), 
+            isActive: form.isActive, 
+            mainImageIndex 
+        };
+        mutation.mutate({ id: editingProduct?.id, payload, files: imageFiles });
     };
 
     const inp = (field) => ({ width: '100%', padding: '10px 14px', borderRadius: 8, background: '#f5f3ff', border: errors[field] ? '2px solid #ef4444' : '1.5px solid #c4b5fd', color: '#1e1b4b', fontSize: '0.9rem', outline: 'none', fontWeight: 500, boxSizing: 'border-box' });
@@ -165,9 +189,9 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
                             style={{ padding: '10px 22px', borderRadius: 8, background: '#f5f3ff', border: '1.5px solid #ddd6fe', color: '#6b7280', cursor: 'pointer', fontWeight: 500 }}>
                             Cancel
                         </button>
-                        <button type="submit" disabled={submitting}
-                            style={{ padding: '10px 28px', borderRadius: 8, background: 'linear-gradient(135deg, #6c63ff, #a855f7)', border: 'none', color: '#fff', fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
-                            {submitting ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Product'}
+                        <button type="submit" disabled={mutation.isPending}
+                            style={{ padding: '10px 28px', borderRadius: 8, background: 'linear-gradient(135deg, #6c63ff, #a855f7)', border: 'none', color: '#fff', fontWeight: 600, cursor: mutation.isPending ? 'not-allowed' : 'pointer', opacity: mutation.isPending ? 0.7 : 1 }}>
+                            {mutation.isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Product'}
                         </button>
                     </div>
                 </form>
@@ -179,71 +203,85 @@ function ProductFormModal({ editingProduct, categories, brands, options, onClose
 
 /* ── Product Management Panel ────────────────────────────────────────────── */
 export default function AdminProductPanel({ showToast }) {
-    const [categories, setCategories] = useState([]);
-    const [brands, setBrands] = useState([]);
-    const [options, setOptions] = useState({});
+    const queryClient = useQueryClient();
     const [activeCatId, setActiveCatId] = useState(null);
     const [viewAll, setViewAll] = useState(false);
-    const [products, setProducts] = useState([]);
-    const [totalProducts, setTotalProducts] = useState(0);
-    const [loadingInit, setLoadingInit] = useState(true);
-    const [loadingProds, setLoadingProds] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
 
-    useEffect(() => {
-        Promise.all([catalogService.getCategories(), catalogService.getBrands(), catalogService.getAttributeOptions()])
-            .then(([cats, brnds, opts]) => { setCategories(cats); setBrands(brnds); setOptions(opts); if (cats.length > 0) setActiveCatId(cats[0].id); })
-            .catch(() => showToast('Could not load dashboard data.', true))
-            .finally(() => setLoadingInit(false));
-    }, [showToast]);
+    // Queries
+    const { data: categories = [], isLoading: isLoadingCats } = useQuery({
+        queryKey: ['categories'],
+        queryFn: catalogService.getCategories,
+    });
 
+    const { data: brands = [] } = useQuery({
+        queryKey: ['brands'],
+        queryFn: catalogService.getBrands,
+    });
+
+    const { data: options = {} } = useQuery({
+        queryKey: ['options'],
+        queryFn: catalogService.getAttributeOptions,
+    });
+
+    const { data: productsData = { content: [], totalElements: 0 }, isLoading: isLoadingProds } = useQuery({
+        queryKey: ['products', activeCatId, viewAll],
+        queryFn: () => viewAll 
+            ? catalogService.getAdminAllProducts() 
+            : catalogService.getProductsByCategory(activeCatId, 0, 50),
+        enabled: Boolean(viewAll || activeCatId),
+    });
+
+    // Automatically select first category if none selected
     useEffect(() => {
-        if (viewAll) {
-            setLoadingProds(true);
-            catalogService.getAdminAllProducts()
-                .then(page => { setProducts(page.content ?? []); setTotalProducts(page.totalElements ?? 0); })
-                .catch(() => showToast('Could not load all products.', true))
-                .finally(() => setLoadingProds(false));
-        } else {
-            if (!activeCatId) return;
-            setLoadingProds(true);
-            catalogService.getProductsByCategory(activeCatId, 0, 50)
-                .then(page => { setProducts(page.content ?? []); setTotalProducts(page.totalElements ?? 0); })
-                .catch(() => showToast('Could not load products.', true))
-                .finally(() => setLoadingProds(false));
+        if (!activeCatId && !viewAll && categories.length > 0) {
+            setActiveCatId(categories[0].id);
         }
-    }, [activeCatId, viewAll, showToast]);
+    }, [categories, activeCatId, viewAll]);
 
-    const refreshProducts = () => {
-        const loader = viewAll ? catalogService.getAdminAllProducts() : catalogService.getProductsByCategory(activeCatId, 0, 50);
-        loader.then(page => { setProducts(page.content ?? []); setTotalProducts(page.totalElements ?? 0); });
-    };
+    // Mutations
+    const deleteMutation = useMutation({
+        mutationFn: catalogService.deleteProduct,
+        onSuccess: (_, productId) => {
+            queryClient.invalidateQueries({ queryKey: ['products'] });
+            showToast(`Product deleted.`);
+        },
+        onError: (err) => showToast(err?.response?.data?.message || 'Failed to delete.', true),
+    });
+
+    const statusMutation = useMutation({
+        mutationFn: ({ id, isActive }) => catalogService.toggleProductStatus(id, isActive),
+        onSuccess: (updated) => {
+            queryClient.invalidateQueries({ queryKey: ['products'] });
+            showToast(`"${updated.name}" → ${updated.isActive ? 'In Stock' : 'Out of Stock'}`);
+        },
+        onError: () => showToast('Failed to update stock status.', true),
+    });
 
     const openCreate = () => { setEditingProduct(null); setShowModal(true); };
     const openEdit = (p) => { setEditingProduct(p); setShowModal(true); };
     const closeModal = () => { setShowModal(false); setEditingProduct(null); };
 
-    const handleFormSuccess = (msg, updatedProduct) => {
+    const handleFormSuccess = (msg) => {
         showToast(msg);
-        if (editingProduct) setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
-        else refreshProducts();
     };
 
-    const handleDelete = async (product) => {
+    const handleDelete = (product) => {
         if (!window.confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
-        try { await catalogService.deleteProduct(product.id); showToast(`"${product.name}" deleted.`); setProducts(prev => prev.filter(p => p.id !== product.id)); setTotalProducts(prev => prev - 1); }
-        catch (err) { showToast(err?.response?.data?.message || 'Failed to delete.', true); }
+        deleteMutation.mutate(product.id);
     };
 
-    const handleToggleStatus = async (product) => {
-        try { const updated = await catalogService.toggleProductStatus(product.id, !product.isActive); showToast(`"${updated.name}" → ${updated.isActive ? 'In Stock' : 'Out of Stock'}`); setProducts(prev => prev.map(p => p.id === updated.id ? updated : p)); }
-        catch { showToast('Failed to update stock status.', true); }
+    const handleToggleStatus = (product) => {
+        statusMutation.mutate({ id: product.id, isActive: !product.isActive });
     };
 
     const BUDGET_COLORS = { LOW: { bg: 'rgba(34,197,94,0.1)', fg: '#059669' }, MEDIUM: { bg: 'rgba(245,158,11,0.1)', fg: '#d97706' }, HIGH: { bg: 'rgba(239,68,68,0.1)', fg: '#dc2626' } };
 
-    if (loadingInit) return <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><div className="spinner" /><p style={{ color: '#6b7280', marginLeft: 16 }}>Loading…</p></div>;
+    if (isLoadingCats) return <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><div className="spinner" /><p style={{ color: '#6b7280', marginLeft: 16 }}>Loading…</p></div>;
+
+    const products = productsData.content ?? [];
+    const totalProducts = productsData.totalElements ?? 0;
 
     return (
         <div className="admin-panel-enter">
@@ -273,7 +311,7 @@ export default function AdminProductPanel({ showToast }) {
                     <div key={s.label} className="admin-card stat-card">
                         <div className="stat-accent-bar" style={{ background: s.color }} />
                         <div className="stat-icon" style={{ color: s.color }}>{s.icon}</div>
-                        <div className="stat-value" style={{ color: s.color }}>{loadingProds ? '—' : s.value}</div>
+                        <div className="stat-value" style={{ color: s.color }}>{isLoadingProds ? '—' : s.value}</div>
                         <div className="stat-label">{s.label}</div>
                     </div>
                 ))}
@@ -295,7 +333,7 @@ export default function AdminProductPanel({ showToast }) {
                     <h2 style={{ fontWeight: 700, color: '#1e1b4b', fontSize: '0.95rem' }}>{viewAll ? 'All Products' : categories.find(c => c.id === activeCatId)?.name ?? 'Products'}</h2>
                     <span style={{ color: '#9ca3af', fontSize: '0.78rem' }}>{totalProducts} total</span>
                 </div>
-                {loadingProds ? (
+                {isLoadingProds ? (
                     <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><div className="spinner" /></div>
                 ) : products.length === 0 ? (
                     <div style={{ padding: '4rem', textAlign: 'center', color: '#9ca3af' }}>
@@ -334,11 +372,13 @@ export default function AdminProductPanel({ showToast }) {
                                         <td style={{ color: '#7c3aed', fontWeight: 700 }}>Rs. {Number(p.basePrice).toFixed(2)}</td>
                                         <td>
                                             <button onClick={() => handleToggleStatus(p)} title="Click to toggle status"
+                                            disabled={statusMutation.isPending}
                                             style={{
                                                 padding: '4px 10px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', border: 'none',
                                                 background: p.isActive ? 'rgba(5,150,105,0.1)' : 'rgba(220,38,38,0.1)',
                                                 color: p.isActive ? '#059669' : '#dc2626',
-                                                display: 'flex', alignItems: 'center', gap: 4
+                                                display: 'flex', alignItems: 'center', gap: 4,
+                                                opacity: statusMutation.isPending ? 0.6 : 1
                                             }}>
                                             {p.isActive ? <CheckCircle size={12} /> : <XCircle size={12} />}
                                             {p.isActive ? 'In Stock' : 'Out of Stock'}
@@ -351,7 +391,8 @@ export default function AdminProductPanel({ showToast }) {
                                                     <Pencil size={16} />
                                                 </button>
                                                 <button onClick={() => handleDelete(p)} title="Delete Product"
-                                                    style={{ padding: '6px', borderRadius: 8, cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1.5px solid rgba(239,68,68,0.2)', color: '#ef4444', display: 'flex' }}>
+                                                    disabled={deleteMutation.isPending}
+                                                    style={{ padding: '6px', borderRadius: 8, cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1.5px solid rgba(239,68,68,0.2)', color: '#ef4444', display: 'flex', opacity: deleteMutation.isPending ? 0.6 : 1 }}>
                                                     <Trash2 size={16} />
                                                 </button>
                                             </div>

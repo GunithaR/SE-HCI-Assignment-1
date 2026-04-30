@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import catalogService from '../services/catalogService';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -68,61 +69,62 @@ function SpecCard({ Icon, label, value }) {
 export default function ProductDetails() {
     const { id } = useParams();
     const { user } = useAuth();
-    const [product, setProduct] = useState(null);
-    const [reviews, setReviews] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const queryClient = useQueryClient();
+
     const [activeImg, setActiveImg] = useState(0);
     const [score, setScore] = useState(5);
     const [hoverScore, setHoverScore] = useState(0);
     const [comment, setComment] = useState('');
-    const [submitting, setSubmitting] = useState(false);
     const [reviewError, setReviewError] = useState('');
     const [reviewSuccess, setReviewSuccess] = useState(false);
     const [showLightbox, setShowLightbox] = useState(false);
     const [isHoveringImage, setIsHoveringImage] = useState(false);
 
-    useEffect(() => {
-        setLoading(true);
-        catalogService.getProductById(id)
-            .then(data => { setProduct(data); setActiveImg(0); })
-            .catch(err => setError(err.response?.data?.message || 'Failed to load product.'))
-            .finally(() => setLoading(false));
-        fetchReviews();
-    }, [id]);
+    // Queries
+    const { data: product, isLoading: loadingProduct, error: productError } = useQuery({
+        queryKey: ['product', id],
+        queryFn: () => catalogService.getProductById(id),
+    });
 
-    const fetchReviews = () => {
-        catalogService.getReviews(id)
-            .then(data => setReviews(data.content || []))
-            .catch(() => { });
-    };
+    const { data: reviewsData = { content: [] }, isLoading: loadingReviews } = useQuery({
+        queryKey: ['reviews', id],
+        queryFn: () => catalogService.getReviews(id),
+    });
 
-    const handleReviewSubmit = async (e) => {
-        e.preventDefault();
-        setSubmitting(true); setReviewError(''); setReviewSuccess(false);
-        try {
-            await catalogService.addReview(id, score, comment);
-            setComment(''); setScore(5); setReviewSuccess(true);
-            fetchReviews();
-            const updated = await catalogService.getProductById(id);
-            setProduct(updated);
-        } catch (err) {
+    // Mutations
+    const reviewMutation = useMutation({
+        mutationFn: (variables) => catalogService.addReview(id, variables.score, variables.comment),
+        onSuccess: () => {
+            setComment('');
+            setScore(5);
+            setReviewSuccess(true);
+            queryClient.invalidateQueries({ queryKey: ['reviews', id] });
+            queryClient.invalidateQueries({ queryKey: ['product', id] });
+        },
+        onError: (err) => {
             setReviewError(err.response?.data?.message || err.response?.data?.error || 'Failed to submit review.');
-        } finally { setSubmitting(false); }
+        }
+    });
+
+    const handleReviewSubmit = (e) => {
+        e.preventDefault();
+        setReviewError('');
+        setReviewSuccess(false);
+        reviewMutation.mutate({ score, comment });
     };
 
-    if (loading) return (
+    if (loadingProduct) return (
         <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#fbf8ff' }}>
             <div className="spinner" />
         </div>
     );
 
-    if (error || !product) return (
+    if (productError || !product) return (
         <div style={{ minHeight: '100vh', padding: '8rem 1.5rem', background: '#fbf8ff', textAlign: 'center' }}>
             <div style={{ color: '#dc2626', marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
                 <AlertCircle size={64} strokeWidth={1.5} />
             </div>
-            <h2 style={{ color: '#dc2626', fontWeight: 700 }}>{error || 'Product not found'}</h2>
+            <h2 style={{ color: '#dc2626', fontWeight: 700 }}>{productError?.response?.data?.message || 'Product not found'}</h2>
             <Link to="/catalog" style={{ color: '#7c3aed', textDecoration: 'none', fontWeight: 600, marginTop: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <ArrowLeft size={18} /> Back to Catalog
             </Link>
@@ -133,11 +135,12 @@ export default function ProductDetails() {
         durabilityRating, climateSuitability, maintenanceLevel, style: pStyle,
         imageUrls, averageRating, reviewCount, isActive } = product;
 
+    const reviews = reviewsData.content || [];
     const budget = BUDGET_CONFIG[budgetLevel];
     const inStock = isActive !== false;
     const imgs = (imageUrls && imageUrls.length > 0) ? imageUrls.map(toAbsoluteImageUrl) : [];
 
-    const avgScore = reviews.length > 0 ? (reviews.reduce((s, r) => s + r.score, 0) / reviews.length) : 0;
+    const avgScoreFromReviews = reviews.length > 0 ? (reviews.reduce((s, r) => s + r.score, 0) / reviews.length) : 0;
     const distrib = [5, 4, 3, 2, 1].map(s => ({ star: s, count: reviews.filter(r => r.score === s).length }));
 
     return (
@@ -160,7 +163,6 @@ export default function ProductDetails() {
 
                     {/* LEFT — Image Gallery */}
                     <div style={{ flex: '0 1 460px', maxWidth: 460 }}>
-                        {/* Main Image */}
                         <div style={{
                             width: '100%', aspectRatio: '4/3', maxHeight: 360,
                             borderRadius: 20, overflow: 'hidden',
@@ -189,7 +191,6 @@ export default function ProductDetails() {
                                 </div>
                             )}
 
-                            {/* Hover Overlay */}
                             {imgs.length > 0 && (
                                 <div style={{
                                     position: 'absolute', inset: 0,
@@ -210,7 +211,6 @@ export default function ProductDetails() {
                                     </div>
                                 </div>
                             )}
-                            {/* Budget badge overlay */}
                             {budget && (
                                 <span style={{
                                     position: 'absolute', top: 14, left: 14,
@@ -223,7 +223,6 @@ export default function ProductDetails() {
                                     {budget.label}
                                 </span>
                             )}
-                            {/* Stock badge overlay */}
                             <span style={{
                                 position: 'absolute', top: 14, right: 14,
                                 background: inStock ? 'rgba(22,163,74,0.15)' : 'rgba(220,38,38,0.15)',
@@ -238,7 +237,6 @@ export default function ProductDetails() {
                             </span>
                         </div>
 
-                        {/* Thumbnails */}
                         {imgs.length > 1 && (
                             <div style={{ display: 'flex', gap: 10, marginTop: 14, overflowX: 'auto', paddingBottom: 4 }}>
                                 {imgs.map((url, idx) => (
@@ -257,8 +255,6 @@ export default function ProductDetails() {
 
                     {/* RIGHT — Product Info */}
                     <div style={{ flex: '1 1 340px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-                        {/* Brand / Category */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             {brandName && (
                                 <span style={{ background: '#ede9fe', color: '#7c3aed', borderRadius: 9999, padding: '4px 14px', fontSize: '0.75rem', fontWeight: 700 }}>
@@ -272,12 +268,10 @@ export default function ProductDetails() {
                             )}
                         </div>
 
-                        {/* Name */}
                         <h1 style={{ fontFamily: "'Manrope', sans-serif", fontSize: 'clamp(1.6rem,3vw,2.4rem)', fontWeight: 900, color: '#1e1b4b', lineHeight: 1.15, margin: 0 }}>
                             {name}
                         </h1>
 
-                        {/* Rating row */}
                         {(averageRating > 0 || reviewCount > 0) && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <StarRow rating={averageRating || 0} size="1.2rem" />
@@ -286,7 +280,6 @@ export default function ProductDetails() {
                             </div>
                         )}
 
-                        {/* Price */}
                         <div style={{
                             background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
                             border: '1.5px solid #ddd6fe', borderRadius: 16,
@@ -300,7 +293,6 @@ export default function ProductDetails() {
                             </div>
                         </div>
 
-                        {/* Description */}
                         {description && (
                             <div>
                                 <h3 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px' }}>Description</h3>
@@ -308,7 +300,6 @@ export default function ProductDetails() {
                             </div>
                         )}
 
-                        {/* Specs Grid */}
                         <div>
                             <h3 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 12px' }}>Specifications</h3>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10 }}>
@@ -324,7 +315,6 @@ export default function ProductDetails() {
 
                 {/* ── REVIEWS SECTION ──────────────────────────────────────── */}
                 <div style={{ marginTop: '4rem' }}>
-                    {/* Divider */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: '2.5rem' }}>
                         <div style={{ flex: 1, height: 1, background: '#ede9fe' }} />
                         <h2 style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 900, fontSize: '1.5rem', color: '#1e1b4b', margin: 0, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -334,16 +324,14 @@ export default function ProductDetails() {
                     </div>
 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2.5rem', alignItems: 'flex-start' }}>
-
-                        {/* Rating Summary */}
                         {reviews.length > 0 && (
                             <div style={{
                                 flex: '0 0 220px', background: '#fff', border: '1.5px solid #ede9fe',
                                 borderRadius: 20, padding: '1.5rem', boxShadow: '0 2px 16px rgba(124,58,237,0.07)',
                                 textAlign: 'center',
                             }}>
-                                <div style={{ fontSize: '3.5rem', fontWeight: 900, color: '#7c3aed', lineHeight: 1 }}>{avgScore.toFixed(1)}</div>
-                                <StarRow rating={avgScore} size="1.3rem" />
+                                <div style={{ fontSize: '3.5rem', fontWeight: 900, color: '#7c3aed', lineHeight: 1 }}>{avgScoreFromReviews.toFixed(1)}</div>
+                                <StarRow rating={avgScoreFromReviews} size="1.3rem" />
                                 <div style={{ color: '#9ca3af', fontSize: '0.78rem', marginTop: 6 }}>{reviews.length} review{reviews.length !== 1 && 's'}</div>
                                 <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
                                     {distrib.map(({ star, count }) => (
@@ -364,9 +352,10 @@ export default function ProductDetails() {
                             </div>
                         )}
 
-                        {/* Reviews List */}
                         <div style={{ flex: '1 1 320px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {reviews.length === 0 ? (
+                            {loadingReviews ? (
+                                <div className="spinner" />
+                            ) : reviews.length === 0 ? (
                                 <div style={{ background: '#fff', border: '1.5px solid #ede9fe', borderRadius: 20, padding: '2.5rem', textAlign: 'center' }}>
                                     <div style={{ color: '#ddd6fe', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
                                         <MessageSquare size={48} strokeWidth={1} />
@@ -398,7 +387,6 @@ export default function ProductDetails() {
                             )}
                         </div>
 
-                        {/* Write Review */}
                         <div style={{ flex: '0 1 300px', minWidth: 260 }}>
                             <div style={{
                                 background: '#fff', border: '1.5px solid #ddd6fe', borderRadius: 20,
@@ -425,7 +413,6 @@ export default function ProductDetails() {
                                             </div>
                                         )}
 
-                                        {/* Star Picker */}
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Your Rating</label>
                                             <div style={{ display: 'flex', gap: 6 }}>
@@ -447,7 +434,6 @@ export default function ProductDetails() {
                                             </div>
                                         </div>
 
-                                        {/* Comment */}
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Comment <span style={{ color: '#9ca3af', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></label>
                                             <textarea
@@ -466,16 +452,16 @@ export default function ProductDetails() {
                                             />
                                         </div>
 
-                                        <button type="submit" disabled={submitting} style={{
-                                            background: submitting ? '#a78bfa' : 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                                        <button type="submit" disabled={reviewMutation.isPending} style={{
+                                            background: reviewMutation.isPending ? '#a78bfa' : 'linear-gradient(135deg, #7c3aed, #6d28d9)',
                                             color: '#fff', border: 'none', borderRadius: 50,
                                             padding: '12px 0', fontWeight: 700, fontSize: '0.92rem',
-                                            cursor: submitting ? 'not-allowed' : 'pointer',
+                                            cursor: reviewMutation.isPending ? 'not-allowed' : 'pointer',
                                             fontFamily: "'Manrope', sans-serif",
-                                            boxShadow: submitting ? 'none' : '0 4px 16px rgba(124,58,237,0.35)',
+                                            boxShadow: reviewMutation.isPending ? 'none' : '0 4px 16px rgba(124,58,237,0.35)',
                                             transition: 'all 0.2s',
                                         }}>
-                                            {submitting ? 'Submitting…' : 'Submit Review'}
+                                            {reviewMutation.isPending ? 'Submitting…' : 'Submit Review'}
                                         </button>
                                     </form>
                                 )}
@@ -484,7 +470,6 @@ export default function ProductDetails() {
                     </div>
                 </div>
 
-                {/* ── LIGHTBOX POPUP ──────────────────────────────────────── */}
                 {showLightbox && (
                     <div style={{
                         position: 'fixed', inset: 0, zIndex: 3000,
@@ -498,7 +483,6 @@ export default function ProductDetails() {
                     }}
                         onClick={() => setShowLightbox(false)}
                     >
-                        {/* Close button */}
                         <button 
                             onClick={(e) => { e.stopPropagation(); setShowLightbox(false); }}
                             style={{
@@ -539,8 +523,6 @@ export default function ProductDetails() {
                                     }} 
                                 />
                             </div>
-                            
-                            {/* Caption */}
                             <div style={{ 
                                 background: 'rgba(255,255,255,0.1)',
                                 backdropFilter: 'blur(10px)',
