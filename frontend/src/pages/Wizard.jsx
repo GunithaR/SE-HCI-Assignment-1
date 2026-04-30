@@ -21,12 +21,6 @@ import imgWall from '../assets/wall.png';
 import imgCeiling from '../assets/ceiling.png';
 import imgAccessories from '../assets/accessories.png';
 
-/* ── Helper: Remove Emojis ───────────────────────────────────── */
-const stripEmojis = (str) => {
-  if (typeof str !== 'string') return str;
-  return str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E6}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F3FB}-\u{1F3FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}]/gu, '').trim();
-};
-
 const BG_IMAGES = [bgQ1, bgQ2, bgQ3, bgQ4, bgQ5];
 
 /* ── Category metadata ───────────────────────────────────────── */
@@ -53,11 +47,11 @@ const CheckSvg = () => (
 );
 
 const ArrowLeft = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a4455" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
 );
 
 const ArrowRight = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
 );
 
 const ResultIcon = ({ color = '#4a4455' }) => (
@@ -127,129 +121,150 @@ const STRATEGY_META = {
 
 const scoreColor = (s) => s >= 8 ? '#16a34a' : s >= 5 ? '#d97706' : '#dc2626';
 
-function ScoreRing({ score, max = 10 }) {
-  const r = 27, c = 2 * Math.PI * r;
-  const pct = Math.min(score / max, 1);
-  const dash = c * pct;
-  const color = scoreColor(score);
-  return (
-    <div className="score-ring-wrap">
-      <svg width="64" height="64" viewBox="0 0 64 64">
-        <circle className="score-ring-bg" cx="32" cy="32" r={r} />
-        <circle className="score-ring-fg" cx="32" cy="32" r={r}
-          stroke={color} strokeDasharray={`${dash} ${c - dash}`} />
-      </svg>
-      <div className="score-ring-text">
-        <span className="ring-val" style={{ color }}>{score.toFixed(1)}</span>
-        <span className="ring-max">/{max}</span>
-      </div>
-    </div>
-  );
+// ─────────────────────────────────────────────────────────────────────────────
+// Score Ring (Radial Progress)
+// ─────────────────────────────────────────────────────────────────────────────
+function ScoreRing({ score, size = 64 }) {
+    const radius = 28;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (score / 10) * circumference;
+
+    return (
+        <div className="score-ring-wrap" style={{ width: size, height: size }}>
+            <svg width={size} height={size} viewBox="0 0 64 64">
+                <circle className="score-ring-bg" cx="32" cy="32" r={radius} />
+                <circle
+                    className="score-ring-fg"
+                    cx="32" cy="32" r={radius}
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    stroke="#630ed4"
+                />
+            </svg>
+            <div className="score-ring-text">
+                <span className="ring-val">{score.toFixed(1)}</span>
+                <span className="ring-max">/10</span>
+            </div>
+        </div>
+    );
 }
 
 const WhyCheckIcon = () => (
-  <svg className="why-check" width="18" height="15" viewBox="0 0 18 15" fill="none">
-    <rect width="18" height="15" rx="7.5" />
-    <path d="M5 7.5l2.5 2.5L13 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
+    <svg className="why-check" viewBox="0 0 18 15">
+        <rect width="18" height="15" rx="4" />
+        <path d="M5 7.5L8 10.5L13 4.5" />
+    </svg>
 );
 
 function ResultCard({ product, rank, isSelected, onToggleSelect }) {
-  const {
-    productName, brandName, basePrice, totalScore, strategyScores,
-    tradeOffs, excluded, ruleAdjustment, appliedRuleNames, excludedByRules, imageUrl,
-  } = product;
+    const {
+        productName, brandName, basePrice, totalScore, strategyScores,
+        tradeOffs, excluded, ruleAdjustment, appliedRuleNames, excludedByRules, imageUrl,
+    } = product;
 
-  const resolvedImageUrl = toAbsoluteImageUrl(imageUrl);
-  const rawExplanation = product.explanation || 'This product is recommended based on your preferences.';
-  const explanation = stripEmojis(rawExplanation);
-  const bullets = explanation.split(/(?<=\.)\s+/).filter(s => s.trim().length > 3).slice(0, 4);
-  const isTop = rank === 1 && !excluded;
+    const resolvedImageUrl = toAbsoluteImageUrl(imageUrl);
+    const explanation = product.explanation || 'This product is recommended based on your preferences.';
+    const bullets = explanation.split(/(?<=\.)\s+/).filter(s => s.trim().length > 3).slice(0, 4);
+    const isTop = rank === 1 && !excluded;
 
-  return (
-    <div className={`result-card${isTop ? ' top-pick' : ''}${excluded ? ' excluded' : ''}`}>
-      <div className="result-card-image">
-        {resolvedImageUrl ? (
-          <img src={resolvedImageUrl} alt={productName} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-        ) : (
-          <div className="image-placeholder">No image</div>
-        )}
-        <div className={`result-rank-badge${isTop ? ' top' : ''}`}>
-          {isTop ? '#1 Top Pick' : `#${rank}`}
-        </div>
-      </div>
-      {!excluded ? (
-        <div className="result-compare-check">
-          <input type="checkbox" checked={isSelected} onChange={onToggleSelect} title="Select for comparison" />
-        </div>
-      ) : (
-        <div className="result-excluded-badge">Excluded</div>
-      )}
-      <div className="result-card-content">
-        <div className="result-card-top">
-          <div>
-            <h3 className="result-card-name">{stripEmojis(productName)}</h3>
-            {brandName && <div className="result-card-brand">{stripEmojis(brandName)}</div>}
-          </div>
-          {basePrice && (
-            <div className="result-card-price">
-              <span className="price-val">Rs. {Number(basePrice).toLocaleString()}</span>
+    return (
+        <div className={`result-card ${isTop ? 'top-pick' : ''} ${excluded ? 'excluded' : ''}`}>
+            <div className="result-card-image">
+                {isTop && <div className="result-rank-badge top">TOP PICK</div>}
+                {!isTop && <div className="result-rank-badge">#{rank}</div>}
+
+                {excluded ? (
+                    <div className="result-excluded-badge">EXCLUDED</div>
+                ) : (
+                    <div className="result-compare-check">
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={onToggleSelect}
+                            title="Select for comparison"
+                        />
+                    </div>
+                )}
+
+                {resolvedImageUrl ? (
+                    <img src={resolvedImageUrl} alt={productName} />
+                ) : (
+                    <div className="image-placeholder">📦</div>
+                )}
             </div>
-          )}
+
+            <div className="result-card-content">
+                <div className="result-card-top">
+                    <div>
+                        <h3 className="result-card-name">{productName}</h3>
+                        {brandName && <div className="result-card-brand">{brandName}</div>}
+                    </div>
+                    {basePrice && (
+                        <div className="result-card-price">
+                            <span className="price-val">Rs. {Number(basePrice).toLocaleString()}</span>
+                            <span className="price-unit">/unit</span>
+                        </div>
+                    )}
+                </div>
+
+                {totalScore !== undefined && (
+                    <div className="result-scores">
+                        <ScoreRing score={totalScore} />
+                        <div className="score-pills">
+                            {strategyScores && Object.entries(strategyScores).map(([key, val]) => {
+                                const meta = STRATEGY_META[key] || { label: key, icon: null };
+                                return (
+                                    <div key={key} className="score-pill">
+                                        {meta.icon ? <span className="pill-icon">{meta.icon}</span> : null}
+                                        <span className="pill-label">{meta.label}</span>
+                                        <span className="pill-val">{val.toFixed(1)}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                <div className="result-why-header">Why we recommend it</div>
+                <div className="result-why-list">
+                    {bullets.map((b, i) => (
+                        <div key={i} className="result-why-item">
+                            <WhyCheckIcon />
+                            <span>{b}</span>
+                        </div>
+                    ))}
+                </div>
+
+                {tradeOffs && tradeOffs.length > 0 && (
+                    <div className="result-tradeoffs">
+                        <h4>Trade-offs</h4>
+                        {tradeOffs.map((t, i) => <p key={i}>• {t}</p>)}
+                    </div>
+                )}
+
+                {!excluded && appliedRuleNames && appliedRuleNames.length > 0 && (
+                    <div className="result-rules">
+                        <h4>Policy Adjustments</h4>
+                        <div className="rule-adj" style={{ color: ruleAdjustment > 0 ? '#10b981' : '#ef4444' }}>
+                            {ruleAdjustment > 0 ? '+' : ''}{ruleAdjustment.toFixed(1)} points
+                        </div>
+                        {appliedRuleNames.map((name, i) => <p key={i}>• {name}</p>)}
+                    </div>
+                )}
+
+                {excluded && excludedByRules && excludedByRules.length > 0 && (
+                    <div className="result-rules">
+                        <h4>Excluded Reasons</h4>
+                        {excludedByRules.map((r, i) => <p key={i}>• {r}</p>)}
+                    </div>
+                )}
+
+                <Link to={`/product/${product.id || product.productId}`} className="result-view-btn">
+                    View Full Details
+                </Link>
+            </div>
         </div>
-        {totalScore !== undefined && (
-          <div className="result-scores">
-            <ScoreRing score={totalScore} />
-            <div className="score-pills">
-              {strategyScores && Object.entries(strategyScores).map(([key, val]) => {
-                const meta = STRATEGY_META[key] || { label: key, icon: null };
-                return (
-                  <div key={key} className="score-pill">
-                    {meta.icon ? <span className="pill-icon">{meta.icon}</span> : null}
-                    <span className="pill-label">{meta.label}</span>
-                    <span className="pill-val" style={{ color: scoreColor(val) }}>{val.toFixed(1)}/10</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-        <div className="result-why-header">Why this is recommended</div>
-        <div className="result-why-list">
-          {bullets.map((b, i) => (
-            <div key={i} className="result-why-item">
-              <WhyCheckIcon />
-              <span>{b}</span>
-            </div>
-          ))}
-        </div>
-        {tradeOffs && tradeOffs.length > 0 && (
-          <div className="result-tradeoffs">
-            <h4>Trade-offs</h4>
-            {tradeOffs.map((t, i) => <p key={i}>{t}</p>)}
-          </div>
-        )}
-        {!excluded && appliedRuleNames && appliedRuleNames.length > 0 && (
-          <div className="result-rules">
-            <h4>Rule Adjustments</h4>
-            <div className="rule-adj" style={{ color: ruleAdjustment > 0 ? '#16a34a' : ruleAdjustment < 0 ? '#dc2626' : '#7c7589' }}>
-              {ruleAdjustment > 0 ? '+' : ''}{ruleAdjustment?.toFixed(1)} pts
-            </div>
-            {appliedRuleNames.map((n, i) => <p key={i}>{n}</p>)}
-          </div>
-        )}
-        {excluded && excludedByRules && excludedByRules.length > 0 && (
-          <div className="result-tradeoffs">
-            <h4>Excluded Reasons</h4>
-            {excludedByRules.map((r, i) => <p key={i}>{r}</p>)}
-          </div>
-        )}
-        <Link to={`/product/${product.productId}`} className="result-view-btn" style={{ alignSelf: 'flex-start', marginTop: '12px' }}>
-          View Details
-        </Link>
-      </div>
-    </div>
-  );
+    );
 }
 
 function ComparisonPanel({ data, onClose }) {
@@ -275,14 +290,14 @@ function ComparisonPanel({ data, onClose }) {
           </div>
         </div>
         {comparativeNarrative && (
-          <div className="comparison-narrative"><p>{stripEmojis(comparativeNarrative)}</p></div>
+          <div className="comparison-narrative"><p>{comparativeNarrative}</p></div>
         )}
         <div className="comparison-table-wrap">
           <table className="comparison-table">
             <thead>
               <tr>
                 <th className="attr-col">Attribute</th>
-                {products.map((p, i) => <th key={i} className="product-col">{stripEmojis(p.productName)}</th>)}
+                {products.map((p, i) => <th key={i} className="product-col">{p.productName}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -328,7 +343,7 @@ function AnswerChips({ answers, visibleQuestions, selectedCategory }) {
         return (
           <div key={q.id} className="answer-chip-pill">
             <span className="chip-key">{label}</span>
-            <span className="chip-val">{stripEmojis(val)}</span>
+            <span className="chip-val">{val}</span>
           </div>
         );
       })}
@@ -428,8 +443,8 @@ function ResultsView({ resultsData, answers, visibleQuestions, selectedCategory,
           <div className="insights-head"><h3>Additional Insights</h3>{augmentationFallbackUsed && <span className="fallback-pill">Rule-based fallback</span>}</div>
           {additionalInsights.map((ins, i) => (
             <div key={i} className="insight-row">
-              <p className="insight-title">{stripEmojis(ins.title)}</p>
-              <p className="insight-detail">{stripEmojis(ins.detail)}</p>
+              <p className="insight-title">{ins.title}</p>
+              <p className="insight-detail">{ins.detail}</p>
             </div>
           ))}
         </div>
@@ -485,8 +500,8 @@ function OptionCard({ option, selected, onClick, index }) {
     <button className={`wizard-opt-card${selected ? ' selected' : ''}`} onClick={onClick}>
       {selected && <div className="opt-check"><CheckSvg /></div>}
       <div className="opt-icon-bg">{IconFn(iconColor)}</div>
-      <div className="opt-title">{stripEmojis(option.label)}</div>
-      {option.desc && <div className="opt-desc">{stripEmojis(option.desc)}</div>}
+      <div className="opt-title">{option.label}</div>
+      {option.desc && <div className="opt-desc">{option.desc}</div>}
     </button>
   );
 }
@@ -515,7 +530,7 @@ function AnswersSidebar({ visibleQuestions, answers, onEdit, selectedCategory })
               <div key={q.id} className="sidebar-item-answered">
                 <div className="si-left">
                   <CategoryIcon color="#630ed4" />
-                  <span className="si-label">{label}: {stripEmojis(ansText)}</span>
+                  <span className="si-label">{label}: {ansText}</span>
                 </div>
                 <button className="si-edit" onClick={() => onEdit(q.id)}>Edit</button>
               </div>
@@ -539,7 +554,6 @@ export default function Wizard() {
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
   const [answers, setAnswers] = useState({});
   const [resultsData, setResultsData] = useState(null);
-  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
   const { data: categories = [], isLoading: loadingCats } = useQuery({
     queryKey: ['question-categories'],
@@ -633,57 +647,60 @@ export default function Wizard() {
   if (loadingCats || questionMutation.isPending) return <div className="wizard-full-loading"><div className="loading-spinner"></div><p>Preparing Guide...</p></div>;
 
   return (
-    <div className="wizard-outer">
-      <div className="wizard-bg-layer" style={{ backgroundImage: `url(${isResultsStep ? bgResults : (isCategoryStep ? bgCategory : (BG_IMAGES[currentIndex % BG_IMAGES.length] || bgQ1))})` }}></div>
+    <div className="wizard-page" style={{ backgroundImage: `url(${isResultsStep ? bgResults : (isCategoryStep ? bgCategory : (BG_IMAGES[currentIndex % BG_IMAGES.length] || bgQ1))})` }}>
       <div className="wizard-overlay"></div>
-      <div className={`wizard-container${isResultsStep ? ' results-mode' : ''}`}>
+      <div className="wizard-page-inner">
         {!isResultsStep && (
-          <div className="wizard-header">
+          <div className="wizard-header" style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
             <StepIndicator visibleQuestions={visibleQuestions} currentIndex={currentIndex} answers={answers} isReviewStep={isReviewStep} isResultsStep={isResultsStep} />
-            <div className="wizard-main-title">{isReviewStep ? 'Review Choices' : (isCategoryStep ? 'Project Type' : 'Preferences')}</div>
-            <div className="wizard-main-desc">{isReviewStep ? 'Verify your selections before AI matching' : (isCategoryStep ? 'Select your project scope' : (currentQ?.question || 'Answer a few questions'))}</div>
+            <h1 className="wizard-q-heading">{isReviewStep ? 'Review Choices' : (isCategoryStep ? 'Project Type' : 'Preferences')}</h1>
+            <p className="wizard-q-subtext">{isReviewStep ? 'Verify your selections before AI matching' : (isCategoryStep ? 'Select your project scope' : (currentQ?.question || 'Answer a few questions'))}</p>
           </div>
         )}
         <div className="wizard-layout">
           {!isCategoryStep && !isResultsStep && (
             <AnswersSidebar visibleQuestions={visibleQuestions} answers={answers} onEdit={(id) => setCurrentQuestionId(id)} selectedCategory={selectedCategory} />
           )}
-          <div className="wizard-content">
+          <div className={`wizard-question-panel${isCategoryStep || isResultsStep ? ' full-width' : ''}`}>
             {isResultsStep ? (
               <ResultsView resultsData={resultsData} answers={answers} visibleQuestions={visibleQuestions} selectedCategory={selectedCategory} onTryAgain={() => { setResultsData(null); setSelectedCategory(null); }} />
             ) : isCategoryStep ? (
-              <div className="wizard-cat-grid">
+              <div className="wizard-options-grid category-grid">
                 {categories.map(cat => (
-                  <button key={cat} className="wizard-cat-card" onClick={() => selectCategory(cat)}>
-                    <div className="cat-img-wrap"><img src={CATEGORY_META[cat]?.img} alt={cat} /></div>
-                    <div className="cat-info"><h3>{cat}</h3><p>{CATEGORY_META[cat]?.desc}</p></div>
+                  <button key={cat} className="wizard-opt-card category-card" onClick={() => selectCategory(cat)}>
+                    <img className="cat-img" src={CATEGORY_META[cat]?.img} alt={cat} />
+                    <div className="opt-title">{cat}</div>
+                    <div className="opt-desc">{CATEGORY_META[cat]?.desc}</div>
                   </button>
                 ))}
               </div>
             ) : isReviewStep ? (
               <div className="wizard-review-container">
-                <div className="review-cards">
+                <div className="wizard-review-list">
                   {visibleQuestions.map(q => (
-                    <div key={q.id} className="review-card">
-                      <div className="review-label">{extractLabel(q.question, q.id)}</div>
-                      <div className="review-val">{stripEmojis(q.options.find(o => o.value === answers[q.id])?.label || answers[q.id])}</div>
+                    <div key={q.id} className="wizard-review-item">
+                      <div>
+                        <div className="wizard-review-q">{extractLabel(q.question, q.id)}</div>
+                        <div className="wizard-review-a">{q.options.find(o => o.value === answers[q.id])?.label || answers[q.id]}</div>
+                      </div>
+                      <button className="wizard-review-edit" onClick={() => setCurrentQuestionId(q.id)}>Change</button>
                     </div>
                   ))}
                 </div>
-                <button className="wizard-submit-btn" onClick={handleSubmit} disabled={recommendMutation.isPending}>
+                <button className="wizard-nav-btn next-btn" onClick={handleSubmit} disabled={recommendMutation.isPending} style={{ width: '100%', justifyContent: 'center', marginTop: '1rem' }}>
                   {recommendMutation.isPending ? 'Analyzing...' : 'Generate Recommendations →'}
                 </button>
               </div>
             ) : (
               <div className="wizard-q-container">
-                <div className="wizard-opt-grid">
+                <div className="wizard-options-grid">
                   {currentQ?.options.map((opt, i) => (
                     <OptionCard key={opt.value} option={opt} selected={currentAnswer === opt.value} onClick={() => { selectOption(currentQ.id, opt.value); goNext(); }} index={i} />
                   ))}
                 </div>
-                <div className="wizard-nav-btns">
-                  <button className="nav-btn prev" onClick={goBack}><ArrowLeft /> Back</button>
-                  {currentAnswer && <button className="nav-btn next" onClick={goNext}>Next <ArrowRight /></button>}
+                <div className="wizard-nav-footer">
+                  <button className="wizard-nav-btn back-btn" onClick={goBack}><ArrowLeft /> Back</button>
+                  {currentAnswer && <button className="wizard-nav-btn next-btn" onClick={goNext}>Next <ArrowRight /></button>}
                 </div>
               </div>
             )}
