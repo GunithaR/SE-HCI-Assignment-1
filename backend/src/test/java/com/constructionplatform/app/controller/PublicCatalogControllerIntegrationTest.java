@@ -6,6 +6,9 @@ import com.constructionplatform.app.entity.Product;
 import com.constructionplatform.app.repository.BrandRepository;
 import com.constructionplatform.app.repository.CategoryRepository;
 import com.constructionplatform.app.repository.ProductRepository;
+import com.constructionplatform.app.repository.ProductReviewRepository;
+import com.constructionplatform.app.repository.RecommendationHistoryRepository;
+import com.constructionplatform.app.repository.SiteVisitRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +44,15 @@ class PublicCatalogControllerIntegrationTest {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private ProductReviewRepository productReviewRepository;
+
+    @Autowired
+    private RecommendationHistoryRepository recommendationHistoryRepository;
+
+    @Autowired
+    private SiteVisitRepository siteVisitRepository;
+
     private Category testCategory;
     private Brand testBrand;
     private List<Product> testProducts = new ArrayList<>();
@@ -48,6 +60,9 @@ class PublicCatalogControllerIntegrationTest {
     @BeforeEach
     void setUpData() {
         // Clear existing data (optional, @Transactional usually handles this, but good for clean state if needed)
+        productReviewRepository.deleteAll();
+        recommendationHistoryRepository.deleteAll();
+        siteVisitRepository.deleteAll();
         productRepository.deleteAll();
         categoryRepository.deleteAll();
         brandRepository.deleteAll();
